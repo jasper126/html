@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BAY SIGHT Woning Calculator Montenegro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             /* Primaire kleuren (Aangepaste Baysight huisstijl) */
@@ -34,7 +34,7 @@
         }
 
         body {
-            font-family: 'Scheherazade New', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
             font-size: 16px;
             line-height: 1.5;
             color: var(--text-primary);
@@ -44,8 +44,8 @@
         }
 
         .baysight-calculator-container {
-            max-width: 1200px;
-            margin: 2rem auto;
+            max-width: 1000px;
+            margin: 0 auto;
             background-color: var(--bg-light);
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -263,6 +263,74 @@
             transform: translateX(26px);
         }
 
+        .toggle-switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--secondary-medium);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--primary-orange);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .toggle-labels {
+            display: flex;
+            justify-content: space-between;
+            width: calc(100% - 80px);
+        }
+
+        .toggle-label-text {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .toggle-label-text.active {
+            color: var(--primary-blue);
+            font-weight: 600;
+        }
+
         .form-navigation {
             display: flex;
             justify-content: space-between;
@@ -347,7 +415,7 @@
 
         .summary-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
@@ -409,11 +477,13 @@
         .chart-container {
             height: 300px;
             margin-bottom: 1.5rem;
+            width: 100%;
         }
 
         .data-table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 1.5rem;
         }
 
         .data-table th, .data-table td {
@@ -455,6 +525,7 @@
             padding: 1.5rem;
             background-color: var(--bg-highlight);
             border-radius: 8px;
+            width: 100%;
         }
 
         .country-comparison h4 {
@@ -624,14 +695,17 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="condition">Staat van onderhoud</label>
-                    <select id="condition" class="form-control">
-                        <option value="Nieuwbouw">Nieuwbouw</option>
-                        <option value="Uitstekend">Uitstekend</option>
-                        <option value="Goed">Goed</option>
-                        <option value="Redelijk">Redelijk</option>
-                        <option value="Renovatie nodig">Renovatie nodig</option>
-                    </select>
+                    <label>Staat van de woning</label>
+                    <div class="toggle-switch-container">
+                        <div class="toggle-labels">
+                            <span class="toggle-label-text" id="existing-label">Bestaande bouw</span>
+                            <span class="toggle-label-text active" id="new-label">Nieuwbouw</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="propertyCondition" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -640,7 +714,25 @@
                 
                 <div class="form-group">
                     <label for="ownCapital">Beschikbaar eigen vermogen (€)</label>
-                    <input type="number" id="ownCapital" class="form-control" min="0" value="150000">
+                    <select id="ownCapital" class="form-control">
+                        <option value="100000">€ 100.000</option>
+                        <option value="125000">€ 125.000</option>
+                        <option value="150000" selected>€ 150.000</option>
+                        <option value="175000">€ 175.000</option>
+                        <option value="200000">€ 200.000</option>
+                        <option value="225000">€ 225.000</option>
+                        <option value="250000">€ 250.000</option>
+                        <option value="275000">€ 275.000</option>
+                        <option value="300000">€ 300.000</option>
+                        <option value="325000">€ 325.000</option>
+                        <option value="350000">€ 350.000</option>
+                        <option value="375000">€ 375.000</option>
+                        <option value="400000">€ 400.000</option>
+                        <option value="425000">€ 425.000</option>
+                        <option value="450000">€ 450.000</option>
+                        <option value="475000">€ 475.000</option>
+                        <option value="500000">€ 500.000</option>
+                    </select>
                 </div>
                 
                 <div class="form-group">
@@ -1358,11 +1450,14 @@
             let propertyType = "Appartement";
             let personalUseWeeks = 6;
             let investmentHorizon = 15;
+            let isNewProperty = true;
+            let ownCapital = 150000;
             
             // Event listeners
             setupEventListeners();
             setupDynamicFormBehavior();
             setupRangeSliders();
+            setupPropertyConditionToggle();
             
             // Event listeners instellen
             function setupEventListeners() {
@@ -1421,6 +1516,11 @@
                 document.getElementById('investmentHorizon').addEventListener('input', function() {
                     investmentHorizon = parseInt(this.value);
                 });
+                
+                // Eigen vermogen wijziging
+                document.getElementById('ownCapital').addEventListener('change', function() {
+                    ownCapital = parseInt(this.value);
+                });
             }
             
             // Dynamisch formuliergedrag
@@ -1439,6 +1539,24 @@
                         slider.addEventListener('input', () => {
                             valueDisplay.textContent = slider.value;
                         });
+                    }
+                });
+            }
+            
+            // Staat van woning toggle
+            function setupPropertyConditionToggle() {
+                const toggle = document.getElementById('propertyCondition');
+                const existingLabel = document.getElementById('existing-label');
+                const newLabel = document.getElementById('new-label');
+                
+                toggle.addEventListener('change', function() {
+                    isNewProperty = this.checked;
+                    if (isNewProperty) {
+                        existingLabel.classList.remove('active');
+                        newLabel.classList.add('active');
+                    } else {
+                        existingLabel.classList.add('active');
+                        newLabel.classList.remove('active');
                     }
                 });
             }
@@ -1528,7 +1646,7 @@
                 const propertyTax = purchasePrice * PROPERTY_TAX_RATE;
                 const insurance = purchasePrice * 0.004; // 0.4% van aankoopprijs
                 const utilities = 750; // Vast bedrag
-                const maintenance = purchasePrice * 0.0075; // 0.75% van aankoopprijs
+                const maintenance = isNewProperty ? purchasePrice * 0.005 : purchasePrice * 0.0075; // 0.5% voor nieuwbouw, 0.75% voor bestaande bouw
                 
                 const totalAnnualCosts = propertyTax + insurance + utilities + maintenance;
                 
@@ -1606,7 +1724,9 @@
                     region,
                     propertyType,
                     personalUseWeeks,
-                    investmentHorizon
+                    investmentHorizon,
+                    isNewProperty,
+                    ownCapital
                 });
                 
                 // Maak grafieken
@@ -1638,7 +1758,9 @@
                     totalYield,
                     futureValue,
                     totalAppreciation,
-                    investmentHorizon
+                    investmentHorizon,
+                    isNewProperty,
+                    ownCapital
                 });
                 
                 switchTab('results');
