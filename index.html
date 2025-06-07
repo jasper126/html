@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BAY SIGHT Woning Calculator Montenegro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chart.js library for creating charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -31,8 +31,8 @@
             
             /* Achtergrond kleuren */
             --bg-light: #FFFFFF;
-            --bg-off-white: #FFFFFF;
-            --bg-highlight: #FFFFFF;
+            --bg-off-white: #F8FAFC;
+            --bg-highlight: #EFF6FF;
         }
 
         body {
@@ -354,6 +354,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             border: 2px solid transparent;
+            text-decoration: none;
         }
 
         .btn-primary {
@@ -363,6 +364,7 @@
 
         .btn-primary:hover {
             background-color: #c07e4d;
+            color: white;
             box-shadow: 0 4px 10px rgba(212, 145, 95, 0.4);
         }
 
@@ -517,6 +519,7 @@
             border-radius: 8px;
             padding: 1.5rem;
             border-left: 5px solid var(--primary-turquoise);
+            margin-top: 2rem;
         }
         .considerations-list h4 {
             margin-top: 0;
@@ -536,10 +539,18 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
             margin-top: 2rem;
             padding-top: 1.5rem;
             border-top: 1px solid var(--secondary-medium);
         }
+        .result-actions-right {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
 
         .country-comparison {
             margin-top: 2rem;
@@ -592,9 +603,17 @@
                 display: none;
             }
            
-            .form-navigation, .result-actions {
+            .form-navigation {
                 flex-direction: column-reverse;
                 gap: 1rem;
+            }
+
+            .result-actions {
+                 flex-direction: column;
+                 align-items: stretch;
+            }
+             .result-actions-right {
+                flex-direction: column;
             }
 
             .btn {
@@ -816,11 +835,18 @@
                     </div>
                 </div>
                 
-                 <div class="panel-section">
+                <div class="panel-section">
                     <h4>Prognose over <span id="summary-horizon">10</span> jaar</h4>
                     <div class="chart-container">
                         <canvas id="projection-chart"></canvas>
                     </div>
+                </div>
+
+                <div class="considerations-list">
+                    <h4>Disclaimer</h4>
+                    <ul>
+                        <li>Deze berekening is een prognose op basis van de ingevoerde gegevens en openbare marktdata. Het is bedoeld om u een indicatie te geven en dient niet te worden beschouwd als financieel advies. Werkelijke resultaten kunnen afwijken. Neem contact op voor persoonlijk advies.</li>
+                    </ul>
                 </div>
 
             </div>
@@ -918,7 +944,10 @@
             
             <div class="result-actions">
                 <button class="btn btn-secondary" id="back-to-input">← Aanpassen</button>
-                <button class="btn btn-primary" id="send-report-email">Verstuur Resultaten per Mail</button>
+                <div class="result-actions-right">
+                    <button class="btn btn-secondary" id="send-report-email">Mail deze Berekening</button>
+                    <a href="https://www.baysight.nl/contact/" target="_blank" class="btn btn-primary">Plan een Adviesgesprek</a>
+                </div>
             </div>
         </div>
     </div>
