@@ -545,13 +545,7 @@
             padding-top: 1.5rem;
             border-top: 1px solid var(--secondary-medium);
         }
-        .result-actions-right {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-
+        
         .country-comparison {
             margin-top: 2rem;
             padding: 1.5rem;
@@ -611,9 +605,6 @@
             .result-actions {
                  flex-direction: column;
                  align-items: stretch;
-            }
-             .result-actions-right {
-                flex-direction: column;
             }
 
             .btn {
@@ -942,12 +933,30 @@
                  </div>
             </div>
             
+            <div class="panel-section" id="lead-form-panel">
+                <h4>Klaar voor de volgende stap?</h4>
+                <p>Vul uw gegevens in om deze volledige berekening per e-mail te ontvangen. We nemen daarnaast vrijblijvend contact met u op om de mogelijkheden te bespreken.</p>
+                
+                <form id="contact-form">
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <div class="form-group" style="flex: 1; min-width: 200px;">
+                            <label for="userName">Naam</label>
+                            <input type="text" id="userName" name="name" class="form-control" required placeholder="Uw naam">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 200px;">
+                            <label for="userEmail">E-mailadres</label>
+                            <input type="email" id="userEmail" name="email" class="form-control" required placeholder="uw.email@voorbeeld.com">
+                        </div>
+                    </div>
+                    <button type="submit" id="submit-form-btn" class="btn btn-primary" style="width: 100%;">Verstuur en ontvang overzicht</button>
+                    <div id="form-status" style="text-align: center; margin-top: 1rem; font-weight: 600;"></div>
+                </form>
+            </div>
+
+
             <div class="result-actions">
                 <button class="btn btn-secondary" id="back-to-input">← Aanpassen</button>
-                <div class="result-actions-right">
-                    <button class="btn btn-secondary" id="send-report-email">Mail deze Berekening</button>
-                    <a href="https://www.baysight.nl/contact/" target="_blank" class="btn btn-primary">Plan een Adviesgesprek</a>
-                </div>
+                <a href="https://www.baysight.nl/contact/" target="_blank" class="btn btn-secondary">Direct contact opnemen</a>
             </div>
         </div>
     </div>
@@ -980,7 +989,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const personalUsageWeeksSlider = document.getElementById('personalUsageWeeks');
 
     const propertyConditionToggle = document.getElementById('propertyCondition');
-    const sendReportBtn = document.getElementById('send-report-email');
+    
+    const contactForm = document.getElementById('contact-form');
 
     // --- FORM NAVIGATION LOGIC ---
     
@@ -1090,7 +1100,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // --- CALCULATION & EMAIL ---
+    // --- CALCULATION & FORM SUBMISSION ---
     function gatherInputs() {
          return {
             purchasePrice: parseFloat(document.getElementById('purchasePrice').value) || 0,
@@ -1114,7 +1124,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const inputs = gatherInputs();
         const results = calculateInvestment(inputs);
         
-        lastCalculation = { inputs, results }; // Store for email
+        lastCalculation = { inputs, results }; // Store for submission
         
         displayResults(inputs, results);
 
@@ -1123,44 +1133,72 @@ document.addEventListener('DOMContentLoaded', function () {
         resultsTab.click();
     });
 
-    sendReportBtn.addEventListener('click', () => {
-        const { inputs, results } = lastCalculation;
-        if (!inputs || !results) {
-            alert('Genereer eerst een berekening voordat u deze verstuurt.');
+    async function handleFormSubmit(event) {
+        event.preventDefault();
+        const statusDiv = document.getElementById('form-status');
+        const submitBtn = document.getElementById('submit-form-btn');
+        
+        const userName = document.getElementById('userName').value;
+        const userEmail = document.getElementById('userEmail').value;
+        
+        if (!userName || !userEmail) {
+            statusDiv.textContent = 'Vul alstublieft uw naam en e-mailadres in.';
+            statusDiv.style.color = 'var(--error)';
             return;
         }
 
+        const { inputs, results } = lastCalculation;
+        if (!inputs || !results) {
+            statusDiv.textContent = 'Fout: geen berekening gevonden. Maak eerst een berekening.';
+            statusDiv.style.color = 'var(--error)';
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Bezig met verzenden...';
+        statusDiv.textContent = '';
+        
         const formatCurrency = (value) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(value);
         const formatPercent = (value) => new Intl.NumberFormat('nl-NL', { style: 'percent', minimumFractionDigits: 2 }).format(value);
 
-        const emailTo = "info@baysight.nl";
-        const emailSubject = "Nieuwe berekening via de Bay Sight Woning Calculator";
+        const dataToSend = {
+            'Contactpersoon': `${userName} (${userEmail})`,
+            '--- Calculator Invoer ---': '',
+            ...Object.fromEntries(Object.entries(inputs).map(([key, value]) => [key, typeof value === 'boolean' ? (value ? 'Ja' : 'Nee') : value])),
+            '--- Calculator Resultaten ---': '',
+            'Totale Investering': formatCurrency(results.totalInvestment),
+            'Netto Jaarlijks Resultaat': formatCurrency(results.netAnnualCashflow),
+            'Totaal Rendement (Jaar 1)': formatPercent(results.totalROI),
+        };
 
-        const emailBody = `
-Nieuwe berekening ontvangen via de Bay Sight Woning Calculator.
+        try {
+            const response = await fetch('https://formspree.io/f/mjkrgqpr', {
+                method: 'POST',
+                body: JSON.stringify(dataToSend),
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+            });
 
---- INGEVOERDE GEGEVENS ---
-Aankoopprijs: ${formatCurrency(inputs.purchasePrice)}
-Staat: ${inputs.isNewBuild ? 'Nieuwbouw' : 'Bestaande bouw'}
-Regio: ${inputs.region}
-Type woning: ${inputs.propertyType}
-Eigen vermogen: ${formatCurrency(inputs.ownCapital)}
-Financiering nodig: ${inputs.needFinancing ? 'Ja' : 'Nee'}
-Gebruiksdoel: ${inputs.usageType}
-Rendementsprofiel: ${formatPercent(inputs.expectedAppreciation)} per jaar
+            if (response.ok) {
+                statusDiv.textContent = 'Bedankt! Uw overzicht is verzonden.';
+                statusDiv.style.color = 'var(--success)';
+                submitBtn.textContent = 'Verzonden!';
+                contactForm.reset();
+            } else {
+                throw new Error('Server response was not ok.');
+            }
+        } catch (error) {
+            console.error('Form submission error:', error);
+            statusDiv.textContent = 'Er is iets misgegaan. Probeer het later opnieuw.';
+            statusDiv.style.color = 'var(--error)';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Verstuur en ontvang overzicht';
+        }
+    }
+    
+    if (contactForm) {
+        contactForm.addEventListener('submit', handleFormSubmit);
+    }
 
---- BELANGRIJKSTE RESULTATEN ---
-Totale Investering: ${formatCurrency(results.totalInvestment)}
-Netto Jaarlijks Resultaat: ${formatCurrency(results.netAnnualCashflow)}
-Totaal Rendement (Jaar 1): ${formatPercent(results.totalROI)}
-
-Met vriendelijke groet,
-
-Een gebruiker van de calculator
-        `;
-
-        window.location.href = `mailto:${emailTo}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody.trim())}`;
-    });
 
     function calculateInvestment(inputs) {
         const results = {};
