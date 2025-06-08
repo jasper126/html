@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BAY SIGHT Woning Calculator</title>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
     <!-- Chart.js library for creating charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -69,8 +69,8 @@
         .calculator-header h2 {
             margin: 0;
             font-size: 2.5rem;
-            font-family: 'Scheherazade New', serif;
-            font-weight: 700;
+            font-family: 'DM Serif Display', serif;
+            font-weight: 400;
             color: var(--primary-orange);
         }
 
@@ -841,7 +841,7 @@
                 <div class="result-tab" data-result="financial">Investering & Kosten</div>
                 <div class="result-tab" data-result="rental">Verhuurpotentieel</div>
                 <div class="result-tab" data-result="roi">Rendement Analyse</div>
-                <div class="result-tab" data-result="appreciation">Waardestijging</div>
+                <div class="result-tab" data-result="appreciation">Prijsontwikkeling</div>
                 <div class="result-tab" data-result="comparison">Landenvergelijking</div>
             </div>
             
@@ -944,18 +944,18 @@
 
              <div class="result-panel" id="appreciation-panel">
                  <div class="panel-section">
-                    <h4>Prognose Waardeontwikkeling (10 Jaar)</h4>
-                    <p>Gebaseerd op historisch onderzoek (MONSTAT, 2019-2025) tonen we drie scenario's voor de waardeontwikkeling van uw vastgoed. Klik hieronder om het volledige onderzoek te downloaden.</p>
-                    <a href="https://cdn.prod.website-files.com/66ab26a563f36a02518a48ae/68455b46f6f777ddab5082bf_montenegro_vastgoed_rapport_baysight.pdf" target="_blank" class="btn btn-primary" style="margin-bottom: 1.5rem; width: auto; display: inline-block;">Download Vastgoed Rapport (PDF)</a>
+                    <h4>Cumulatieve Prijsontwikkeling (2019-2024)</h4>
+                    <p>Gebaseerd op officieel onderzoek (zie PDF) toont deze grafiek de totale vastgoedwaardestijging in de periode 2019-2024, vergeleken met andere populaire Zuid-Europese landen. Klik hieronder om het volledige onderzoek te downloaden.</p>
+                    <a href="https://cdn.prod.website-files.com/66ab26a563f36a02518a48ae/68455b46f6f777ddab5082bf_montenegro_vastgoed_rapport_baysight.pdf" target="_blank" class="btn btn-primary" style="margin-bottom: 1.5rem; width: auto; display: inline-block;">Download Vergelijkend Rapport (PDF)</a>
                     <div class="chart-container">
-                        <canvas id="appreciation-chart"></canvas>
+                        <canvas id="cumulative-appreciation-chart"></canvas>
                     </div>
                 </div>
                 <div class="considerations-list">
                     <h4>Disclaimer bij Prognose</h4>
                     <ul>
-                        <li>Rendementen uit het verleden bieden geen garantie voor de toekomst.</li>
-                        <li>Economische groei, toerisme en het traject richting EU-lidmaatschap zijn belangrijke factoren die de werkelijke waardestijging zullen beïnvloeden.</li>
+                        <li>Historische prijsontwikkeling biedt geen garantie voor de toekomst.</li>
+                        <li>Deze data is gebaseerd op een vergelijkend rapport en is bedoeld om een algemeen marktbeeld te geven.</li>
                         <li>Deze prognose is bedoeld als hulpmiddel en vormt geen financieel advies.</li>
                     </ul>
                 </div>
@@ -1395,10 +1395,10 @@ document.addEventListener('DOMContentLoaded', function () {
             </tbody>`;
         
         const countryData = {
-            'Montenegro': { tax: inputs.isNewBuild ? 0 : 0.03, yield: results.netRentalYield, color: 'var(--primary-orange)' },
-            'Spanje': { tax: 0.08, yield: 0.035, color: 'var(--warning)' },
-            'Portugal': { tax: 0.06, yield: 0.04, color: 'var(--primary-turquoise)' },
-            'Italië': { tax: 0.09, yield: 0.025, color: 'var(--success)' }
+            'Montenegro': { tax: inputs.isNewBuild ? 0 : 0.03, yield: results.netRentalYield, color: '#d4915f' },
+            'Spanje': { tax: 0.08, yield: 0.035, color: '#F0B429' },
+            'Portugal': { tax: 0.06, yield: 0.04, color: '#00A5CF' },
+            'Italië': { tax: 0.09, yield: 0.025, color: '#31C48D' }
         };
 
         const comparisonTableBody = document.querySelector('#country-comparison-table');
@@ -1451,21 +1451,29 @@ document.addEventListener('DOMContentLoaded', function () {
             options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
         });
         
-        const projectionLabels = Array.from({ length: inputs.investmentHorizon + 1 }, (_, i) => `Jaar ${i}`);
-        
-        destroyChart('appreciation-chart');
-        charts['appreciation-chart'] = new Chart(document.getElementById('appreciation-chart'), {
-            type: 'line',
+        // Data from the comparative report
+        const cumulativeGrowthData = {
+            'Montenegro': { growth: 80.1, color: '#d4915f' },
+            'Spanje': { growth: 28.1, color: '#F0B429' },
+            'Portugal': { growth: 9.1, color: '#00A5CF' },
+            'Italië': { growth: 15.1, color: '#31C48D' }
+        };
+
+        destroyChart('cumulative-appreciation-chart');
+        charts['cumulative-appreciation-chart'] = new Chart(document.getElementById('cumulative-appreciation-chart'), {
+            type: 'bar',
             data: {
-                labels: projectionLabels,
+                labels: Object.keys(cumulativeGrowthData),
                 datasets: [
-                    { label: 'Beste geval', data: projectionLabels.map((_, i) => results.purchasePrice * Math.pow(1 + results.appreciationRates.best, i)), borderColor: 'var(--success)', fill: false, tension: 0.3 },
-                    { label: 'Gemiddeld geval', data: projectionLabels.map((_, i) => results.purchasePrice * Math.pow(1 + results.appreciationRates.average, i)), borderColor: 'var(--primary-orange)', backgroundColor: 'rgba(212, 145, 95, 0.1)', fill: true, tension: 0.3 },
-                    { label: 'Slechtste geval', data: projectionLabels.map((_, i) => results.purchasePrice * Math.pow(1 + results.appreciationRates.worst, i)), borderColor: 'var(--error)', fill: false, tension: 0.3, borderDash: [5, 5] }
-                ]
+                {
+                    label: 'Cumulatieve Prijsontwikkeling (2019-2024)',
+                    data: Object.values(cumulativeGrowthData).map(d => d.growth),
+                    backgroundColor: Object.values(cumulativeGrowthData).map(d => d.color),
+                }]
             },
-            options: { ...sharedOptions, scales: { y: { beginAtZero: false, ticks: { callback: value => '€' + (value/1000) + 'k' } } } }
+            options: { ...sharedOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: value => value + '%' } } } }
         });
+
 
         destroyChart('summary-comparison-chart');
         charts['summary-comparison-chart'] = new Chart(document.getElementById('summary-comparison-chart'), {
