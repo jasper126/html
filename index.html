@@ -699,7 +699,7 @@
         </div>
 
         <div class="calculator-tabs">
-            <div class="tab active" data-tab="input">Gegevens invoeren</div>
+            <div class="tab active" data-tab="input">Start & Invoer</div>
             <div class="tab disabled" data-tab="results">Resultaten</div>
         </div>
         
@@ -711,7 +711,30 @@
                 <div class="progress-step" data-step="4">4. Voorkeuren</div>
             </div>
             
-            <div class="input-form active" id="step-1">
+            <div class="input-form active" id="step-0">
+                <div class="panel-section">
+                    <h4>Uitleg van de Calculator</h4>
+                    <p>Deze calculator is ontworpen om u een gedetailleerd en realistisch inzicht te geven in het potentiële rendement van een vastgoedinvestering. Onze berekeningen zijn niet zomaar schattingen; ze zijn gebaseerd op een diepgaande analyse van de meest recente, openbare data.</p>
+                    
+                    <h5>Onze Databronnen</h5>
+                    <p>Voor de nauwkeurigheid van deze tool vertrouwen we uitsluitend op gezaghebbende bronnen, waaronder:</p>
+                    <ul>
+                        <li><strong>Nationale Statistische Bureaus:</strong> Gegevens over vastgoedprijzen, transactievolumes en economische indicatoren zijn afkomstig van de officiële CBS-equivalenten van elk land, zoals MONSTAT (Montenegro), INE (Spanje), INE Portugal, en ISTAT (Italië).</li>
+                        <li><strong>Belastingautoriteiten:</strong> Alle berekeningen van overdrachtsbelasting, jaarlijkse eigendomsbelasting en belasting op huurinkomsten zijn gebaseerd op de officiële, meest recente tarieven en wetgeving van de respectievelijke belastingdiensten.</li>
+                        <li><strong>Onafhankelijke Marktanalyse:</strong> Voor parameters zoals gemiddelde huurrendementen en beheerkosten maken we gebruik van data van gerenommeerde, onafhankelijke vastgoedanalisten zoals de Global Property Guide, en analyses van financiële instellingen zoals PwC en BBVA Research.</li>
+                    </ul>
+
+                    <h5>Transparante Berekeningen</h5>
+                    <p>De tool berekent dynamisch de kosten en opbrengsten voor uw specifieke situatie. Wanneer u een aankoopprijs invoert, wordt voor elk land een parallelle berekening gemaakt van de transactiekosten en het te verwachten netto huurrendement. Dit stelt u in staat om een eerlijke, data-gedreven vergelijking te maken.</p>
+                    
+                    <div class="considerations-list" style="border-left-color: var(--warning);">
+                         <h4>Disclaimer</h4>
+                         <p>Hoewel we streven naar maximale nauwkeurigheid, dient deze calculator als een indicatief hulpmiddel. De vastgoedmarkt is dynamisch en werkelijke resultaten kunnen afwijken. Deze berekening vormt geen financieel advies. Wij raden u ten zeerste aan om contact op te nemen voor een persoonlijk adviesgesprek om uw specifieke situatie te bespreken.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-form" id="step-1">
                 <h3>Woninggegevens in Montenegro</h3>
                 
                 <div class="form-group">
@@ -844,7 +867,6 @@
         <div class="calculator-section" id="results-section">
             <div class="results-tabs">
                 <div class="result-tab active" data-result="summary">Samenvatting</div>
-                <div class="result-tab" data-result="explanation">Uitleg Tool</div>
                 <div class="result-tab" data-result="financial">Investering & Kosten</div>
                 <div class="result-tab" data-result="rental">Verhuurpotentieel</div>
                 <div class="result-tab" data-result="roi">Rendement Analyse</div>
@@ -896,35 +918,6 @@
                   <a href="https://cdn.prod.website-files.com/66ab26a563f36a02518a48ae/68455b46f6f777ddab5082bf_montenegro_vastgoed_rapport_baysight.pdf" target="_blank" class="btn btn-primary" style="margin-bottom: 1.5rem; width: auto; display: inline-block;">Download Vergelijkend Rapport (PDF)</a>
                 </div>
 
-            </div>
-
-            <div class="result-panel" id="explanation-panel">
-                <div class="panel-section">
-                    <h4>Uitleg van de Calculator</h4>
-                    <p>Deze calculator is ontworpen om u een gedetailleerd en realistisch inzicht te geven in het potentiële rendement van een vastgoedinvestering. Onze berekeningen zijn niet zomaar schattingen; ze zijn gebaseerd op een diepgaande analyse van de meest recente, openbare data.</p>
-                    
-                    <h5>Onze Databronnen</h5>
-                    <p>Voor de nauwkeurigheid van deze tool vertrouwen we uitsluitend op gezaghebbende bronnen, waaronder:</p>
-                    <ul>
-                        <li><strong>Nationale Statistische Bureaus:</strong> Gegevens over vastgoedprijzen, transactievolumes en economische indicatoren zijn afkomstig van de officiële CBS-equivalenten van elk land, zoals MONSTAT (Montenegro), INE (Spanje), INE Portugal, en ISTAT (Italië).</li>
-                        <li><strong>Belastingautoriteiten:</strong> Alle berekeningen van overdrachtsbelasting, jaarlijkse eigendomsbelasting en belasting op huurinkomsten zijn gebaseerd op de officiële, meest recente tarieven en wetgeving van de respectievelijke belastingdiensten.</li>
-                        <li><strong>Onafhankelijke Marktanalyse:</strong> Voor parameters zoals gemiddelde huurrendementen en beheerkosten maken we gebruik van data van gerenommeerde, onafhankelijke vastgoedanalisten zoals de Global Property Guide, en analyses van financiële instellingen zoals PwC en BBVA Research.</li>
-                    </ul>
-
-                    <h5>Transparante Berekeningen</h5>
-                    <p>De tool berekent dynamisch de kosten en opbrengsten voor uw specifieke situatie. Wanneer u een aankoopprijs invoert, wordt voor elk land een parallelle berekening gemaakt van de transactiekosten en het te verwachten netto huurrendement. Dit stelt u in staat om een eerlijke, data-gedreven vergelijking te maken. De tool houdt rekening met factoren zoals:</p>
-                     <ul>
-                         <li>Progressieve transactiebelastingen</li>
-                         <li>Notaris- en registratiekosten</li>
-                         <li>Gemiddelde beheerkosten per land</li>
-                         <li>Jaarlijkse operationele kosten</li>
-                         <li>Specifieke belastingregels voor niet-residentiële investeerders</li>
-                     </ul>
-                      <div class="considerations-list" style="border-left-color: var(--warning);">
-                         <h4>Disclaimer</h4>
-                         <p>Hoewel we streven naar maximale nauwkeurigheid, dient deze calculator als een indicatief hulpmiddel. De vastgoedmarkt is dynamisch en werkelijke resultaten kunnen afwijken. Deze berekening vormt geen financieel advies. Wij raden u ten zeerste aan om contact op te nemen voor een persoonlijk adviesgesprek om uw specifieke situatie te bespreken.</p>
-                     </div>
-                </div>
             </div>
 
             <div class="result-panel" id="financial-panel">
@@ -1019,7 +1012,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // --- STATE VARIABLES ---
-    let currentStep = 1;
+    let currentStep = 0; // AANGEPAST: Start bij stap 0 (welkomstscherm)
     let charts = {}; // Object to hold all chart instances
     let lastCalculation = {}; // To store inputs and results for email
 
@@ -1050,6 +1043,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- FORM NAVIGATION LOGIC ---
     
     function updateFormState() {
+        // AANGEPAST: Verberg voortgangsindicator op het welkomstscherm (stap 0)
+        document.querySelector('.progress-indicator').style.display = (currentStep === 0) ? 'none' : 'flex';
+
         // Update progress bar
         progressSteps.forEach((step, index) => {
             const stepNum = index + 1;
@@ -1066,8 +1062,11 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById(`step-${currentStep}`).classList.add('active');
 
         // Update button states
-        prevBtn.disabled = currentStep === 1;
-        if (currentStep === formSteps.length) {
+        prevBtn.disabled = currentStep === 0; // AANGEPAST: Vorige knop is uitgeschakeld op stap 0
+        
+        // AANGEPAST: De totale lengte van de formulieren is nu het aantal stappen + het welkomstscherm
+        const totalForms = document.querySelectorAll('.input-form').length -1;
+        if (currentStep === totalForms) {
             nextBtn.style.display = 'none';
             calculateBtn.style.display = 'inline-block';
         } else {
@@ -1077,14 +1076,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     nextBtn.addEventListener('click', () => {
-        if (currentStep < formSteps.length) {
+        const totalForms = document.querySelectorAll('.input-form').length;
+        if (currentStep < totalForms - 1) {
             currentStep++;
             updateFormState();
         }
     });
 
     prevBtn.addEventListener('click', () => {
-        if (currentStep > 1) {
+        if (currentStep > 0) { // Kan nu terug naar stap 0
             currentStep--;
             updateFormState();
         }
@@ -1139,6 +1139,12 @@ document.addEventListener('DOMContentLoaded', function () {
             tab.classList.add('active');
             calculatorSections.forEach(s => s.classList.remove('active'));
             document.getElementById(`${tab.dataset.tab}-section`).classList.add('active');
+            
+            // Als we teruggaan naar de invoer, reset naar stap 0
+             if(tab.dataset.tab === 'input') {
+                currentStep = 0;
+                updateFormState();
+             }
         });
     });
     
@@ -1154,7 +1160,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const activePanel = document.getElementById(`${tab.dataset.result}-panel`);
             if (activePanel) {
                 activePanel.classList.add('active');
-                // Redraw charts for the now active panel
                 drawChartsForPanel(tab.dataset.result);
             }
         });
@@ -1184,7 +1189,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const inputs = gatherInputs();
         const results = calculateAll(inputs);
         
-        lastCalculation = { inputs, results }; // Store for submission
+        lastCalculation = { inputs, results }; 
         
         displayResults(inputs, results);
 
@@ -1276,9 +1281,6 @@ document.addEventListener('DOMContentLoaded', function () {
         // Based on "Documentanalyse en gegevensverificatie vier landen_.pdf"
         switch(country) {
             case 'Montenegro':
-                // Using conservative average from document 
-                // Beheerkosten 10% lange termijn 
-                // Belasting ~11.87% op bruto 
                 params = { 
                     grossYieldRate: 0.065, 
                     managementFeeRate: { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0.05 }[managementPreference],
@@ -1287,9 +1289,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 };
                 break;
             case 'Spanje':
-                // Using Valencia example 
-                // Beheerkosten 10% lange termijn 
-                // Belasting ~15% op netto 
                 params = { 
                     totalTransactionCostRate: 0.116,
                     grossYieldRate: 0.06, 
@@ -1299,9 +1298,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 };
                 break;
             case 'Portugal':
-                 // Using average for cities/coast 
-                 // Beheerkosten 8% lange termijn 
-                 // Belasting 28% op bruto 
                 params = { 
                     totalTransactionCostRate: 0.073,
                     grossYieldRate: 0.055, 
@@ -1311,9 +1307,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 };
                 break;
             case 'Italië':
-                // Using recenter average 
-                // Beheerkosten 10% lange termijn 
-                // Belasting 21% (Cedolare Secca) op bruto 
                 params = { 
                     totalTransactionCostRate: 0.106,
                     grossYieldRate: 0.055, 
@@ -1328,7 +1321,6 @@ document.addEventListener('DOMContentLoaded', function () {
         let totalAdditionalCosts = 0;
         
         if (country === 'Montenegro') {
-            // Progressive tax based on document 
             if (results.purchasePrice <= 150000) {
                 results.transferTax = results.purchasePrice * 0.03;
             } else if (results.purchasePrice <= 500000) {
@@ -1336,12 +1328,12 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 results.transferTax = 22000 + (results.purchasePrice - 500000) * 0.06;
             }
-            if(isNewBuild) results.transferTax = 0; // No transfer tax on new build 
+            if(isNewBuild) results.transferTax = 0;
 
-            results.notaryCosts = 400; // Estimate from doc 
-            results.registrationCosts = 50; // Estimate from doc 
-            results.brokerageCosts = 0; // Not typically paid by buyer
-            results.lawyerCosts = results.purchasePrice * 0.01; // Estimate from doc 
+            results.notaryCosts = 400;
+            results.registrationCosts = 50;
+            results.brokerageCosts = 0;
+            results.lawyerCosts = results.purchasePrice * 0.01;
             results.furnishingCosts = furnishingCosts;
             totalAdditionalCosts = results.transferTax + results.notaryCosts + results.registrationCosts + results.brokerageCosts + results.lawyerCosts + results.furnishingCosts;
         } else {
@@ -1392,7 +1384,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if(params.taxOnGross){
             taxAmount = results.grossAnnualRentalIncome * params.effectiveTaxRate;
         } else {
-            // Tax on net income (Spain scenario)
             const netIncomeBeforeTax = results.netAnnualRentalIncome - results.totalAnnualCostsBeforeFinancing;
             taxAmount = Math.max(0, netIncomeBeforeTax) * params.effectiveTaxRate;
         }
