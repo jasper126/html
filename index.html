@@ -567,7 +567,7 @@
         .country-badge.montenegro { background-color: var(--primary-orange); }
         .country-badge.spanje { background-color: var(--warning); color: var(--text-primary); }
         .country-badge.portugal { background-color: var(--primary-turquoise); }
-        .country-badge.italië { background-color: var(--success); }
+        .country-badge.italie { background-color: var(--success); }
 
         /* Tooltip styles */
         .tooltip {
@@ -1120,10 +1120,12 @@ document.addEventListener('DOMContentLoaded', function () {
             resultTabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             resultPanels.forEach(p => p.classList.remove('active'));
-            document.getElementById(`${tab.dataset.result}-panel`).classList.add('active');
-            Object.values(charts).forEach(chart => {
-                if(chart) chart.resize();
-            });
+            const activePanel = document.getElementById(`${tab.dataset.result}-panel`);
+            if (activePanel) {
+                activePanel.classList.add('active');
+                // Redraw charts for the now active panel
+                drawChartsForPanel(tab.dataset.result);
+            }
         });
     });
 
@@ -1255,21 +1257,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
         }
 
-        results.purchasePrice = purchasePrice;
+        results.purchasePrice = purchasePrice || 0;
         let totalAdditionalCosts;
         if (country === 'Montenegro') {
-            results.transferTax = isNewBuild ? 0 : purchasePrice * params.transferTaxRate;
-            results.notaryCosts = purchasePrice * params.notaryRate;
-            results.registrationCosts = purchasePrice * params.registrationRate;
-            results.brokerageCosts = purchasePrice * params.brokerageRate;
+            results.transferTax = isNewBuild ? 0 : results.purchasePrice * params.transferTaxRate;
+            results.notaryCosts = results.purchasePrice * params.notaryRate;
+            results.registrationCosts = results.purchasePrice * params.registrationRate;
+            results.brokerageCosts = results.purchasePrice * params.brokerageRate;
             results.lawyerCosts = params.lawyerFee;
             results.furnishingCosts = furnishingCosts;
             totalAdditionalCosts = results.transferTax + results.notaryCosts + results.registrationCosts + results.brokerageCosts + results.lawyerCosts + results.furnishingCosts;
         } else {
-            totalAdditionalCosts = purchasePrice * params.totalTransactionCostRate + furnishingCosts;
+            totalAdditionalCosts = results.purchasePrice * params.totalTransactionCostRate + furnishingCosts;
         }
 
-        results.totalInvestment = purchasePrice + totalAdditionalCosts;
+        results.totalInvestment = results.purchasePrice + totalAdditionalCosts;
 
         // Financing only for Montenegro
         results.annualFinancingCost = 0;
@@ -1278,7 +1280,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (results.financingAmount > 0 && financingInterestRate > 0 && financingTerm > 0) {
                 const r = financingInterestRate / 12;
                 const n = financingTerm * 12;
-                results.annualFinancingCost = (results.financingAmount * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)) * 12 || 0;
+                results.annualFinancingCost = (results.financingAmount * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)) || 0;
             }
         }
          results.ownCapitalContribution = results.totalInvestment - (results.financingAmount || 0);
@@ -1287,14 +1289,14 @@ document.addEventListener('DOMContentLoaded', function () {
         const annualInsuranceRate = 0.002;
         const annualMaintenanceRate = 0.008;
 
-        results.annualPropertyTax = purchasePrice * annualPropertyTaxRate;
-        results.annualInsurance = purchasePrice * annualInsuranceRate;
-        results.annualMaintenance = purchasePrice * annualMaintenanceRate;
+        results.annualPropertyTax = results.purchasePrice * annualPropertyTaxRate;
+        results.annualInsurance = results.purchasePrice * annualInsuranceRate;
+        results.annualMaintenance = results.purchasePrice * annualMaintenanceRate;
         results.totalAnnualCostsBeforeFinancing = results.annualPropertyTax + results.annualInsurance + results.annualMaintenance;
         
         let grossAnnualRentalIncome = 0;
-        if (usageType !== 'Vakantiewoning') {
-             grossAnnualRentalIncome = purchasePrice * params.grossYieldRate;
+        if (usageType !== 'Vakantiewoning' && results.purchasePrice > 0) {
+             grossAnnualRentalIncome = results.purchasePrice * params.grossYieldRate;
         }
        
         results.rentalManagementFee = grossAnnualRentalIncome * params.managementFeeRate;
@@ -1412,7 +1414,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }).join('')}
             </tbody>`;
 
-        drawCharts(inputs, allResults, countryData);
+        drawChartsForPanel('summary', inputs, allResults, countryData);
     }
     
     function destroyChart(chartId) {
@@ -1421,81 +1423,96 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function drawCharts(inputs, results, countryData) {
-        Chart.defaults.font.family = "'Open Sans', sans-serif";
-        Chart.defaults.color = 'var(--text-secondary)';
-        const sharedOptions = { responsive: true, maintainAspectRatio: false };
-        const { montenegro } = results;
+    function drawChartsForPanel(panelId, inputs, results, countryData) {
+         const { montenegro } = results;
+         Chart.defaults.font.family = "'Open Sans', sans-serif";
+         Chart.defaults.color = 'var(--text-secondary)';
+         const sharedOptions = { responsive: true, maintainAspectRatio: false };
 
-        destroyChart('investment-breakdown-chart');
-        charts['investment-breakdown-chart'] = new Chart(document.getElementById('investment-breakdown-chart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Aankoopprijs', 'Belastingen', 'Notaris/Reg.', 'Makelaar', 'Advocaat', 'Inrichting'],
-                datasets: [{ data: [montenegro.purchasePrice, montenegro.transferTax, montenegro.notaryCosts + montenegro.registrationCosts, montenegro.brokerageCosts, montenegro.lawyerCosts, montenegro.furnishingCosts], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#F0B429', '#31C48D'], borderWidth: 0 }]
-            },
-            options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
-        });
-        
-        destroyChart('annual-costs-chart');
-        charts['annual-costs-chart'] = new Chart(document.getElementById('annual-costs-chart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Vastgoedbelasting', 'Verzekering', 'Onderhoud/VvE', 'Financiering'],
-                datasets: [{ data: [montenegro.annualPropertyTax, montenegro.annualInsurance, montenegro.annualMaintenance, montenegro.annualFinancingCost], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98'], borderWidth: 0 }]
-            },
-            options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
-        });
-        
-        // Data from the comparative report for line chart
-        const priceDevelopmentData = {
-            labels: ['2019', '2020', '2021', '2022', '2023', '2024'],
-            datasets: [
-                { label: 'Montenegro', data: [100, 92.9, 116.7, 134.4, 160.6, 180.1], borderColor: '#d4915f', backgroundColor: 'transparent', pointBackgroundColor: '#d4915f', tension: 0.1 },
-                { label: 'Spanje', data: [100, 102.1, 105.9, 113.7, 118.3, 128.1], borderColor: '#F0B429', backgroundColor: 'transparent', pointBackgroundColor: '#F0B429', tension: 0.1 },
-                { label: 'Portugal', data: [100, 106.0, 117.8, 128.0, 139.1, 150.8], borderColor: '#00A5CF', backgroundColor: 'transparent', pointBackgroundColor: '#00A5CF', tension: 0.1 },
-                { label: 'Italië', data: [100, 101.5, 103.5, 105.7, 107.9, 115.1], borderColor: '#31C48D', backgroundColor: 'transparent', pointBackgroundColor: '#31C48D', tension: 0.1 }
-            ]
-        };
-
-        destroyChart('cumulative-appreciation-chart');
-        charts['cumulative-appreciation-chart'] = new Chart(document.getElementById('cumulative-appreciation-chart'), {
-            type: 'line',
-            data: priceDevelopmentData,
-            options: { ...sharedOptions, scales: { y: { beginAtZero: false, title: { display: true, text: 'Prijsindex (2019 = 100)' } } } }
-        });
-
-
-        destroyChart('summary-comparison-chart');
-        charts['summary-comparison-chart'] = new Chart(document.getElementById('summary-comparison-chart'), {
-             type: 'bar',
-            data: {
-                labels: Object.keys(countryData),
-                datasets: [
-                {
-                    label: 'Netto Huurrendement',
-                    data: Object.values(countryData).map(d => d.yield * 100),
-                    backgroundColor: Object.values(countryData).map(d => d.color),
-                }]
-            },
-            options: { ...sharedOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: value => value + '%' } } } }
-        });
-
-        destroyChart('country-comparison-chart');
-        charts['country-comparison-chart'] = new Chart(document.getElementById('country-comparison-chart'), {
-            type: 'bar',
-            data: {
-                labels: Object.keys(countryData),
-                datasets: [
-                    { 
-                        label: 'Netto Huurrendement', 
-                        data: Object.values(countryData).map(d => d.yield * 100), 
-                        backgroundColor: Object.values(countryData).map(d => d.color) 
+        if(panelId === 'summary'){
+            destroyChart('summary-comparison-chart');
+            const summaryCtx = document.getElementById('summary-comparison-chart');
+            if (summaryCtx) {
+                charts['summary-comparison-chart'] = new Chart(summaryCtx, {
+                     type: 'bar',
+                    data: {
+                        labels: Object.keys(countryData),
+                        datasets: [ {
+                            label: 'Netto Huurrendement',
+                            data: Object.values(countryData).map(d => d.yield * 100),
+                            backgroundColor: Object.values(countryData).map(d => d.color),
+                        }]
                     },
-                ]
-            },
-            options: { ...sharedOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: value => value + '%' } } } }
-        });
+                    options: { ...sharedOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: value => value + '%' } } } }
+                });
+            }
+
+            destroyChart('cumulative-appreciation-chart');
+            const appreciationCtx = document.getElementById('cumulative-appreciation-chart');
+             if(appreciationCtx) {
+                const priceDevelopmentData = {
+                    labels: ['2019', '2020', '2021', '2022', '2023', '2024'],
+                    datasets: [
+                        { label: 'Montenegro', data: [100, 92.9, 116.7, 134.4, 160.6, 180.1], borderColor: '#d4915f', backgroundColor: 'transparent', pointBackgroundColor: '#d4915f', tension: 0.1 },
+                        { label: 'Spanje', data: [100, 102.1, 105.9, 113.7, 118.3, 128.1], borderColor: '#F0B429', backgroundColor: 'transparent', pointBackgroundColor: '#F0B429', tension: 0.1 },
+                        { label: 'Portugal', data: [100, 106.0, 117.8, 128.0, 139.1, 150.8], borderColor: '#00A5CF', backgroundColor: 'transparent', pointBackgroundColor: '#00A5CF', tension: 0.1 },
+                        { label: 'Italië', data: [100, 101.5, 103.5, 105.7, 107.9, 115.1], borderColor: '#31C48D', backgroundColor: 'transparent', pointBackgroundColor: '#31C48D', tension: 0.1 }
+                    ]
+                };
+                charts['cumulative-appreciation-chart'] = new Chart(appreciationCtx, {
+                    type: 'line',
+                    data: priceDevelopmentData,
+                    options: { ...sharedOptions, scales: { y: { beginAtZero: false, title: { display: true, text: 'Prijsindex (2019 = 100)' } } } }
+                });
+             }
+        }
+        if(panelId === 'financial'){
+             destroyChart('investment-breakdown-chart');
+             const investmentCtx = document.getElementById('investment-breakdown-chart');
+             if (investmentCtx) {
+                charts['investment-breakdown-chart'] = new Chart(investmentCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Aankoopprijs', 'Belastingen', 'Notaris/Reg.', 'Makelaar', 'Advocaat', 'Inrichting'],
+                        datasets: [{ data: [montenegro.purchasePrice, montenegro.transferTax, montenegro.notaryCosts + montenegro.registrationCosts, montenegro.brokerageCosts, montenegro.lawyerCosts, montenegro.furnishingCosts], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#F0B429', '#31C48D'], borderWidth: 0 }]
+                    },
+                    options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
+                });
+             }
+            
+            destroyChart('annual-costs-chart');
+             const costsCtx = document.getElementById('annual-costs-chart');
+             if (costsCtx) {
+                charts['annual-costs-chart'] = new Chart(costsCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Vastgoedbelasting', 'Verzekering', 'Onderhoud/VvE', 'Financiering'],
+                        datasets: [{ data: [montenegro.annualPropertyTax, montenegro.annualInsurance, montenegro.annualMaintenance, montenegro.annualFinancingCost], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98'], borderWidth: 0 }]
+                    },
+                    options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
+                });
+             }
+        }
+        if(panelId === 'comparison') {
+             destroyChart('country-comparison-chart');
+             const comparisonCtx = document.getElementById('country-comparison-chart');
+             if (comparisonCtx) {
+                charts['country-comparison-chart'] = new Chart(comparisonCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(countryData),
+                        datasets: [
+                            { 
+                                label: 'Netto Huurrendement', 
+                                data: Object.values(countryData).map(d => d.yield * 100), 
+                                backgroundColor: Object.values(countryData).map(d => d.color) 
+                            },
+                        ]
+                    },
+                    options: { ...sharedOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: value => value + '%' } } } }
+                });
+             }
+        }
     }
 
     // Initialize the form state on page load
