@@ -50,7 +50,7 @@
 
         .baysight-calculator-container {
             width: 100%;
-            max-width: 1160px; /* Aangepaste breedte voor desktop */
+            max-width: 1160px;
             margin: 0 auto;
             background-color: var(--bg-light);
             border-radius: 8px;
@@ -226,7 +226,6 @@
             margin-bottom: 0;
         }
 
-        /* Custom styling for range inputs */
         input[type="range"] {
             -webkit-appearance: none;
             appearance: none;
@@ -576,20 +575,6 @@
             border-top: 1px solid var(--secondary-medium);
         }
         
-        .country-comparison {
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background-color: var(--bg-light);
-            border: 1px solid var(--secondary-light);
-            border-radius: 8px;
-        }
-        
-        .country-comparison h4 {
-             margin-top: 0;
-             color: var(--primary-blue);
-             margin-bottom: 1rem;
-        }
-
         .country-badge {
             display: inline-flex;
             align-items: center;
@@ -610,9 +595,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            width: 100%;
         }
 
-        /* Tooltip styles */
         .tooltip {
             position: relative;
             display: inline-block;
@@ -670,13 +655,68 @@
             visibility: visible;
             opacity: 1;
         }
+        
+        .cta-section {
+            background-color: var(--secondary-light);
+            border-radius: 8px;
+            padding: 2.5rem;
+            margin-top: 2rem;
+            border: 1px solid var(--secondary-medium);
+        }
+
+        .cta-content {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+        }
+        
+        .cta-icon-container {
+            flex-shrink: 0;
+            color: var(--primary-orange);
+        }
+
+        .cta-icon-container svg {
+            width: 80px;
+            height: 80px;
+        }
+
+        .cta-text {
+            flex-grow: 1;
+        }
+
+        .cta-text h2 {
+            font-family: 'DM Serif Display', serif;
+            color: var(--primary-blue);
+            font-size: 2rem;
+            margin-top: 0;
+            margin-bottom: 1rem;
+        }
+
+        .cta-text p {
+            margin-bottom: 1.5rem;
+            color: var(--text-secondary);
+        }
+        
+        .cta-form-inputs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cta-form-inputs .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .btn-cta {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+        }
 
 
-        @media (max-width: 1159px) { /* Adjust breakpoint for smaller screens */
-            .baysight-calculator-container {
-                max-width: 100%;
-            }
-             .summary-grid {
+        @media (max-width: 1159px) {
+            .summary-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -716,6 +756,15 @@
             .btn {
                 width: 100%;
                 box-sizing: border-box;
+            }
+            
+            .cta-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 1.5rem;
+            }
+            .cta-form-inputs {
+                flex-direction: column;
             }
         }
     </style>
@@ -948,11 +997,10 @@
                 
                 <div class="panel-section">
                   <h4>Historische Prijsontwikkeling (2019-2024)</h4>
-                  <p>Gebaseerd op officieel onderzoek (zie PDF hieronder) toont deze grafiek de vastgoedwaardestijging, vergeleken met andere populaire Zuid-Europese landen.</p>
+                  <p>Gebaseerd op officieel onderzoek toont deze grafiek de vastgoedwaardestijging, vergeleken met andere populaire Zuid-Europese landen.</p>
                   <div class="chart-container">
                        <canvas id="cumulative-appreciation-chart"></canvas>
                   </div>
-                   <a href="https://cdn.prod.website-files.com/66ab26a563f36a02518a48ae/68455b46f6f777ddab5082bf_montenegro_vastgoed_rapport_baysight.pdf" target="_blank" class="btn btn-primary" style="margin-bottom: 1.5rem; width: auto; display: inline-block;">Download Vergelijkend Rapport (PDF)</a>
                 </div>
 
             </div>
@@ -1008,24 +1056,30 @@
                 </div>
             </div>
             
-            <div class="panel-section" id="lead-form-panel">
-                <h4>Klaar voor de volgende stap?</h4>
-                <p>Vul uw gegevens in om deze volledige berekening per e-mail te ontvangen. We nemen daarnaast vrijblijvend contact met u op om de mogelijkheden te bespreken.</p>
-                
-                <form id="contact-form">
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <div class="form-group" style="flex: 1; min-width: 200px;">
-                            <label for="userName">Naam</label>
-                            <input type="text" id="userName" name="name" class="form-control" required placeholder="Uw naam">
-                        </div>
-                        <div class="form-group" style="flex: 1; min-width: 200px;">
-                            <label for="userEmail">E-mailadres</label>
-                            <input type="email" id="userEmail" name="email" class="form-control" required placeholder="uw.email@voorbeeld.com">
-                        </div>
+            <div class="panel-section cta-section" id="lead-form-panel">
+                <div class="cta-content">
+                    <div class="cta-icon-container">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                     </div>
-                    <button type="submit" id="submit-form-btn" class="btn btn-primary" style="width: 100%;">Verstuur en ontvang overzicht</button>
-                    <div id="form-status" style="text-align: center; margin-top: 1rem; font-weight: 600;"></div>
-                </form>
+                    <div class="cta-text">
+                        <h2>Uw Persoonlijke Rendementsanalyse</h2>
+                        <p>Laat uw naam en e-mailadres achter en ontvang een gedetailleerd PDF-rapport met uw volledige, persoonlijke investeringsanalyse. Gratis en vrijblijvend.</p>
+                        <form id="contact-form">
+                            <div class="cta-form-inputs">
+                                <div class="form-group">
+                                    <label for="userName">Naam</label>
+                                    <input type="text" id="userName" name="name" class="form-control" required placeholder="Uw volledige naam">
+                                </div>
+                                <div class="form-group">
+                                    <label for="userEmail">E-mailadres</label>
+                                    <input type="email" id="userEmail" name="email" class="form-control" required placeholder="uw.email@voorbeeld.com">
+                                </div>
+                            </div>
+                            <button type="submit" id="submit-form-btn" class="btn btn-primary btn-cta">Verstuur en Ontvang uw Rapport</button>
+                            <div id="form-status" style="text-align: center; margin-top: 1rem; font-weight: 600;"></div>
+                        </form>
+                    </div>
+                </div>
             </div>
 
 
@@ -1299,7 +1353,7 @@ document.addEventListener('DOMContentLoaded', function () {
             statusDiv.textContent = 'Er is iets misgegaan. Probeer het later opnieuw.';
             statusDiv.style.color = 'var(--error)';
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Verstuur en ontvang overzicht';
+            submitBtn.textContent = 'Verstuur en Ontvang uw Rapport';
         }
     }
     
@@ -1781,7 +1835,6 @@ document.addEventListener('DOMContentLoaded', function () {
     needFinancingToggle.dispatchEvent(new Event('change'));
     usageTypeSelect.dispatchEvent(new Event('change'));
 });
-
 </script>
 </body>
 </html>
