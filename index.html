@@ -605,8 +605,9 @@
         .country-badge.spanje { background-color: var(--warning); color: var(--text-primary); }
         .country-badge.portugal { background-color: var(--primary-turquoise); }
         .country-badge.italie { background-color: var(--success); }
-
-        .country-cell {
+        
+        /* GEWIJZIGD: CSS-regel hernoemd om de cel-inhoud te stylen, niet de cel zelf */
+        .country-cell-inner {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -1548,7 +1549,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 <tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td class="numeric-cell">${formatCurrency(totalAnnualCosts)}</td></tr>
             </tbody>`;
         
-        // GEWIJZIGD: Tooltips toegevoegd aan Verhuurpotentieel
         const rentalIncomeTable = document.getElementById('rental-income-table').parentElement;
         const netRentalResultTable = document.getElementById('net-rental-result-table').parentElement;
         if (inputs.usageType !== 'Vakantiewoning') {
@@ -1623,10 +1623,10 @@ document.addEventListener('DOMContentLoaded', function () {
             </tbody>`;
         
         const countryData = {
-            'Montenegro': { yield: allResults.montenegro.netRentalYield, tax: allResults.montenegro.taxAmount, taxRate: allResults.montenegro.effectiveTaxRate, taxBase: '15% op netto (na forfaitaire aftrek)', netCashflow: allResults.montenegro.netAnnualCashflow, color: '#d4915f' },
-            'Spanje': { yield: allResults.spanje.netRentalYield, tax: allResults.spanje.taxAmount, taxRate: allResults.spanje.effectiveTaxRate, taxBase: '19% op netto', netCashflow: allResults.spanje.netAnnualCashflow, color: '#F0B429' },
-            'Portugal': { yield: allResults.portugal.netRentalYield, tax: allResults.portugal.taxAmount, taxRate: allResults.portugal.effectiveTaxRate, taxBase: '28% op netto', netCashflow: allResults.portugal.netAnnualCashflow, color: '#00A5CF' },
-            'Italië': { yield: allResults.italië.netRentalYield, tax: allResults.italië.taxAmount, taxRate: allResults.italië.effectiveTaxRate, taxBase: '21% op bruto', netCashflow: allResults.italië.netAnnualCashflow, color: '#31C48D' }
+            'Montenegro': { yield: allResults.montenegro.netRentalYield, tax: allResults.montenegro.taxAmount, taxBase: '15% op netto (na forfaitaire aftrek)', netCashflow: allResults.montenegro.netAnnualCashflow, color: '#d4915f' },
+            'Spanje': { yield: allResults.spanje.netRentalYield, tax: allResults.spanje.taxAmount, taxBase: '19% op netto', netCashflow: allResults.spanje.netAnnualCashflow, color: '#F0B429' },
+            'Portugal': { yield: allResults.portugal.netRentalYield, tax: allResults.portugal.taxAmount, taxBase: '28% op netto', netCashflow: allResults.portugal.netAnnualCashflow, color: '#00A5CF' },
+            'Italië': { yield: allResults.italië.netRentalYield, tax: allResults.italië.taxAmount, taxBase: '21% op bruto', netCashflow: allResults.italië.netAnnualCashflow, color: '#31C48D' }
         };
 
         const taxTooltips = {
@@ -1651,13 +1651,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = countryData[country];
             const countryClass = country.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             
+            // GEWIJZIGD: HTML structuur voor de eerste cel om uitlijning te fixen
             return `<tr>
-                    <td class="country-cell">
-                        <span class="country-badge ${countryClass}">${country}</span>
-                        <span class="tooltip">
-                            <i class="tooltip-icon">i</i>
-                            <span class="tooltip-text">${taxTooltips[country]}</span>
-                        </span>
+                    <td>
+                        <div class="country-cell-inner">
+                            <span class="country-badge ${countryClass}">${country}</span>
+                            <span class="tooltip">
+                                <i class="tooltip-icon">i</i>
+                                <span class="tooltip-text">${taxTooltips[country]}</span>
+                            </span>
+                        </div>
                     </td>
                     <td class="numeric-cell"><strong>${formatCurrency(data.netCashflow)}</strong></td>
                     <td class="numeric-cell">
