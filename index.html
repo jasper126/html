@@ -734,7 +734,6 @@
                     <p>Deze calculator is ontworpen om u een gedetailleerd en realistisch inzicht te geven in het potentiële rendement van een vastgoedinvestering. Onze berekeningen zijn niet zomaar schattingen; ze zijn gebaseerd op een diepgaande analyse van de meest recente, openbare data.</p>
                     
                     <h5>Onze Databronnen</h5>
-                    <p>Voor de nauwkeurigheid van deze tool vertrouwen we uitsluitend op gezaghebbende bronnen, waaronder:</p>
                     <ul>
                         <li><strong>Nationale Statistische Bureaus:</strong> Gegevens over vastgoedprijzen, transactievolumes en economische indicatoren zijn afkomstig van de officiële CBS-equivalenten van elk land, zoals MONSTAT (Montenegro), INE (Spanje), INE Portugal, en ISTAT (Italië).</li>
                         <li><strong>Belastingautoriteiten:</strong> Alle berekeningen van overdrachtsbelasting, jaarlijkse eigendomsbelasting en belasting op huurinkomsten zijn gebaseerd op de officiële, meest recente tarieven en wetgeving van de respectievelijke belastingdiensten.</li>
@@ -1307,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function calculateCountry(inputs, country) {
         const results = {};
-        const { purchasePrice, isNewBuild, propertySize, furnishingCosts, managementPreference, usageType, personalUsageWeeks, needFinancing, financingInterestRate, financingTerm, ownCapital } = inputs;
+        const { purchasePrice, isNewBuild, propertyType, furnishingCosts, managementPreference, usageType, personalUsageWeeks, needFinancing, financingInterestRate, financingTerm, ownCapital } = inputs;
 
         let params = {};
         
@@ -1362,8 +1361,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             results.notaryCosts = 400;
             results.registrationCosts = 50;
-            results.brokerageCosts = results.purchasePrice * 0.025; // GEWIJZIGD: 2.5% makelaarskosten
-            results.lawyerCosts = 500; // GEWIJZIGD: Vast bedrag advocaatkosten
+            results.brokerageCosts = results.purchasePrice * 0.025; 
+            results.lawyerCosts = 500;
             results.furnishingCosts = furnishingCosts;
             totalAdditionalCosts = results.transferTax + results.notaryCosts + results.registrationCosts + results.brokerageCosts + results.lawyerCosts + results.furnishingCosts;
         } else {
@@ -1393,7 +1392,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const annualPropertyTaxRate = 0.007;
         const annualInsuranceRate = 0.002;
-        const annualMaintenanceRate = 0.008;
+        
+        // GEWIJZIGD: Dynamische onderhoudskosten
+        let annualMaintenanceRate = 0.008; // Standaard voor appartement (Onderhoud & VvE)
+        if (propertyType === 'Villa' || propertyType === 'Landhuis') {
+            annualMaintenanceRate = 0.005; // Lager tarief voor alleen onderhoud
+        }
 
         results.annualPropertyTax = results.purchasePrice * annualPropertyTaxRate;
         results.annualInsurance = results.purchasePrice * annualInsuranceRate;
@@ -1457,7 +1461,6 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('summary-rental-yield').textContent = formatPercent(montenegro.netRentalYield);
         document.getElementById('summary-appreciation').textContent = formatPercent(montenegro.avgAppreciation);
         
-        // GEWIJZIGD: Tabel met makelaarskosten
         document.getElementById('investment-table').innerHTML = `
             <tbody>
                 <tr><td>Aankoopprijs</td><td>${formatCurrency(montenegro.purchasePrice)}</td></tr>
@@ -1471,13 +1474,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 <tr><td>Eigen Vermogen</td><td>${formatCurrency(montenegro.ownCapitalContribution)}</td></tr>
                 <tr><td>Financiering</td><td>${formatCurrency(montenegro.financingAmount || 0)}</td></tr>
             </tbody>`;
-
+        
+        // GEWIJZIGD: Dynamisch label voor onderhoud
+        const maintenanceLabel = (inputs.propertyType === 'Villa' || inputs.propertyType === 'Landhuis') ? 'Onderhoud' : 'Onderhoud & VvE';
         const totalAnnualCosts = montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost + montenegro.taxAmount;
         document.getElementById('costs-table').innerHTML = `
                     <tbody>
                         <tr><td>Onroerendgoedbelasting</td><td>${formatCurrency(montenegro.annualPropertyTax)}</td></tr>
                         <tr><td>Verzekering</td><td>${formatCurrency(montenegro.annualInsurance)}</td></tr>
-                        <tr><td>Onderhoud & VvE</td><td>${formatCurrency(montenegro.annualMaintenance)}</td></tr>
+                        <tr><td>${maintenanceLabel}</td><td>${formatCurrency(montenegro.annualMaintenance)}</td></tr>
                         <tr><td>Jaarlijkse Financieringskosten</td><td>${formatCurrency(montenegro.annualFinancingCost)}</td></tr>
                         <tr><td>Inkomstenbelasting</td><td>${formatCurrency(montenegro.taxAmount)}</td></tr>
                         <tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td>${formatCurrency(totalAnnualCosts)}</td></tr>
@@ -1497,7 +1502,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
              document.getElementById('net-rental-result-table').innerHTML = `<tbody>
                          <tr><td>Netto Huurinkomsten</td><td>${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
-                         <tr><td style="padding-left: 2rem;">- Operationele Kosten (VvE, etc.)</td><td>-${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing)}</td></tr>
+                         <tr><td style="padding-left: 2rem;">- Operationele Kosten (Verzekering, etc.)</td><td>-${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing)}</td></tr>
                          <tr><td style="padding-left: 2rem;">- Financieringskosten</td><td>-${formatCurrency(montenegro.annualFinancingCost)}</td></tr>
                          <tr><td style="padding-left: 2rem;">- Inkomstenbelasting</td><td>-${formatCurrency(montenegro.taxAmount)}</td></tr>
                          <tr class="total-row"><td>Netto Cashflow (Eindresultaat)</td><td>${formatCurrency(montenegro.netAnnualCashflow)}</td></tr>
@@ -1647,7 +1652,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
         if(panelId === 'financial'){
-             // GEWIJZIGD: Grafiek met makelaarskosten
              destroyChart('investment-breakdown-chart');
              const investmentCtx = document.getElementById('investment-breakdown-chart');
              if (investmentCtx) {
@@ -1668,8 +1672,13 @@ document.addEventListener('DOMContentLoaded', function () {
              destroyChart('annual-costs-chart');
              const costsCtx = document.getElementById('annual-costs-chart');
              if (costsCtx) {
+                 // GEWIJZIGD: Dynamisch label in grafiek
+                 const maintenanceLabel = (inputs.propertyType === 'Villa' || inputs.propertyType === 'Landhuis') ? 'Onderhoud' : 'Onderhoud/VvE';
                  const costsData = [montenegro.annualPropertyTax, montenegro.annualInsurance, montenegro.annualMaintenance, montenegro.annualFinancingCost, montenegro.taxAmount].filter(v => v > 0);
-                 const costsLabels = ['Vastgoedbelasting', 'Verzekering', 'Onderhoud/VvE', 'Financiering', 'Inkomstenbelasting'].filter((_, i) => [montenegro.annualPropertyTax, montenegro.annualInsurance, montenegro.annualMaintenance, montenegro.annualFinancingCost, montenegro.taxAmount][i] > 0);
+                 const costsLabels = ['Vastgoedbelasting', 'Verzekering', maintenanceLabel, 'Financiering', 'Inkomstenbelasting'].filter((label, i) => {
+                    const dataValue = [montenegro.annualPropertyTax, montenegro.annualInsurance, montenegro.annualMaintenance, montenegro.annualFinancingCost, montenegro.taxAmount][i];
+                    return dataValue > 0;
+                 });
 
                  charts['annual-costs-chart'] = new Chart(costsCtx, {
                      type: 'doughnut',
