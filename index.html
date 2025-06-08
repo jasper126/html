@@ -1381,8 +1381,8 @@ document.addEventListener('DOMContentLoaded', function () {
             taxAmount = Math.max(0, netIncomeBeforeTax) * params.effectiveTaxRate;
         }
         results.taxAmount = taxAmount;
-        results.effectiveTaxRate = params.effectiveTaxRate; // AANGEPAST: Geef percentage door
-        results.taxOnGross = params.taxOnGross; // AANGEPAST: Geef belastingbasis door
+        results.effectiveTaxRate = params.effectiveTaxRate;
+        results.taxOnGross = params.taxOnGross;
 
         results.netAnnualCashflow = results.netAnnualRentalIncome - results.totalAnnualCostsBeforeFinancing - results.annualFinancingCost - results.taxAmount;
         
@@ -1475,18 +1475,19 @@ document.addEventListener('DOMContentLoaded', function () {
             </tbody>`;
         
         const countryData = {
-            'Montenegro': { yield: allResults.montenegro.netRentalYield, tax: allResults.montenegro.taxAmount, taxRate: allResults.montenegro.effectiveTaxRate, taxBase: allResults.montenegro.taxOnGross ? 'bruto' : 'netto', color: '#d4915f' },
-            'Spanje': { yield: allResults.spanje.netRentalYield, tax: allResults.spanje.taxAmount, taxRate: allResults.spanje.effectiveTaxRate, taxBase: allResults.spanje.taxOnGross ? 'bruto' : 'netto', color: '#F0B429' },
-            'Portugal': { yield: allResults.portugal.netRentalYield, tax: allResults.portugal.taxAmount, taxRate: allResults.portugal.effectiveTaxRate, taxBase: allResults.portugal.taxOnGross ? 'bruto' : 'netto', color: '#00A5CF' },
-            'Italië': { yield: allResults.italië.netRentalYield, tax: allResults.italië.taxAmount, taxRate: allResults.italië.effectiveTaxRate, taxBase: allResults.italië.taxOnGross ? 'bruto' : 'netto', color: '#31C48D' }
+            'Montenegro': { yield: allResults.montenegro.netRentalYield, tax: allResults.montenegro.taxAmount, taxRate: allResults.montenegro.effectiveTaxRate, taxBase: allResults.montenegro.taxOnGross ? 'bruto' : 'netto', netCashflow: allResults.montenegro.netAnnualCashflow, color: '#d4915f' },
+            'Spanje': { yield: allResults.spanje.netRentalYield, tax: allResults.spanje.taxAmount, taxRate: allResults.spanje.effectiveTaxRate, taxBase: allResults.spanje.taxOnGross ? 'bruto' : 'netto', netCashflow: allResults.spanje.netAnnualCashflow, color: '#F0B429' },
+            'Portugal': { yield: allResults.portugal.netRentalYield, tax: allResults.portugal.taxAmount, taxRate: allResults.portugal.effectiveTaxRate, taxBase: allResults.portugal.taxOnGross ? 'bruto' : 'netto', netCashflow: allResults.portugal.netAnnualCashflow, color: '#00A5CF' },
+            'Italië': { yield: allResults.italië.netRentalYield, tax: allResults.italië.taxAmount, taxRate: allResults.italië.effectiveTaxRate, taxBase: allResults.italië.taxOnGross ? 'bruto' : 'netto', netCashflow: allResults.italië.netAnnualCashflow, color: '#31C48D' }
         };
 
-        // AANGEPAST: Tabelgeneratie om percentage en basis (bruto/netto) te tonen
+        // AANGEPAST: Tabelgeneratie met de nieuwe kolom "Netto Inkomen"
         const comparisonTable = document.getElementById('country-comparison-table');
         comparisonTable.innerHTML = `
             <thead>
               <tr>
                 <th>Land</th>
+                <th>Netto Inkomen (Jaarlijks)</th>
                 <th>Inkomstenbelasting (Jaarlijks)</th>
                 <th>Netto Huurrendement</th>
               </tr>
@@ -1495,9 +1496,10 @@ document.addEventListener('DOMContentLoaded', function () {
             ${Object.keys(countryData).map(country => {
             const data = countryData[country];
             const countryClass = country.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            const taxRateFormatted = (data.taxRate === 0.1187) ? formatPercent(data.taxRate, 2) : formatPercent(data.taxRate, 0); // Meer decimalen voor Montenegro
+            const taxRateFormatted = (data.taxRate === 0.1187) ? formatPercent(data.taxRate, 2) : formatPercent(data.taxRate, 0);
             return `<tr>
                      <td><span class="country-badge ${countryClass}">${country}</span></td>
+                     <td><strong>${formatCurrency(data.netCashflow)}</strong></td>
                      <td>
                         <strong>${formatCurrency(data.tax)}</strong>
                         <small style="display: block; color: var(--text-light);">${taxRateFormatted} op ${data.taxBase}</small>
