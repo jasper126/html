@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Woning Calculator </title>
+    <title>BAY SIGHT Woning Calculator</title>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
     <!-- Chart.js library for creating charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -31,8 +32,8 @@
             
             /* Achtergrond kleuren */
             --bg-light: #FFFFFF;
-            --bg-off-white: #FFFFFF;
-            --bg-highlight: #FFFFFF;
+            --bg-off-white: #F8FAFC;
+            --bg-highlight: #EFF6FF;
         }
 
         body {
@@ -67,22 +68,21 @@
 
         .calculator-header h2 {
             margin: 0;
-            font-size: 1.75rem;
-        }
-        
-        .calculator-header .bay-sight {
-            color: var(--primary-orange);
+            font-size: 2.5rem;
+            font-family: 'Scheherazade New', serif;
             font-weight: 700;
+            color: var(--primary-orange);
         }
 
         .calculator-tabs {
             display: flex;
             background-color: var(--secondary-light);
             border-bottom: 1px solid var(--secondary-medium);
+            flex-wrap: wrap;
         }
 
         .tab {
-            flex: 1;
+            flex: 1 1 auto;
             padding: 1rem 1.5rem;
             cursor: pointer;
             font-weight: 600;
@@ -389,13 +389,6 @@
              color: var(--text-primary);
         }
 
-        .results-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid var(--secondary-medium);
-        }
-
         .result-tab {
             padding: 0.75rem 1.25rem;
             cursor: pointer;
@@ -469,8 +462,8 @@
             color: var(--primary-orange);
         }
 
-        .summary-chart {
-            height: 150px;
+        .summary-chart-container {
+            height: 250px;
         }
 
         .panel-section {
@@ -568,12 +561,72 @@
             border-radius: 12px;
             font-weight: 600;
             font-size: 0.875rem;
+            color: white;
         }
 
-        .country-badge.montenegro { background-color: #DA291C; color: white; }
-        .country-badge.spain { background-color: #FFC400; color: #AA151B; }
-        .country-badge.portugal { background-color: #006600; color: white; }
-        .country-badge.italy { background-color: #009246; color: white; }
+        .country-badge.montenegro { background-color: var(--primary-orange); }
+        .country-badge.spanje { background-color: var(--warning); color: var(--text-primary); }
+        .country-badge.portugal { background-color: var(--primary-turquoise); }
+        .country-badge.italië { background-color: var(--success); }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .tooltip .tooltip-icon {
+            font-style: normal;
+            font-weight: 700;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: var(--secondary-dark);
+            color: white;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 280px;
+            background-color: var(--primary-blue);
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -140px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--primary-blue) transparent transparent transparent;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
 
         @media (max-width: 768px) {
             body { padding: 0; }
@@ -629,7 +682,7 @@
 <body>
     <div class="baysight-calculator-container">
         <div class="calculator-header">
-            <h2>Woning Calculator Montenegro</h2>
+            <h2>Woning Calculator</h2>
         </div>
 
         <!-- Navigatie tabs -->
@@ -655,6 +708,11 @@
                 <div class="form-group">
                     <label for="purchasePrice">Aankoopprijs (€)</label>
                     <input type="number" id="purchasePrice" class="form-control" placeholder="bv. 250000" value="250000">
+                </div>
+
+                 <div class="form-group">
+                    <label for="furnishingCosts">Inrichtingskosten (€) (Optioneel)</label>
+                    <input type="number" id="furnishingCosts" class="form-control" placeholder="bv. 20000">
                 </div>
                 
                 <div class="form-group">
@@ -735,9 +793,10 @@
                 <div class="form-group">
                     <label for="usageType">Primair gebruiksdoel</label>
                     <select id="usageType" class="form-control">
-                        <option value="Verhuur">Volledige Verhuur</option>
                         <option value="Combinatie">Combinatie (Eigen gebruik & Verhuur)</option>
                         <option value="Vakantiewoning">Alleen eigen gebruik (Vakantiewoning)</option>
+                        <option value="LangeTermijnVerhuur">Volledige Lange Termijn Verhuur</option>
+                        <option value="KorteTermijnVerhuur">Volledige Korte Termijn Verhuur (Vakantie)</option>
                     </select>
                 </div>
                 
@@ -755,21 +814,11 @@
             </div>
 
             <div class="input-form" id="step-4">
-                <h3>Verwachtingen & Voorkeuren</h3>
-                
-                <div class="form-group">
-                    <label for="returnProfile">Kies uw senario</label>
-                    <select id="returnProfile" class="form-control">
-                        <option value="0.06">Matig (Gem. 6% per jaar)</option>
-                        <option value="0.075" selected>Gemiddeld (Gem. 7.5% per jaar)</option>
-                        <option value="0.09">Beste geval (Gem. 9% per jaar)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
+                <h3>Voorkeuren</h3>
+                 <div class="form-group">
                     <label for="managementPreference">Voorkeur voor beheer (indien verhuur)</label>
                     <select id="managementPreference" class="form-control">
-                        <option value="Volledig uitbesteden">Volledig uitbesteden</option>
+                        <option value="Volledig uitbesteden">Volledig uitbesteden (Aanbevolen)</option>
                         <option value="Gedeeltelijk uitbesteden">Gedeeltelijk uitbesteden</option>
                         <option value="Zelf actief beheren">Zelf actief beheren</option>
                     </select>
@@ -792,6 +841,7 @@
                 <div class="result-tab" data-result="financial">Investering & Kosten</div>
                 <div class="result-tab" data-result="rental">Verhuurpotentieel</div>
                 <div class="result-tab" data-result="roi">Rendement Analyse</div>
+                <div class="result-tab" data-result="appreciation">Waardestijging</div>
                 <div class="result-tab" data-result="comparison">Landenvergelijking</div>
             </div>
             
@@ -820,16 +870,16 @@
                     </div>
                     
                     <div class="summary-card">
-                        <h4>Totaal Rendement (Jaar 1)</h4>
-                        <div class="summary-value" id="summary-total-roi">0%</div>
-                        <p>Inclusief netto cashflow en verwachte waardestijging.</p>
+                        <h4>Netto Huurrendement</h4>
+                        <div class="summary-value" id="summary-rental-yield">0%</div>
+                        <p>Direct rendement uit verhuur op jaarbasis.</p>
                     </div>
                 </div>
                 
                 <div class="panel-section">
-                    <h4>Prognose over <span id="summary-horizon">10</span> jaar</h4>
-                    <div class="chart-container">
-                        <canvas id="projection-chart"></canvas>
+                   <h4>Netto Huurrendement Vergelijking</h4>
+                    <div class="summary-chart-container">
+                        <canvas id="summary-comparison-chart"></canvas>
                     </div>
                 </div>
 
@@ -848,38 +898,30 @@
                     <div class="chart-container" style="height: 250px;">
                         <canvas id="investment-breakdown-chart"></canvas>
                     </div>
-                    <table class="data-table" id="investment-table">
-                        <!-- Rijen worden door JS toegevoegd -->
-                    </table>
+                    <table class="data-table" id="investment-table"></table>
                 </div>
                  <div class="panel-section">
                     <h4>Jaarlijkse Operationele Kosten</h4>
                      <div class="chart-container" style="height: 250px;">
                         <canvas id="annual-costs-chart"></canvas>
                     </div>
-                    <table class="data-table" id="costs-table">
-                        <!-- Rijen worden door JS toegevoegd -->
-                    </table>
+                    <table class="data-table" id="costs-table"></table>
                 </div>
             </div>
 
             <div class="result-panel" id="rental-panel">
                 <div class="panel-section">
                     <h4>Verhuurinkomsten Prognose (Jaarlijks)</h4>
-                    <table class="data-table" id="rental-income-table">
-                       <!-- Rijen worden door JS toegevoegd -->
-                    </table>
+                    <table class="data-table" id="rental-income-table"></table>
                 </div>
                  <div class="panel-section">
                     <h4>Netto Verhuurresultaat</h4>
-                    <table class="data-table" id="net-rental-result-table">
-                       <!-- Rijen worden door JS toegevoegd -->
-                    </table>
+                    <table class="data-table" id="net-rental-result-table"></table>
                 </div>
                 <div class="considerations-list">
                     <h4>Aandachtspunten bij verhuur</h4>
                     <ul>
-                        <li>De bezettingsgraad is een schatting en kan variëren op basis van marketing, seizoensinvloeden en de kwaliteit van de woning.</li>
+                        <li>De bezettingsgraad is een realistische schatting en kan variëren op basis van marketing, seizoensinvloeden en de kwaliteit van de woning.</li>
                         <li>Huurprijzen zijn marktconform en kunnen fluctueren. Regelmatige evaluatie is aanbevolen.</li>
                         <li>Professioneel beheer via een partij als Bay Sight kan zorgen voor een hogere bezettingsgraad en minder zorgen.</li>
                     </ul>
@@ -889,53 +931,50 @@
             <div class="result-panel" id="roi-panel">
                 <div class="panel-section">
                     <h4>Analyse van Rendement</h4>
-                     <table class="data-table" id="roi-table">
-                       <!-- Rijen worden door JS toegevoegd -->
-                    </table>
+                     <table class="data-table" id="roi-table"></table>
                 </div>
+                 <div class="considerations-list">
+                    <h4>Toelichting Rendement</h4>
+                    <ul>
+                        <li><b>Netto Huurrendement:</b> Dit is het directe, jaarlijkse rendement uit verhuurinkomsten, afgezet tegen uw totale investering. Het toont de directe winstgevendheid van het pand.</li>
+                        <li><b>Cash-on-Cash Rendement:</b> Dit belangrijke kengetal meet hoeveel cash u jaarlijks overhoudt (na alle kosten, inclusief financiering) ten opzichte van het eigen geld dat u daadwerkelijk heeft ingelegd.</li>
+                   </ul>
+                </div>
+            </div>
+
+             <div class="result-panel" id="appreciation-panel">
                  <div class="panel-section">
-                    <h4>Waardeontwikkeling over <span id="roi-horizon">10</span> jaar</h4>
+                    <h4>Prognose Waardeontwikkeling (10 Jaar)</h4>
+                    <p>Gebaseerd op historisch onderzoek (MONSTAT, 2019-2025) tonen we drie scenario's voor de waardeontwikkeling van uw vastgoed. Klik hieronder om het volledige onderzoek te downloaden.</p>
+                    <a href="https://cdn.prod.website-files.com/66ab26a563f36a02518a48ae/68455b46f6f777ddab5082bf_montenegro_vastgoed_rapport_baysight.pdf" target="_blank" class="btn btn-primary" style="margin-bottom: 1.5rem; width: auto; display: inline-block;">Download Vastgoed Rapport (PDF)</a>
                     <div class="chart-container">
                         <canvas id="appreciation-chart"></canvas>
                     </div>
                 </div>
                 <div class="considerations-list">
-                    <h4>Aandachtspunten bij rendement</h4>
+                    <h4>Disclaimer bij Prognose</h4>
                     <ul>
-                        <li>De waardestijging is een prognose gebaseerd op uw gekozen profiel en marktgemiddelden. Werkelijke rendementen kunnen afwijken.</li>
-                        <li>Economische groei, ontwikkeling van toerisme en het traject richting EU-lidmaatschap zijn belangrijke positieve factoren voor de markt in Montenegro.</li>
-                        <li>Rendementen uit het verleden bieden geen garantie voor de toekomst. Spreiding en een lange termijnvisie zijn belangrijk.</li>
+                        <li>Rendementen uit het verleden bieden geen garantie voor de toekomst.</li>
+                        <li>Economische groei, toerisme en het traject richting EU-lidmaatschap zijn belangrijke factoren die de werkelijke waardestijging zullen beïnvloeden.</li>
+                        <li>Deze prognose is bedoeld als hulpmiddel en vormt geen financieel advies.</li>
                     </ul>
                 </div>
             </div>
             
             <div class="result-panel" id="comparison-panel">
                  <div class="panel-section">
-                    <h4>Rendementsvergelijking Zuid-Europese Landen</h4>
-                    <p>Uw geschatte totale rendement in Montenegro vergeleken met vergelijkbare investeringen in andere populaire landen.</p>
+                    <h4>Netto Huurrendement Vergelijking</h4>
+                    <p>Uw geschatte netto huurrendement in Montenegro vergeleken met vergelijkbare investeringen in andere populaire landen.</p>
                     <div class="chart-container" style="height: 400px;">
                         <canvas id="country-comparison-chart"></canvas>
                     </div>
-                    <table class="data-table" id="country-comparison-table">
-                         <thead>
-                             <tr>
-                                 <th>Land</th>
-                                 <th>Overdrachtsbelasting</th>
-                                 <th>Netto Huurrendement</th>
-                                 <th>Waardestijging (Gem.)</th>
-                                 <th>Totaal Rendement</th>
-                             </tr>
-                         </thead>
-                         <tbody>
-                            <!-- Rijen worden door JS toegevoegd -->
-                         </tbody>
-                    </table>
+                    <table class="data-table" id="country-comparison-table"></table>
                  </div>
             </div>
             
             <div class="panel-section" id="lead-form-panel">
                 <h4>Klaar voor de volgende stap?</h4>
-                <p>Vul uw gegevens in om deze volledige berekening samen met ons wilt bespreken. We nemen dan vrijblijvend contact met u op om de mogelijkheden te bespreken.</p>
+                <p>Vul uw gegevens in om deze volledige berekening per e-mail te ontvangen. We nemen daarnaast vrijblijvend contact met u op om de mogelijkheden te bespreken.</p>
                 
                 <form id="contact-form">
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
@@ -1055,9 +1094,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     usageTypeSelect.addEventListener('change', () => {
         const usage = usageTypeSelect.value;
-        rentalDetails.style.display = (usage === 'Verhuur' || usage === 'Combinatie') ? 'block' : 'none';
-        personalUsageWeeksSlider.disabled = (usage === 'Verhuur');
-        if (usage === 'Verhuur') {
+        const isRental = usage !== 'Vakantiewoning';
+        rentalDetails.style.display = (usage === 'Combinatie') ? 'block' : 'none';
+        
+        if (usage === 'LangeTermijnVerhuur' || usage === 'KorteTermijnVerhuur') {
              personalUsageWeeksSlider.value = 0;
              personalUsageWeeksSlider.dispatchEvent(new Event('input'));
         }
@@ -1096,7 +1136,9 @@ document.addEventListener('DOMContentLoaded', function () {
             tab.classList.add('active');
             resultPanels.forEach(p => p.classList.remove('active'));
             document.getElementById(`${tab.dataset.result}-panel`).classList.add('active');
-            Object.values(charts).forEach(chart => chart.resize());
+            Object.values(charts).forEach(chart => {
+                if(chart) chart.resize();
+            });
         });
     });
 
@@ -1104,6 +1146,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function gatherInputs() {
          return {
             purchasePrice: parseFloat(document.getElementById('purchasePrice').value) || 0,
+            furnishingCosts: parseFloat(document.getElementById('furnishingCosts').value) || 0,
             isNewBuild: document.getElementById('propertyCondition').checked,
             propertySize: parseFloat(document.getElementById('propertySize').value) || 0,
             region: document.getElementById('region').value,
@@ -1114,7 +1157,6 @@ document.addEventListener('DOMContentLoaded', function () {
             financingTerm: parseInt(document.getElementById('financingTerm').value) || 0,
             usageType: document.getElementById('usageType').value,
             personalUsageWeeks: parseInt(document.getElementById('personalUsageWeeks').value) || 0,
-            expectedAppreciation: parseFloat(document.getElementById('returnProfile').value) || 0,
             managementPreference: document.getElementById('managementPreference').value,
             investmentHorizon: 10
         };
@@ -1168,7 +1210,7 @@ document.addEventListener('DOMContentLoaded', function () {
             '--- Calculator Resultaten ---': '',
             'Totale Investering': formatCurrency(results.totalInvestment),
             'Netto Jaarlijks Resultaat': formatCurrency(results.netAnnualCashflow),
-            'Totaal Rendement (Jaar 1)': formatPercent(results.totalROI),
+            'Netto Huurrendement': formatPercent(results.netRentalYield),
         };
 
         try {
@@ -1202,24 +1244,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function calculateInvestment(inputs) {
         const results = {};
-        const notaryAndFeesRate = 0.01, transferTaxRate = 0.03, furnishingRate = 0.08;
-        const annualPropertyTaxRate = 0.005, annualInsuranceRate = 0.002, annualMaintenanceRate = 0.008;
-        const baseNightlyRate = 120, rentalOccupancyRate = 0.70;
         
+        // Kostenstructuur
+        const transferTaxRate = 0.03;
+        const notaryRate = 0.005;
+        const registrationRate = 0.003;
+        const brokerageRate = 0.0225; // Gemiddelde
+        const lawyerFee = 500;
+        
+        const annualPropertyTaxRate = 0.005, annualInsuranceRate = 0.002, annualMaintenanceRate = 0.008;
+        
+        const appreciationRates = { worst: 0.04, average: 0.125, best: 0.20 };
+        results.appreciationRates = appreciationRates;
+
         const managementFeeRate = {
-            "Volledig uitbesteden": 0.20,
-            "Gedeeltelijk uitbesteden": 0.10,
-            "Zelf actief beheren": 0
+            "Volledig uitbesteden": 0.20, "Gedeeltelijk uitbesteden": 0.10, "Zelf actief beheren": 0
         }[inputs.managementPreference];
         results.managementFeeRate = managementFeeRate;
-
-        const regionRentalFactors = { "Kotor": 1.1, "Budva": 1.2, "Tivat": 1.15, "Bar": 0.9, "Noord": 0.7 };
         
         results.purchasePrice = inputs.purchasePrice;
         results.transferTax = inputs.isNewBuild ? 0 : inputs.purchasePrice * transferTaxRate;
-        results.notaryAndFees = inputs.purchasePrice * notaryAndFeesRate;
-        results.furnishingCosts = inputs.purchasePrice * furnishingRate;
-        results.totalInvestment = results.purchasePrice + results.transferTax + results.notaryAndFees + results.furnishingCosts;
+        results.notaryCosts = inputs.purchasePrice * notaryRate;
+        results.registrationCosts = inputs.purchasePrice * registrationRate;
+        results.brokerageCosts = inputs.purchasePrice * brokerageRate;
+        results.lawyerCosts = lawyerFee;
+        results.furnishingCosts = inputs.furnishingCosts;
+
+        const totalAdditionalCosts = results.transferTax + results.notaryCosts + results.registrationCosts + results.brokerageCosts + results.lawyerCosts + results.furnishingCosts;
+        results.totalInvestment = results.purchasePrice + totalAdditionalCosts;
 
         results.financingAmount = 0;
         results.annualFinancingCost = 0;
@@ -1239,22 +1291,28 @@ document.addEventListener('DOMContentLoaded', function () {
         results.annualMaintenance = results.purchasePrice * annualMaintenanceRate;
         results.totalAnnualCostsBeforeFinancing = results.annualPropertyTax + results.annualInsurance + results.annualMaintenance;
         
-        results.grossAnnualRentalIncome = 0;
-        const rentalWeeks = (inputs.usageType === 'Vakantiewoning') ? 0 : 52 - inputs.personalUsageWeeks;
-        if (rentalWeeks > 0) {
-            const nightlyRate = baseNightlyRate * (regionRentalFactors[inputs.region] || 1);
-            results.grossAnnualRentalIncome = rentalWeeks * 7 * nightlyRate * rentalOccupancyRate;
+        // Realistische verhuurprognoses
+        let occupancyRate = 0, rentalRate = 0, rentalDays = 0;
+        if (inputs.usageType === 'KorteTermijnVerhuur' || (inputs.usageType === 'Combinatie' && (52 - inputs.personalUsageWeeks) > 0)) {
+            occupancyRate = 0.60; // 60% bezetting voor vakantieverhuur
+            rentalRate = 125 * ({"Kotor": 1.1, "Budva": 1.2, "Tivat": 1.15, "Bar": 0.9, "Noord": 0.7}[inputs.region] || 1); // Dagprijs
+            rentalDays = (52 - inputs.personalUsageWeeks) * 7;
+            results.grossAnnualRentalIncome = rentalDays * rentalRate * occupancyRate;
+        } else if (inputs.usageType === 'LangeTermijnVerhuur') {
+            occupancyRate = 0.95; // 95% bezetting voor lange termijn
+            rentalRate = (inputs.propertySize * 15) * ({"Kotor": 1.1, "Budva": 1.2, "Tivat": 1.15, "Bar": 0.9, "Noord": 0.7}[inputs.region] || 1); // Maandprijs
+            results.grossAnnualRentalIncome = rentalRate * 12 * occupancyRate;
+        } else {
+             results.grossAnnualRentalIncome = 0;
         }
+
         results.rentalManagementFee = results.grossAnnualRentalIncome * managementFeeRate;
         results.netAnnualRentalIncome = results.grossAnnualRentalIncome - results.rentalManagementFee;
 
         results.netAnnualCashflow = results.netAnnualRentalIncome - results.totalAnnualCostsBeforeFinancing - results.annualFinancingCost;
-        results.annualAppreciationValue = results.purchasePrice * inputs.expectedAppreciation;
-        results.totalAnnualReturn = results.netAnnualCashflow + results.annualAppreciationValue;
-
-        results.netRentalYield = (results.totalInvestment > 0) ? results.netAnnualRentalIncome / results.totalInvestment : 0;
+        
+        results.netRentalYield = (results.totalInvestment > 0) ? results.netAnnualCashflow / results.totalInvestment : 0;
         results.cashOnCashReturn = (results.ownCapitalContribution > 0) ? results.netAnnualCashflow / results.ownCapitalContribution : 0;
-        results.totalROI = (results.totalInvestment > 0) ? results.totalAnnualReturn / results.totalInvestment : 0;
 
         return results;
     }
@@ -1267,15 +1325,17 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('summary-region').textContent = document.querySelector(`#region option[value="${inputs.region}"]`).textContent;
         document.getElementById('summary-total-investment').textContent = formatCurrency(results.totalInvestment);
         document.getElementById('summary-annual-result').textContent = formatCurrency(results.netAnnualCashflow);
-        document.getElementById('summary-total-roi').textContent = formatPercent(results.totalROI);
-        document.getElementById('summary-horizon').textContent = inputs.investmentHorizon;
+        document.getElementById('summary-rental-yield').textContent = formatPercent(results.netRentalYield);
         
         document.getElementById('investment-table').innerHTML = `
             <tbody>
                 <tr><td>Aankoopprijs</td><td>${formatCurrency(results.purchasePrice)}</td></tr>
-                <tr><td>Overdrachtsbelasting</td><td>${formatCurrency(results.transferTax)}</td></tr>
-                <tr><td>Notaris- & registratiekosten</td><td>${formatCurrency(results.notaryAndFees)}</td></tr>
-                <tr><td>Inrichtingskosten (schatting)</td><td>${formatCurrency(results.furnishingCosts)}</td></tr>
+                <tr><td>Overdrachtsbelasting (3%)</td><td>${formatCurrency(results.transferTax)}</td></tr>
+                <tr><td>Notariskosten (~0.5%)</td><td>${formatCurrency(results.notaryCosts)}</td></tr>
+                <tr><td>Registratiekosten (~0.3%)</td><td>${formatCurrency(results.registrationCosts)}</td></tr>
+                <tr><td>Makelaarskosten (~2.25%)</td><td>${formatCurrency(results.brokerageCosts)}</td></tr>
+                <tr><td>Advocaatkosten</td><td>${formatCurrency(results.lawyerCosts)}</td></tr>
+                <tr><td>Inrichtingskosten</td><td>${formatCurrency(results.furnishingCosts)}</td></tr>
                 <tr class="total-row"><td>Totale Investering</td><td>${formatCurrency(results.totalInvestment)}</td></tr>
                 <tr><td>Eigen Vermogen</td><td>${formatCurrency(results.ownCapitalContribution)}</td></tr>
                 <tr><td>Financiering</td><td>${formatCurrency(results.financingAmount)}</td></tr>
@@ -1297,7 +1357,7 @@ document.addEventListener('DOMContentLoaded', function () {
              rentalIncomeTable.style.display = 'block';
              netRentalResultTable.style.display = 'block';
              document.getElementById('rental-income-table').innerHTML = `<tbody>
-                    <tr><td>Aantal verhuurbare weken</td><td>${52 - inputs.personalUsageWeeks}</td></tr>
+                    <tr><td>Type verhuur</td><td>${inputs.usageType.includes('Korte') ? 'Korte Termijn' : (inputs.usageType.includes('Lange') ? 'Lange Termijn' : 'Combinatie')}</td></tr>
                     <tr><td>Bruto Huurinkomsten</td><td>${formatCurrency(results.grossAnnualRentalIncome)}</td></tr>
                     <tr><td>Beheerkosten (${formatPercent(results.managementFeeRate)})</td><td>-${formatCurrency(results.rentalManagementFee)}</td></tr>
                     <tr class="total-row"><td>Netto Huurinkomsten</td><td>${formatCurrency(results.netAnnualRentalIncome)}</td></tr>
@@ -1317,32 +1377,45 @@ document.addEventListener('DOMContentLoaded', function () {
                 </tbody>`;
         }
         
-        document.getElementById('roi-horizon').textContent = inputs.investmentHorizon;
         document.getElementById('roi-table').innerHTML = `<tbody>
-                <tr><td>Netto Huurrendement</td><td>${formatPercent(results.netRentalYield)}</td></tr>
-                <tr><td>Cash-on-Cash Rendement</td><td>${formatPercent(results.cashOnCashReturn)}</td></tr>
-                <tr><td>Waardestijging (Prognose)</td><td>${formatPercent(inputs.expectedAppreciation)}</td></tr>
-                <tr class="total-row"><td>Totaal Rendement (Jaar 1)</td><td>${formatPercent(results.totalROI)}</td></tr>
+                <tr>
+                    <td>Netto Huurrendement 
+                        <span class="tooltip"><i class="tooltip-icon">i</i>
+                        <span class="tooltip-text">Meet de winstgevendheid van de huurinkomsten t.o.v. de totale investering.<br><b>Formule:</b> (Netto Cashflow / Totale Investering) * 100%</span></span>
+                    </td>
+                    <td>${formatPercent(results.netRentalYield)}</td>
+                </tr>
+                 <tr>
+                    <td>Cash-on-Cash Rendement
+                        <span class="tooltip"><i class="tooltip-icon">i</i>
+                        <span class="tooltip-text">Meet de cashflow t.o.v. het daadwerkelijk geïnvesteerde eigen vermogen.<br><b>Formule:</b> (Netto Cashflow / Eigen Vermogen) * 100%</span></span>
+                    </td>
+                    <td>${formatPercent(results.cashOnCashReturn)}</td>
+                </tr>
             </tbody>`;
         
         const countryData = {
-            'Montenegro': { tax: inputs.isNewBuild ? 0 : 0.03, yield: results.netRentalYield, appreciation: inputs.expectedAppreciation, color: '#DA291C' },
-            'Spanje': { tax: 0.08, yield: 0.035, appreciation: 0.04, color: '#FFC400' },
-            'Portugal': { tax: 0.06, yield: 0.04, appreciation: 0.05, color: '#006600' },
-            'Italië': { tax: 0.09, yield: 0.03, appreciation: 0.025, color: '#009246' }
+            'Montenegro': { tax: inputs.isNewBuild ? 0 : 0.03, yield: results.netRentalYield, color: 'var(--primary-orange)' },
+            'Spanje': { tax: 0.08, yield: 0.035, color: 'var(--warning)' },
+            'Portugal': { tax: 0.06, yield: 0.04, color: 'var(--primary-turquoise)' },
+            'Italië': { tax: 0.09, yield: 0.025, color: 'var(--success)' }
         };
 
-        const comparisonTableBody = document.querySelector('#country-comparison-table tbody');
-        comparisonTableBody.innerHTML = Object.keys(countryData).map(country => {
+        const comparisonTableBody = document.querySelector('#country-comparison-table');
+        comparisonTableBody.innerHTML = `<thead>
+             <tr><th>Land</th><th>Overdrachtsbelasting</th><th>Netto Huurrendement</th></tr>
+           </thead>
+           <tbody>
+           ${Object.keys(countryData).map(country => {
             const data = countryData[country];
+            const countryClass = country.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); // Make class names safe
             return `<tr>
-                    <td><span class="country-badge ${country.toLowerCase()}">${country}</span></td>
+                    <td><span class="country-badge ${countryClass}">${country}</span></td>
                     <td>${formatPercent(data.tax)}</td>
-                    <td>${formatPercent(data.yield)}</td>
-                    <td>${formatPercent(data.appreciation)}</td>
-                    <td><strong>${formatPercent(data.yield + data.appreciation)}</strong></td>
+                    <td><strong>${formatPercent(data.yield)}</strong></td>
                 </tr>`;
-        }).join('');
+            }).join('')}
+            </tbody>`;
 
         drawCharts(inputs, results, countryData);
     }
@@ -1362,10 +1435,10 @@ document.addEventListener('DOMContentLoaded', function () {
         charts['investment-breakdown-chart'] = new Chart(document.getElementById('investment-breakdown-chart'), {
             type: 'doughnut',
             data: {
-                labels: ['Aankoopprijs', 'Belasting', 'Notaris/Fees', 'Inrichting'],
-                datasets: [{ data: [results.purchasePrice, results.transferTax, results.notaryAndFees, results.furnishingCosts], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98'], borderWidth: 0 }]
+                labels: ['Aankoopprijs', 'Belastingen', 'Notaris/Reg.', 'Makelaar', 'Advocaat', 'Inrichting'],
+                datasets: [{ data: [results.purchasePrice, results.transferTax, results.notaryCosts + results.registrationCosts, results.brokerageCosts, results.lawyerCosts, results.furnishingCosts], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#F0B429', '#31C48D'], borderWidth: 0 }]
             },
-            options: { ...sharedOptions, cutout: '60%', plugins: { legend: { display: false } } }
+            options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
         });
         
         destroyChart('annual-costs-chart');
@@ -1375,34 +1448,38 @@ document.addEventListener('DOMContentLoaded', function () {
                 labels: ['Vastgoedbelasting', 'Verzekering', 'Onderhoud/VvE', 'Financiering'],
                 datasets: [{ data: [results.annualPropertyTax, results.annualInsurance, results.annualMaintenance, results.annualFinancingCost], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98'], borderWidth: 0 }]
             },
-            options: { ...sharedOptions, cutout: '60%', plugins: { legend: { display: false } } }
+            options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
         });
         
         const projectionLabels = Array.from({ length: inputs.investmentHorizon + 1 }, (_, i) => `Jaar ${i}`);
-        const propertyValueData = projectionLabels.map((_, i) => results.purchasePrice * Math.pow(1 + inputs.expectedAppreciation, i));
-        
-        destroyChart('projection-chart');
-        charts['projection-chart'] = new Chart(document.getElementById('projection-chart'), {
-            type: 'line',
-            data: {
-                labels: projectionLabels,
-                datasets: [{
-                    label: 'Waarde van Woning',
-                    data: propertyValueData,
-                    borderColor: '#042943',
-                    backgroundColor: 'rgba(4, 41, 67, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: { ...sharedOptions, scales: { y: { beginAtZero: false } } }
-        });
         
         destroyChart('appreciation-chart');
         charts['appreciation-chart'] = new Chart(document.getElementById('appreciation-chart'), {
-            type: 'bar',
-            data: { labels: projectionLabels, datasets: [{ label: 'Waarde van Woning', data: propertyValueData, backgroundColor: '#042943' }] },
-            options: { ...sharedOptions, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false } } }
+            type: 'line',
+            data: {
+                labels: projectionLabels,
+                datasets: [
+                    { label: 'Beste geval', data: projectionLabels.map((_, i) => results.purchasePrice * Math.pow(1 + results.appreciationRates.best, i)), borderColor: 'var(--success)', fill: false, tension: 0.3 },
+                    { label: 'Gemiddeld geval', data: projectionLabels.map((_, i) => results.purchasePrice * Math.pow(1 + results.appreciationRates.average, i)), borderColor: 'var(--primary-orange)', backgroundColor: 'rgba(212, 145, 95, 0.1)', fill: true, tension: 0.3 },
+                    { label: 'Slechtste geval', data: projectionLabels.map((_, i) => results.purchasePrice * Math.pow(1 + results.appreciationRates.worst, i)), borderColor: 'var(--error)', fill: false, tension: 0.3, borderDash: [5, 5] }
+                ]
+            },
+            options: { ...sharedOptions, scales: { y: { beginAtZero: false, ticks: { callback: value => '€' + (value/1000) + 'k' } } } }
+        });
+
+        destroyChart('summary-comparison-chart');
+        charts['summary-comparison-chart'] = new Chart(document.getElementById('summary-comparison-chart'), {
+             type: 'bar',
+            data: {
+                labels: Object.keys(countryData),
+                datasets: [
+                {
+                    label: 'Netto Huurrendement',
+                    data: Object.values(countryData).map(d => d.yield * 100),
+                    backgroundColor: Object.values(countryData).map(d => d.color),
+                }]
+            },
+            options: { ...sharedOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: value => value + '%' } } } }
         });
 
         destroyChart('country-comparison-chart');
@@ -1411,11 +1488,14 @@ document.addEventListener('DOMContentLoaded', function () {
             data: {
                 labels: Object.keys(countryData),
                 datasets: [
-                    { label: 'Netto Huurrendement', data: Object.values(countryData).map(d => d.yield * 100), backgroundColor: '#042943' },
-                    { label: 'Waardestijging', data: Object.values(countryData).map(d => d.appreciation * 100), backgroundColor: '#d4915f' }
+                    { 
+                        label: 'Netto Huurrendement', 
+                        data: Object.values(countryData).map(d => d.yield * 100), 
+                        backgroundColor: Object.values(countryData).map(d => d.color) 
+                    },
                 ]
             },
-            options: { ...sharedOptions, indexAxis: 'y', scales: { x: { stacked: true, ticks: { callback: value => value + '%' } }, y: { stacked: true } } }
+            options: { ...sharedOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: value => value + '%' } } } }
         });
     }
 
