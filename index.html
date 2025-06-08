@@ -1421,118 +1421,66 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 5000);
     }
     
-    // AANGEPAST: Herschreven voor maximale stabiliteit
+    // AANGEPAST: Functie volledig herschreven voor stapsgewijze FOUTOPSPORING.
     async function generatePdfReport() {
         const statusDiv = document.getElementById('form-status');
-        let pdfContent; // Maak de variabele hier beschikbaar
-        
+        const submitBtn = document.getElementById('submit-form-btn');
+
+        // Houd de knop uitgeschakeld tijdens het proces
+        submitBtn.disabled = true;
+
         try {
-            statusDiv.textContent = 'Stap 1/5: Inhoud voorbereiden...';
-            pdfContent = document.createElement('div');
-            pdfContent.id = 'pdf-content';
-            
-            const formatCurrency = (value) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(value);
-            
-            const pdfHeaderHTML = `
-                <div style="text-align: center; background-color: #042943; padding: 25px 20px; color: white;">
-                    <img src="${logoBase64}" alt="Bay Sight Logo" style="width: 250px; height: auto; margin-bottom: 20px;">
-                    <h2 style="font-size: 2.5rem; text-transform: uppercase; margin: 0; color: #d4915f;">Persoonlijk Rapport</h2>
-                </div>
-                <div style="padding: 20px 0;"></div>
-            `;
-            pdfContent.innerHTML += pdfHeaderHTML;
-            
-            const { inputs } = lastCalculation;
-            const regionText = document.querySelector(`#region option[value="${inputs.region}"]`).textContent;
-            const inputSummaryHTML = `
-                <div class="panel-section">
-                    <h4>Uw Invoer</h4>
-                    <table class="data-table"><tbody>
-                        <tr><td>Aankoopprijs</td><td class="numeric-cell">${formatCurrency(inputs.purchasePrice)}</td></tr>
-                        <tr><td>Staat woning</td><td class="numeric-cell">${inputs.isNewBuild ? 'Nieuwbouw' : 'Bestaande Bouw'}</td></tr>
-                        <tr><td>Type woning</td><td class="numeric-cell">${inputs.propertyType} in ${regionText}</td></tr>
-                        <tr><td>Eigen vermogen</td><td class="numeric-cell">${formatCurrency(inputs.ownCapital)}</td></tr>
-                        <tr><td>Financiering nodig</td><td class="numeric-cell">${inputs.needFinancing ? 'Ja' : 'Nee'}</td></tr>
-                        <tr><td>Gebruiksdoel</td><td class="numeric-cell">${inputs.usageType}</td></tr>
-                    </tbody></table>
-                </div>`;
-            pdfContent.innerHTML += inputSummaryHTML;
-            
-            const resultsContainer = document.getElementById('results-section').cloneNode(true);
-            resultsContainer.querySelector('.results-tabs').remove();
-            resultsContainer.querySelector('.result-actions').remove();
-            resultsContainer.querySelector('#lead-form-panel').remove();
-            resultsContainer.querySelectorAll('.result-panel').forEach(panel => {
-                panel.style.display = 'block';
-                panel.style.animation = 'none';
-            });
-            
-            const chartIds = Object.keys(charts);
-            for (const chartId of chartIds) {
-                const canvasElement = resultsContainer.querySelector(`#${chartId}`);
-                if (canvasElement && charts[chartId]) {
-                    const chartImage = document.createElement('img');
-                    chartImage.src = charts[chartId].toBase64Image('image/png', 1.0);
-                    const container = canvasElement.parentElement;
-                    container.innerHTML = ''; 
-                    container.appendChild(chartImage);
-                }
-            }
-            
-            pdfContent.appendChild(resultsContainer);
-            document.body.appendChild(pdfContent);
+            // --------------------------------------------------------------------
+            // TEST 1: EEN EXTREEM SIMPELE PDF MAKEN (NU UITGESCHAKELD)
+            // --------------------------------------------------------------------
+            /*
+            statusDiv.textContent = 'Test 1: Simpele PDF wordt gemaakt...';
+            console.log("Start Test 1: Basis jsPDF");
 
-            statusDiv.textContent = 'Stap 2/5: Grafieken laden...';
-            const images = Array.from(pdfContent.querySelectorAll('img'));
-            const promises = images.map(img => {
-                if (img.complete) return Promise.resolve();
-                return new Promise((resolve, reject) => {
-                    img.onload = resolve;
-                    img.onerror = reject;
-                });
-            });
-            await Promise.all(promises);
-
-            statusDiv.textContent = 'Stap 3/5: Rapport samenstellen...';
-            const canvas = await html2canvas(pdfContent, {
-                scale: 1.5,
-                useCORS: true,
-                logging: false,
-                width: 1100 // Vaste breedte
-            });
-            
-            statusDiv.textContent = 'Stap 4/5: PDF genereren...';
-            const imgData = canvas.toDataURL('image/png');
-            const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-
-            const pdfWidth = doc.internal.pageSize.getWidth();
-            const pdfHeight = doc.internal.pageSize.getHeight();
-            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-            
-            let heightLeft = imgHeight;
-            let position = 0;
-
-            doc.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-            heightLeft -= pdfHeight;
-
-            while (heightLeft > 0) {
-                position -= pdfHeight;
-                doc.addPage();
-                doc.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                heightLeft -= pdfHeight;
-            }
-            
-            statusDiv.textContent = 'Stap 5/5: PDF openen...';
+            const doc = new jsPDF();
+            doc.setFontSize(16);
+            doc.text("Test 1 geslaagd!", 10, 20);
             doc.output('dataurlnewwindow');
 
+            statusDiv.textContent = 'Test 1 is uitgevoerd. Is er een PDF geopend?';
+            console.log("Einde Test 1. PDF zou nu moeten openen.");
+            */
+
+
+            // --------------------------------------------------------------------
+            // TEST 2: EEN SIMPEL HTML-ELEMENT RENDEREN (NU ACTIEF)
+            // Doel: Controleren of html2canvas werkt op een eenvoudig, zichtbaar element.
+            // Als dit werkt, verschijnt er een PDF met alleen de donkerblauwe header.
+            // --------------------------------------------------------------------
+            
+            statusDiv.textContent = 'Test 2: Header wordt gerenderd...';
+            console.log("Start Test 2: html2canvas op de header");
+            
+            const elementToRender = document.querySelector('.calculator-header');
+            
+            const canvas = await html2canvas(elementToRender, { logging: true });
+            const imgData = canvas.toDataURL('image/png');
+            
+            const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.output('dataurlnewwindow');
+
+            statusDiv.textContent = 'Test 2 is uitgevoerd. Is er een PDF met de header geopend?';
+            console.log("Einde Test 2. PDF met header zou nu moeten openen.");
+            
+
+
         } catch (error) {
-            console.error("Fout bij het genereren van de PDF:", error);
-            statusDiv.textContent = 'Er is een fout opgetreden. Controleer de console (F12) voor details.';
+            // Als een van de tests mislukt, zien we de fout hier.
+            console.error("FOUT TIJDENS PDF-GENERATIE:", error);
+            statusDiv.textContent = `Fout opgetreden: ${error.message}. Check de console (F12).`;
             statusDiv.style.color = 'var(--error)';
         } finally {
-            if (pdfContent) {
-                document.body.removeChild(pdfContent);
-            }
+             // De knop wordt na 5 seconden weer ingeschakeld in de handleFormSubmit functie.
         }
     }
     
