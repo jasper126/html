@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.js"></script>
 
     <style>
         :root {
@@ -718,29 +719,6 @@
             font-size: 1.1rem;
         }
 
-        /* Styling for the PDF export container */
-        #pdf-content {
-            position: absolute;
-            left: -9999px; /* Position off-screen */
-            top: 0;
-            width: 1100px; /* Fixed width for consistent PDF layout */
-            background: var(--bg-light);
-            padding: 2rem;
-            color: var(--text-primary);
-            box-sizing: border-box;
-        }
-        #pdf-content h2, #pdf-content h3, #pdf-content h4 {
-             color: var(--primary-blue);
-             font-family: 'DM Serif Display', serif;
-        }
-        #pdf-content .chart-image-container img {
-            max-width: 100%;
-            height: auto;
-            border: 1px solid var(--secondary-medium);
-            margin-bottom: 1.5rem;
-        }
-
-
         @media (max-width: 1159px) {
             .summary-grid {
                 grid-template-columns: 1fr;
@@ -1367,53 +1345,12 @@ document.addEventListener('DOMContentLoaded', function () {
         
         await generatePdfReport();
         
+        // Formspree is nog steeds uitgeschakeld voor testdoeleinden
         statusDiv.textContent = 'PDF geopend. Formulierverzending is voor testdoeleinden uitgeschakeld.';
         statusDiv.style.color = 'var(--success)';
         submitBtn.textContent = 'Verzonden!';
         contactForm.reset();
         
-        /*
-        // AANGEPAST: De Formspree-verzending is tijdelijk uitgeschakeld.
-        // Verwijder de /* en * / hieronder om het versturen van het formulier weer te activeren.
-        
-        const formatCurrency = (value) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(value);
-        const formatPercent = (value) => new Intl.NumberFormat('nl-NL', { style: 'percent', minimumFractionDigits: 2 }).format(value);
-
-        const dataToSend = {
-            'Contactpersoon': `${userName} (${userEmail})`,
-            '--- Calculator Invoer ---': '',
-            ...Object.fromEntries(Object.entries(inputs).map(([key, value]) => [key, typeof value === 'boolean' ? (value ? 'Ja' : 'Nee') : value])),
-            '--- Calculator Resultaten (Montenegro) ---': '',
-            'Totale Investering': formatCurrency(results.montenegro.totalInvestment),
-            'Netto Jaarlijks Resultaat': formatCurrency(results.montenegro.netAnnualCashflow),
-            'Netto Huurrendement': formatPercent(results.montenegro.netRentalYield),
-        };
-
-        try {
-            statusDiv.textContent = 'PDF geopend. Nu de gegevens versturen...';
-            const response = await fetch('https://formspree.io/f/mjkrgqpr', {
-                method: 'POST',
-                body: JSON.stringify(dataToSend),
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
-            });
-
-            if (response.ok) {
-                statusDiv.textContent = 'Bedankt! Uw overzicht is verzonden.';
-                statusDiv.style.color = 'var(--success)';
-                submitBtn.textContent = 'Verzonden!';
-                contactForm.reset();
-            } else {
-                throw new Error('Server response was not ok.');
-            }
-        } catch (error) {
-            console.error('Form submission error:', error);
-            statusDiv.textContent = 'De PDF is geopend, maar er ging iets mis bij het versturen. Probeer het later opnieuw.';
-            statusDiv.style.color = 'var(--error)';
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Verstuur en Ontvang uw Rapport';
-        }
-        */
-
         setTimeout(() => { // Reset button state after a while
            submitBtn.disabled = false;
            submitBtn.textContent = 'Verstuur en Ontvang uw Rapport';
@@ -1421,66 +1358,229 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 5000);
     }
     
-    // AANGEPAST: Functie volledig herschreven voor stapsgewijze FOUTOPSPORING.
+    // DEFINITIEVE VERSIE: PDF wordt programmatisch opgebouwd voor maximale betrouwbaarheid.
     async function generatePdfReport() {
         const statusDiv = document.getElementById('form-status');
         const submitBtn = document.getElementById('submit-form-btn');
-
-        // Houd de knop uitgeschakeld tijdens het proces
         submitBtn.disabled = true;
 
         try {
-            // --------------------------------------------------------------------
-            // TEST 1: EEN EXTREEM SIMPELE PDF MAKEN (NU UITGESCHAKELD)
-            // --------------------------------------------------------------------
-            /*
-            statusDiv.textContent = 'Test 1: Simpele PDF wordt gemaakt...';
-            console.log("Start Test 1: Basis jsPDF");
+            statusDiv.textContent = 'Rapport wordt opgebouwd...';
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
-            const doc = new jsPDF();
-            doc.setFontSize(16);
-            doc.text("Test 1 geslaagd!", 10, 20);
+            const { inputs, results } = lastCalculation;
+            const me = results.montenegro; // Afkorting voor Montenegro resultaten
+
+            // --- HULPFUNCTIES & STIJLEN ---
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageMargin = 15;
+            let y = 0; // Verticale cursor
+
+            const addPageFooter = () => {
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(8);
+                    doc.setTextColor(150);
+                    doc.text(`Pagina ${i} van ${pageCount}`, pageWidth - pageMargin, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
+                    doc.text('Persoonlijk Rapport gegenereerd door BAY SIGHT', pageMargin, doc.internal.pageSize.getHeight() - 10);
+                }
+            };
+            
+            const checkPageBreak = (yOffset) => {
+                if (y + yOffset > doc.internal.pageSize.getHeight() - 20) { // 20mm marge onderaan
+                    doc.addPage();
+                    y = pageMargin;
+                }
+            };
+
+            const addChapterTitle = (title) => {
+                checkPageBreak(22);
+                y += 15; // Ruimte boven de titel
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(16);
+                doc.setTextColor(4, 41, 67); // --primary-blue
+                doc.text(title, pageMargin, y);
+                doc.setFont('helvetica', 'normal');
+                y += 8;
+            };
+            
+            const addParagraph = (text) => {
+                 doc.setFontSize(10);
+                 doc.setTextColor(72, 101, 129); // --text-secondary
+                 const splitText = doc.splitTextToSize(text, pageWidth - (pageMargin * 2));
+                 checkPageBreak(splitText.length * 5);
+                 doc.text(splitText, pageMargin, y);
+                 y += (splitText.length * 4) + 6; // Ruimte na paragraaf
+            };
+
+            // --- PAGINA 1: VOORPAGINA & INTRODUCTIE ---
+            y = 20;
+            doc.addImage(logoBase64, 'PNG', pageMargin, y, 80, 15);
+            y += 40;
+            
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(24);
+            doc.setTextColor(4, 41, 67); // --primary-blue
+            doc.text("Persoonlijk Rendementsrapport", pageMargin, y);
+            y += 10;
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(12);
+            doc.setTextColor(100);
+            doc.text(`Voor: ${document.getElementById('userName').value}`, pageMargin, y);
+            y += 6;
+            doc.text(`Datum: ${new Date().toLocaleDateString('nl-NL')}`, pageMargin, y);
+
+            y = 110;
+            addChapterTitle("Inleiding");
+            addParagraph(
+                "Dit rapport is speciaal voor u samengesteld om een helder en begrijpelijk inzicht te geven in de financiële aspecten van uw mogelijke vastgoedinvestering. We nemen u stap voor stap mee door de eenmalige kosten, de jaarlijkse exploitatie en het te verwachten rendement. Het doel is om complexe financiële concepten te vertalen naar duidelijke taal, zodat u een weloverwogen beslissing kunt maken."
+            );
+            
+            // --- HOOFDSTUK 2: UW INVOER ---
+            addChapterTitle("Hoofdstuk 1: Uw Investering in Vogelvlucht");
+            addParagraph("Dit is een overzicht van de belangrijkste gegevens die u heeft ingevoerd. Deze waarden vormen de basis voor alle berekeningen in dit rapport.");
+
+            const regionText = document.querySelector(`#region option[value="${inputs.region}"]`).textContent;
+            const inputData = [
+                ['Aankoopprijs', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(inputs.purchasePrice)],
+                ['Type & Regio', `${inputs.propertyType} in ${regionText}`],
+                ['Eigen Inleg', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(inputs.ownCapital)],
+                ['Financiering Nodig', inputs.needFinancing ? 'Ja' : 'Nee']
+            ];
+
+            doc.autoTable({
+                startY: y,
+                head: [['Onderwerp', 'Uw Invoer']],
+                body: inputData,
+                theme: 'grid',
+                headStyles: { fillColor: [4, 41, 67] } // --primary-blue
+            });
+            y = doc.autoTable.previous.finalY;
+
+            // --- HOOFDSTUK 3: EENMALIGE KOSTEN ---
+            addChapterTitle("Hoofdstuk 2: De Eenmalige Investering");
+            addParagraph(
+                "Bij de aankoop van een woning zijn er naast de koopsom altijd bijkomende kosten, ook wel 'Kosten Koper' genoemd. Deze tabel specificeert alle eenmalige uitgaven. Het totaal van deze kosten, opgeteld bij de aankoopprijs en eventuele inrichtingskosten, vormt uw totale investering."
+            );
+            
+            const investmentBody = [
+                ['Aankoopprijs', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.purchasePrice)],
+                ['Overdrachtsbelasting', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.transferTax)],
+                ['Makelaarskosten', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.brokerageCosts)],
+                ['Advocaatkosten', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.lawyerCosts)],
+                ['Notaris- & Registratiekosten', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.notaryCosts + me.registrationCosts)],
+                ['Inrichtingskosten (optioneel)', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.furnishingCosts)]
+            ];
+
+            doc.autoTable({
+                startY: y,
+                head: [['Kostenpost', 'Bedrag']],
+                body: investmentBody,
+                foot: [['TOTAAL INVESTERING', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.totalInvestment)]],
+                theme: 'grid',
+                headStyles: { fillColor: [4, 41, 67] },
+                footStyles: { fillColor: [217, 226, 236], textColor: [4, 41, 67], fontStyle: 'bold' }
+            });
+            y = doc.autoTable.previous.finalY;
+            
+            doc.addPage(); y = pageMargin;
+
+            // --- HOOFDSTUK 4: JAARLIJKSE EXPLOITATIE ---
+            addChapterTitle("Hoofdstuk 3: De Jaarlijkse Exploitatie");
+            addParagraph(
+                "Een woning bezitten brengt jaarlijkse kosten en (indien van toepassing) inkomsten met zich mee. Hieronder splitsen we deze uit om tot een netto resultaat per jaar te komen. Dit netto resultaat wordt ook wel 'cashflow' genoemd: het bedrag dat u jaarlijks daadwerkelijk overhoudt of moet bijleggen."
+            );
+            
+            const incomeBody = [
+                ['Bruto Huurinkomsten', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.grossAnnualRentalIncome)],
+                [`Beheerkosten (${(me.managementFeeRate*100).toFixed(0)}%)`, `- ${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.rentalManagementFee)}`],
+            ];
+            const costsBody = [
+                ['Onroerendgoedbelasting', `- ${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.annualPropertyTax)}`],
+                ['Verzekering', `- ${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.annualInsurance)}`],
+                ['Onderhoud & VvE', `- ${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.annualMaintenance)}`],
+                ['Financieringskosten (rente & aflossing)', `- ${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.annualFinancingCost)}`],
+                ['Inkomstenbelasting over verhuur', `- ${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.taxAmount)}`],
+            ];
+
+            doc.autoTable({
+                startY: y,
+                head: [['Jaarlijkse Inkomsten', '']],
+                body: incomeBody,
+                foot: [['Netto Huurinkomsten', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.netAnnualRentalIncome)]],
+                theme: 'striped', headStyles: { fillColor: [4, 41, 67] }, footStyles: { fontStyle: 'bold' }
+            });
+            y = doc.autoTable.previous.finalY + 7;
+
+            doc.autoTable({
+                startY: y,
+                head: [['Jaarlijkse Kosten & Vaste Lasten', '']],
+                body: costsBody,
+                theme: 'striped', headStyles: { fillColor: [4, 41, 67] }
+            });
+            y = doc.autoTable.previous.finalY;
+            
+             doc.autoTable({
+                startY: y,
+                body: [['NETTO CASHFLOW PER JAAR', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.netAnnualCashflow)]],
+                theme: 'grid',
+                bodyStyles: { fillColor: [212, 145, 95], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12, halign: 'center' }
+            });
+            y = doc.autoTable.previous.finalY;
+
+            // --- HOOFDSTUK 5: RENDEMENT ---
+            addChapterTitle("Hoofdstuk 4: Wat is uw Rendement?");
+            addParagraph("Rendement drukt in een percentage uit hoe winstgevend uw investering is. We kijken naar twee belangrijke soorten rendement:");
+
+            const roiBody = [
+                ['Netto Huurrendement', `${(me.netRentalYield * 100).toFixed(2)}%`, 'Dit percentage vergelijkt de jaarlijkse netto cashflow met uw *totale* investering. Het toont hoe efficiënt uw volledige investeringsbedrag voor u aan het werk is.'],
+                ['Cash-on-Cash Rendement', `${(me.cashOnCashReturn * 100).toFixed(2)}%`, 'Dit is misschien wel het belangrijkste getal. Het vergelijkt de jaarlijkse cashflow met alleen het geld dat u *zelf uit eigen zak* heeft ingelegd. Dit toont het werkelijke rendement op uw eigen vermogen.']
+            ];
+
+            doc.autoTable({
+                startY: y,
+                head: [['Kengetal', 'Percentage', 'Uitleg voor de niet-investeerder']],
+                body: roiBody,
+                theme: 'grid', headStyles: { fillColor: [4, 41, 67] },
+                columnStyles: { 0: {cellWidth: 40}, 1: {cellWidth: 25}, 2: { cellWidth: 'auto' } },
+            });
+            y = doc.autoTable.previous.finalY;
+            
+            doc.addPage(); y = pageMargin;
+
+            // --- HOOFDSTUK 6: VISUELE VERGELIJKING ---
+            addChapterTitle("Hoofdstuk 5: Visuele Marktvergelijking");
+            addParagraph("Hoe verhoudt uw investering in Montenegro zich tot andere populaire Zuid-Europese landen? De onderstaande grafieken en tabel geven een indicatie op basis van algemene marktgegevens voor een vergelijkbare aankoopprijs.");
+            
+            checkPageBreak(85);
+            const comparisonChartImg = charts['country-comparison-chart'].toBase64Image('image/png', 1.0);
+            doc.addImage(comparisonChartImg, 'PNG', pageMargin, y, pageWidth - (pageMargin*2), 80);
+            y += 85;
+
+            checkPageBreak(40);
+            doc.autoTable({ html: '#country-comparison-table', startY: y, theme: 'grid', headStyles: { fillColor: [4, 41, 67] } });
+            y = doc.autoTable.previous.finalY;
+            
+            checkPageBreak(85);
+            y += 10;
+            const appreciationChartImg = charts['cumulative-appreciation-chart'].toBase64Image('image/png', 1.0);
+            doc.addImage(appreciationChartImg, 'PNG', pageMargin, y, pageWidth - (pageMargin*2), 70);
+            y += 75;
+
+            addParagraph("Bovenstaande grafiek toont de historische prijsontwikkeling van vastgoed, gebaseerd op data van nationale statistiekbureaus. Dit is geen garantie voor de toekomst, maar geeft wel een beeld van de marktdynamiek in de afgelopen jaren.");
+            
+            // --- FINALE STAPPEN ---
+            addPageFooter();
+            statusDiv.textContent = 'PDF wordt geopend...';
             doc.output('dataurlnewwindow');
 
-            statusDiv.textContent = 'Test 1 is uitgevoerd. Is er een PDF geopend?';
-            console.log("Einde Test 1. PDF zou nu moeten openen.");
-            */
-
-
-            // --------------------------------------------------------------------
-            // TEST 2: EEN SIMPEL HTML-ELEMENT RENDEREN (NU ACTIEF)
-            // Doel: Controleren of html2canvas werkt op een eenvoudig, zichtbaar element.
-            // Als dit werkt, verschijnt er een PDF met alleen de donkerblauwe header.
-            // --------------------------------------------------------------------
-            
-            statusDiv.textContent = 'Test 2: Header wordt gerenderd...';
-            console.log("Start Test 2: html2canvas op de header");
-            
-            const elementToRender = document.querySelector('.calculator-header');
-            
-            const canvas = await html2canvas(elementToRender, { logging: true });
-            const imgData = canvas.toDataURL('image/png');
-            
-            const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const imgProps = pdf.getImageProperties(imgData);
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.output('dataurlnewwindow');
-
-            statusDiv.textContent = 'Test 2 is uitgevoerd. Is er een PDF met de header geopend?';
-            console.log("Einde Test 2. PDF met header zou nu moeten openen.");
-            
-
-
         } catch (error) {
-            // Als een van de tests mislukt, zien we de fout hier.
             console.error("FOUT TIJDENS PDF-GENERATIE:", error);
             statusDiv.textContent = `Fout opgetreden: ${error.message}. Check de console (F12).`;
             statusDiv.style.color = 'var(--error)';
-        } finally {
-             // De knop wordt na 5 seconden weer ingeschakeld in de handleFormSubmit functie.
         }
     }
     
