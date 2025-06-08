@@ -389,6 +389,13 @@
              color: var(--text-primary);
         }
 
+        .results-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--secondary-medium);
+        }
+
         .result-tab {
             padding: 0.75rem 1.25rem;
             cursor: pointer;
@@ -1415,11 +1422,18 @@ document.addEventListener('DOMContentLoaded', function () {
             </tbody>`;
 
         drawChartsForPanel('summary', inputs, allResults, countryData);
+        // Ensure all charts are drawn initially
+        Object.keys(charts).forEach(key => charts[key].destroy());
+        charts = {};
+        drawChartsForPanel('summary', inputs, allResults, countryData);
+        drawChartsForPanel('financial', inputs, allResults, countryData);
+        drawChartsForPanel('comparison', inputs, allResults, countryData);
     }
     
     function destroyChart(chartId) {
         if (charts[chartId]) {
             charts[chartId].destroy();
+            delete charts[chartId];
         }
     }
 
