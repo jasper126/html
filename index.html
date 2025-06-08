@@ -739,9 +739,6 @@
             border: 1px solid var(--secondary-medium);
             margin-bottom: 1.5rem;
         }
-        #pdf-content .page-break {
-            page-break-after: always;
-        }
 
 
         @media (max-width: 1159px) {
@@ -1426,22 +1423,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 5000);
     }
 
+    // AANGEPAST: Functie volledig herschreven voor een stabielere PDF-export.
     async function generatePdfReport() {
-        const { inputs, results } = lastCalculation;
-        const doc = new jsPDF({
-            orientation: 'p',
-            unit: 'px',
-            format: 'a4',
-            hotfixes: ['px_scaling']
-        });
-        
+        // --- STAP 1: BOUW DE HTML-CONTENT VOOR DE PDF ---
         let pdfContent = document.createElement('div');
         pdfContent.id = 'pdf-content';
         
-        // Functies voor opmaak
         const formatCurrency = (value) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(value);
         
-        // NIEUW: PDF Header met logo en titel
         const pdfHeaderHTML = `
             <div style="text-align: center; background-color: #042943; padding: 25px 20px; color: white;">
                 <img src="${logoBase64}" alt="Bay Sight Logo" style="width: 250px; height: auto; margin-bottom: 20px;">
@@ -1451,6 +1440,7 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
         pdfContent.innerHTML += pdfHeaderHTML;
         
+        const { inputs } = lastCalculation;
         const regionText = document.querySelector(`#region option[value="${inputs.region}"]`).textContent;
         const inputSummaryHTML = `
             <div class="panel-section">
@@ -1470,11 +1460,9 @@ document.addEventListener('DOMContentLoaded', function () {
         pdfContent.innerHTML += inputSummaryHTML;
         
         const resultsContainer = document.getElementById('results-section').cloneNode(true);
-        
         resultsContainer.querySelector('.results-tabs').remove();
         resultsContainer.querySelector('.result-actions').remove();
         resultsContainer.querySelector('#lead-form-panel').remove();
-        
         resultsContainer.querySelectorAll('.result-panel').forEach(panel => {
             panel.style.display = 'block';
             panel.style.animation = 'none';
@@ -1495,17 +1483,44 @@ document.addEventListener('DOMContentLoaded', function () {
         pdfContent.appendChild(resultsContainer);
         document.body.appendChild(pdfContent);
 
-        await doc.html(pdfContent, {
-            callback: function (doc) {
-                doc.output('dataurlnewwindow');
-                document.body.removeChild(pdfContent);
-            },
-            x: 0,
-            y: 0,
-            width: doc.internal.pageSize.getWidth(),
-            windowWidth: pdfContent.offsetWidth,
-            autoPaging: 'text'
+        // --- STAP 2: RENDER DE HTML NAAR EEN AFBEELDING MET HTML2CANVAS ---
+        const canvas = await html2canvas(pdfContent, {
+            scale: 2, // Hogere resolutie voor scherpere PDF
+            useCORS: true,
+            logging: false
         });
+        
+        // --- STAP 3: VOEG DE AFBEELDING TOE AAN EEN PDF EN VERDEEL OVER MEERDERE PAGINA'S ---
+        const imgData = canvas.toDataURL('image/png');
+        const doc = new jsPDF({
+            orientation: 'p',
+            unit: 'px',
+            format: 'a4',
+            hotfixes: ['px_scaling']
+        });
+
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = doc.internal.pageSize.getHeight();
+        
+        const imgProps = doc.getImageProperties(imgData);
+        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        doc.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+            position -= pdfHeight;
+            doc.addPage();
+            doc.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+            heightLeft -= pdfHeight;
+        }
+
+        // --- STAP 4: OPEN DE PDF EN RUIM OP ---
+        doc.output('dataurlnewwindow');
+        document.body.removeChild(pdfContent);
     }
     
     if (contactForm) {
