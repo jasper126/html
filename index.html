@@ -1268,7 +1268,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         results.purchasePrice = purchasePrice || 0;
-        let totalAdditionalCosts;
+        let totalAdditionalCosts = 0;
         if (country === 'Montenegro') {
             results.transferTax = isNewBuild ? 0 : results.purchasePrice * params.transferTaxRate;
             results.notaryCosts = results.purchasePrice * params.notaryRate;
