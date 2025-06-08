@@ -886,8 +886,8 @@
                 </div>
                 
                 <div class="panel-section">
-                   <h4>Cumulatieve Prijsontwikkeling (2019-2024)</h4>
-                    <p>Gebaseerd op officieel onderzoek (zie PDF hieronder) toont deze grafiek de totale vastgoedwaardestijging, vergeleken met andere populaire Zuid-Europese landen.</p>
+                   <h4>Historische Prijsontwikkeling (2019-2024)</h4>
+                    <p>Gebaseerd op officieel onderzoek (zie PDF hieronder) toont deze grafiek de vastgoedwaardestijging, vergeleken met andere populaire Zuid-Europese landen.</p>
                     <div class="chart-container">
                         <canvas id="cumulative-appreciation-chart"></canvas>
                     </div>
@@ -1281,7 +1281,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 results.annualFinancingCost = (results.financingAmount * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)) * 12 || 0;
             }
         }
-        results.ownCapitalContribution = results.totalInvestment - (results.financingAmount || 0);
+         results.ownCapitalContribution = results.totalInvestment - (results.financingAmount || 0);
 
         const annualPropertyTaxRate = 0.007;
         const annualInsuranceRate = 0.002;
