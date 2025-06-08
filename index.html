@@ -1012,7 +1012,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // --- STATE VARIABLES ---
-    let currentStep = 0; // AANGEPAST: Start bij stap 0 (welkomstscherm)
+    let currentStep = 0;
     let charts = {}; // Object to hold all chart instances
     let lastCalculation = {}; // To store inputs and results for email
 
@@ -1043,10 +1043,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- FORM NAVIGATION LOGIC ---
     
     function updateFormState() {
-        // AANGEPAST: Verberg voortgangsindicator op het welkomstscherm (stap 0)
         document.querySelector('.progress-indicator').style.display = (currentStep === 0) ? 'none' : 'flex';
 
-        // Update progress bar
         progressSteps.forEach((step, index) => {
             const stepNum = index + 1;
             step.classList.remove('active', 'completed');
@@ -1057,15 +1055,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Show current form step
         formSteps.forEach(form => form.classList.remove('active'));
         document.getElementById(`step-${currentStep}`).classList.add('active');
 
-        // Update button states
-        prevBtn.disabled = currentStep === 0; // AANGEPAST: Vorige knop is uitgeschakeld op stap 0
+        prevBtn.disabled = currentStep === 0;
         
-        // AANGEPAST: De totale lengte van de formulieren is nu het aantal stappen + het welkomstscherm
-        const totalForms = document.querySelectorAll('.input-form').length -1;
+        const totalForms = document.querySelectorAll('.input-form').length - 1;
         if (currentStep === totalForms) {
             nextBtn.style.display = 'none';
             calculateBtn.style.display = 'inline-block';
@@ -1084,7 +1079,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     prevBtn.addEventListener('click', () => {
-        if (currentStep > 0) { // Kan nu terug naar stap 0
+        if (currentStep > 0) {
             currentStep--;
             updateFormState();
         }
@@ -1140,7 +1135,6 @@ document.addEventListener('DOMContentLoaded', function () {
             calculatorSections.forEach(s => s.classList.remove('active'));
             document.getElementById(`${tab.dataset.tab}-section`).classList.add('active');
             
-            // Als we teruggaan naar de invoer, reset naar stap 0
              if(tab.dataset.tab === 'input') {
                 currentStep = 0;
                 updateFormState();
@@ -1278,7 +1272,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         let params = {};
         
-        // Based on "Documentanalyse en gegevensverificatie vier landen_.pdf"
         switch(country) {
             case 'Montenegro':
                 params = { 
@@ -1388,6 +1381,8 @@ document.addEventListener('DOMContentLoaded', function () {
             taxAmount = Math.max(0, netIncomeBeforeTax) * params.effectiveTaxRate;
         }
         results.taxAmount = taxAmount;
+        results.effectiveTaxRate = params.effectiveTaxRate; // AANGEPAST: Geef percentage door
+        results.taxOnGross = params.taxOnGross; // AANGEPAST: Geef belastingbasis door
 
         results.netAnnualCashflow = results.netAnnualRentalIncome - results.totalAnnualCostsBeforeFinancing - results.annualFinancingCost - results.taxAmount;
         
@@ -1403,7 +1398,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function displayResults(inputs, allResults) {
         const { montenegro } = allResults;
         const formatCurrency = (value) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(value);
-        const formatPercent = (value) => new Intl.NumberFormat('nl-NL', { style: 'percent', minimumFractionDigits: 2 }).format(value);
+        const formatPercent = (value, digits = 2) => new Intl.NumberFormat('nl-NL', { style: 'percent', minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
 
         document.getElementById('summary-property-type').textContent = inputs.propertyType;
         document.getElementById('summary-region').textContent = document.querySelector(`#region option[value="${inputs.region}"]`).textContent;
@@ -1444,7 +1439,7 @@ document.addEventListener('DOMContentLoaded', function () {
              document.getElementById('rental-income-table').innerHTML = `<tbody>
                      <tr><td>Type verhuur</td><td>${inputs.usageType.includes('Korte') ? 'Korte Termijn' : (inputs.usageType.includes('Lange') ? 'Lange Termijn' : 'Combinatie')}</td></tr>
                      <tr><td>Bruto Huurinkomsten</td><td>${formatCurrency(montenegro.grossAnnualRentalIncome)}</td></tr>
-                     <tr><td>Beheerkosten (${formatPercent(montenegro.managementFeeRate)})</td><td>-${formatCurrency(montenegro.rentalManagementFee)}</td></tr>
+                     <tr><td>Beheerkosten (${formatPercent(montenegro.managementFeeRate, 0)})</td><td>-${formatCurrency(montenegro.rentalManagementFee)}</td></tr>
                      <tr class="total-row"><td>Netto Huurinkomsten</td><td>${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
                  </tbody>`;
              document.getElementById('net-rental-result-table').innerHTML = `<tbody>
@@ -1480,12 +1475,13 @@ document.addEventListener('DOMContentLoaded', function () {
             </tbody>`;
         
         const countryData = {
-            'Montenegro': { yield: allResults.montenegro.netRentalYield, tax: allResults.montenegro.taxAmount, color: '#d4915f' },
-            'Spanje': { yield: allResults.spanje.netRentalYield, tax: allResults.spanje.taxAmount, color: '#F0B429' },
-            'Portugal': { yield: allResults.portugal.netRentalYield, tax: allResults.portugal.taxAmount, color: '#00A5CF' },
-            'Italië': { yield: allResults.italië.netRentalYield, tax: allResults.italië.taxAmount, color: '#31C48D' }
+            'Montenegro': { yield: allResults.montenegro.netRentalYield, tax: allResults.montenegro.taxAmount, taxRate: allResults.montenegro.effectiveTaxRate, taxBase: allResults.montenegro.taxOnGross ? 'bruto' : 'netto', color: '#d4915f' },
+            'Spanje': { yield: allResults.spanje.netRentalYield, tax: allResults.spanje.taxAmount, taxRate: allResults.spanje.effectiveTaxRate, taxBase: allResults.spanje.taxOnGross ? 'bruto' : 'netto', color: '#F0B429' },
+            'Portugal': { yield: allResults.portugal.netRentalYield, tax: allResults.portugal.taxAmount, taxRate: allResults.portugal.effectiveTaxRate, taxBase: allResults.portugal.taxOnGross ? 'bruto' : 'netto', color: '#00A5CF' },
+            'Italië': { yield: allResults.italië.netRentalYield, tax: allResults.italië.taxAmount, taxRate: allResults.italië.effectiveTaxRate, taxBase: allResults.italië.taxOnGross ? 'bruto' : 'netto', color: '#31C48D' }
         };
 
+        // AANGEPAST: Tabelgeneratie om percentage en basis (bruto/netto) te tonen
         const comparisonTable = document.getElementById('country-comparison-table');
         comparisonTable.innerHTML = `
             <thead>
@@ -1499,9 +1495,13 @@ document.addEventListener('DOMContentLoaded', function () {
             ${Object.keys(countryData).map(country => {
             const data = countryData[country];
             const countryClass = country.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const taxRateFormatted = (data.taxRate === 0.1187) ? formatPercent(data.taxRate, 2) : formatPercent(data.taxRate, 0); // Meer decimalen voor Montenegro
             return `<tr>
                      <td><span class="country-badge ${countryClass}">${country}</span></td>
-                     <td><strong>${formatCurrency(data.tax)}</strong></td>
+                     <td>
+                        <strong>${formatCurrency(data.tax)}</strong>
+                        <small style="display: block; color: var(--text-light);">${taxRateFormatted} op ${data.taxBase}</small>
+                     </td>
                      <td><strong>${formatPercent(data.yield)}</strong></td>
                  </tr>`;
             }).join('')}
