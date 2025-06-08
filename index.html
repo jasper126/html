@@ -585,7 +585,6 @@
         .country-badge.portugal { background-color: var(--primary-turquoise); }
         .country-badge.italie { background-color: var(--success); }
 
-        /* AANGEPAST: CSS voor uitlijning van tooltip iconen */
         .country-cell {
             display: flex;
             justify-content: space-between;
@@ -800,10 +799,11 @@
                 <div class="form-group">
                     <label for="ownCapital">Beschikbaar eigen vermogen (€)</label>
                     <input type="number" id="ownCapital" class="form-control" placeholder="bv. 150000" value="150000" min="0">
+                    <div id="capital-warning" style="color: var(--warning); font-size: 0.9rem; margin-top: 0.5rem; display: none;"></div>
                 </div>
                 
                 <div class="form-group">
-                     <label>Heeft u financiering nodig?</label>
+                     <label>Heeft u financiering nodig? <small style="font-weight: 400; color: var(--text-secondary);">(bv. via opname overwaarde)</small></label>
                     <div class="toggle-switch-container">
                         <span class="toggle-label-text active" id="no-financing-label">Nee</span>
                         <label class="toggle-switch">
@@ -1042,10 +1042,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const personalUsageWeeksSlider = document.getElementById('personalUsageWeeks');
 
     const propertyConditionToggle = document.getElementById('propertyCondition');
-    
     const contactForm = document.getElementById('contact-form');
 
-    // --- FORM NAVIGATION LOGIC ---
+    // --- AANGEPAST: Elementen voor validatie
+    const purchasePriceInput = document.getElementById('purchasePrice');
+    const ownCapitalInput = document.getElementById('ownCapital');
+    const capitalWarningDiv = document.getElementById('capital-warning');
+
+
+    // --- FORM NAVIGATION & VALIDATION LOGIC ---
+    function validateStep1() {
+        const price = parseFloat(purchasePriceInput.value) || 0;
+        nextBtn.disabled = price <= 0;
+    }
+
+    function checkCapitalWarning() {
+        const purchasePrice = parseFloat(purchasePriceInput.value) || 0;
+        const ownCapital = parseFloat(ownCapitalInput.value) || 0;
+        if (purchasePrice > 0 && ownCapital > 0 && ownCapital < (purchasePrice * 0.5)) {
+            capitalWarningDiv.textContent = 'Let op: een eigen inleg van minder dan 50% kan de financieringsmogelijkheden beïnvloeden.';
+            capitalWarningDiv.style.display = 'block';
+        } else {
+            capitalWarningDiv.style.display = 'none';
+        }
+    }
     
     function updateFormState() {
         document.querySelector('.progress-indicator').style.display = (currentStep === 0) ? 'none' : 'flex';
@@ -1073,6 +1093,14 @@ document.addEventListener('DOMContentLoaded', function () {
             nextBtn.style.display = 'inline-block';
             calculateBtn.style.display = 'none';
         }
+        
+        // Voer validaties uit afhankelijk van de stap
+        if (currentStep === 1) {
+            validateStep1();
+        }
+        if (currentStep === 2) {
+            checkCapitalWarning();
+        }
     }
     
     nextBtn.addEventListener('click', () => {
@@ -1089,8 +1117,17 @@ document.addEventListener('DOMContentLoaded', function () {
             updateFormState();
         }
     });
+
+    // --- UI INTERACTION LOGIC & EVENT LISTENERS ---
     
-    // --- UI INTERACTION LOGIC ---
+    // AANGEPAST: Real-time validatie
+    purchasePriceInput.addEventListener('input', () => {
+        if (currentStep === 1) validateStep1();
+        if (currentStep === 2) checkCapitalWarning();
+    });
+    ownCapitalInput.addEventListener('input', () => {
+        if (currentStep === 2) checkCapitalWarning();
+    });
 
     needFinancingToggle.addEventListener('change', () => {
         financingDetails.style.display = needFinancingToggle.checked ? 'block' : 'none';
@@ -1458,7 +1495,6 @@ document.addEventListener('DOMContentLoaded', function () {
                      <tr class="total-row"><td>Netto Huurinkomsten</td><td>${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
                  </tbody>`;
 
-             // AANGEPAST: Gedetailleerde uitsplitsing in "Netto Verhuurresultaat"
              document.getElementById('net-rental-result-table').innerHTML = `<tbody>
                      <tr><td>Netto Huurinkomsten</td><td>${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
                      <tr><td style="padding-left: 2rem;">- Operationele Kosten (VvE, etc.)</td><td>-${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing)}</td></tr>
