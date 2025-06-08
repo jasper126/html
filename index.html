@@ -590,6 +590,7 @@
             position: relative;
             display: inline-block;
             cursor: pointer;
+            vertical-align: middle; /* Zorgt voor betere uitlijning */
         }
 
         .tooltip .tooltip-icon {
@@ -870,7 +871,6 @@
                 <div class="result-tab" data-result="financial">Investering & Kosten</div>
                 <div class="result-tab" data-result="rental">Verhuurpotentieel</div>
                 <div class="result-tab" data-result="roi">Rendement Analyse</div>
-                <div class="result-tab" data-result="comparison">Landenvergelijking</div>
             </div>
             
             <div class="result-panel active" id="summary-panel">
@@ -907,6 +907,15 @@
                         <div class="summary-value" id="summary-appreciation">0%</div>
                         <p>Gemiddelde prognose per jaar (historisch).</p>
                     </div>
+                </div>
+
+                <div class="panel-section">
+                    <h4>Landenvergelijking</h4>
+                    <p>Uw geschatte resultaten in Montenegro vergeleken met vergelijkbare investeringen in andere populaire landen, gebaseerd op de ingevoerde aankoopprijs.</p>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="country-comparison-chart"></canvas>
+                    </div>
+                    <table class="data-table" id="country-comparison-table"></table>
                 </div>
                 
                 <div class="panel-section">
@@ -968,17 +977,6 @@
                         <li><b>Cash-on-Cash Rendement:</b> Dit belangrijke kengetal meet hoeveel cash u jaarlijks overhoudt (na alle kosten, inclusief financiering) ten opzichte van het eigen geld dat u daadwerkelijk heeft ingelegd.</li>
                     </ul>
                 </div>
-            </div>
-            
-            <div class="result-panel" id="comparison-panel">
-                 <div class="panel-section">
-                    <h4>Resultaten Vergelijking</h4>
-                    <p>Uw geschatte resultaten in Montenegro vergeleken met vergelijkbare investeringen in andere populaire landen, gebaseerd op de ingevoerde aankoopprijs.</p>
-                    <div class="chart-container" style="height: 400px;">
-                        <canvas id="country-comparison-chart"></canvas>
-                    </div>
-                    <table class="data-table" id="country-comparison-table"></table>
-                 </div>
             </div>
             
             <div class="panel-section" id="lead-form-panel">
@@ -1105,7 +1103,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     usageTypeSelect.addEventListener('change', () => {
         const usage = usageTypeSelect.value;
-        const isRental = usage !== 'Vakantiewoning';
         rentalDetails.style.display = (usage === 'Combinatie') ? 'block' : 'none';
         
         if (usage === 'LangeTermijnVerhuur' || usage === 'KorteTermijnVerhuur') {
@@ -1274,7 +1271,6 @@ document.addEventListener('DOMContentLoaded', function () {
         
         switch(country) {
             case 'Montenegro':
-                // AANGEPAST: Geen params nodig, berekening is nu uniek.
                 params = { 
                     grossYieldRate: 0.065, 
                     managementFeeRate: { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0.05 }[managementPreference]
@@ -1374,19 +1370,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
         let taxAmount = 0;
 
-        // AANGEPAST: Unieke belastinglogica voor Montenegro
         if (country === 'Montenegro') {
-            let forfaitaireRate = 0.30; // Standaard voor lange termijn
+            let forfaitaireRate = 0.30;
             if (usageType === 'KorteTermijnVerhuur' || usageType === 'Combinatie') {
-                forfaitaireRate = 0.50; // Hogere aftrek voor korte termijn
+                forfaitaireRate = 0.50;
             }
             const taxableIncome = results.grossAnnualRentalIncome * (1 - forfaitaireRate);
-            taxAmount = taxableIncome * 0.15; // 15% belasting over netto belastbaar inkomen
+            taxAmount = taxableIncome * 0.15;
 
             results.effectiveTaxRate = (results.grossAnnualRentalIncome > 0) ? taxAmount / results.grossAnnualRentalIncome : 0;
-            results.taxOnGross = true; // Voor weergave in tabel als effectief % op bruto
+            results.taxOnGross = true; 
         } else {
-            // Bestaande logica voor andere landen
             if(params.taxOnGross){
                 taxAmount = results.grossAnnualRentalIncome * params.effectiveTaxRate;
             } else {
@@ -1495,6 +1489,13 @@ document.addEventListener('DOMContentLoaded', function () {
             'Italië': { yield: allResults.italië.netRentalYield, tax: allResults.italië.taxAmount, taxRate: allResults.italië.effectiveTaxRate, taxBase: allResults.italië.taxOnGross ? 'bruto' : 'netto', netCashflow: allResults.italië.netAnnualCashflow, color: '#31C48D' }
         };
 
+        const taxTooltips = {
+            'Montenegro': 'Belasting is 15% over het netto belastbaar inkomen. Dit wordt berekend na een forfaitaire kostenaftrek (30% voor lange termijn, 50% voor korte termijn verhuur) van de bruto huur.',
+            'Spanje': 'Belasting is 19% over de netto huurinkomsten voor EU/EER-residenten. Kosten zoals IBI, onderhoud en beheer zijn aftrekbaar. De calculator gaat uit van een EU/EER-resident.',
+            'Portugal': 'Belasting is 28% over de netto huurinkomsten voor non-residenten. Kosten zoals IMI, onderhoud en beheer zijn aftrekbaar.',
+            'Italië': 'Meestal een vast tarief (Cedolare Secca) van 21% op de bruto huurinkomsten. Onder dit regime zijn er geen kostenaftrekposten mogelijk.'
+        };
+
         const comparisonTable = document.getElementById('country-comparison-table');
         comparisonTable.innerHTML = `
             <thead>
@@ -1510,14 +1511,19 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = countryData[country];
             const countryClass = country.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             
-            // AANGEPAST: Weergave voor Montenegro's belasting
             let taxDetails = `${formatPercent(data.taxRate, 0)} op ${data.taxBase}`;
             if (country === 'Montenegro') {
                 taxDetails = `15% op netto (na forfaitaire aftrek)`;
             }
 
             return `<tr>
-                     <td><span class="country-badge ${countryClass}">${country}</span></td>
+                     <td>
+                        <span class="country-badge ${countryClass}">${country}</span>
+                        <span class="tooltip">
+                            <i class="tooltip-icon">i</i>
+                            <span class="tooltip-text">${taxTooltips[country]}</span>
+                        </span>
+                     </td>
                      <td><strong>${formatCurrency(data.netCashflow)}</strong></td>
                      <td>
                         <strong>${formatCurrency(data.tax)}</strong>
@@ -1529,11 +1535,6 @@ document.addEventListener('DOMContentLoaded', function () {
             </tbody>`;
 
         drawChartsForPanel('summary', inputs, allResults, countryData);
-        Object.keys(charts).forEach(key => charts[key].destroy());
-        charts = {};
-        drawChartsForPanel('summary', inputs, allResults, countryData);
-        drawChartsForPanel('financial', inputs, allResults, countryData);
-        drawChartsForPanel('comparison', inputs, allResults, countryData);
     }
     
     function destroyChart(chartId) {
@@ -1578,6 +1579,25 @@ document.addEventListener('DOMContentLoaded', function () {
                     options: { ...sharedOptions, scales: { y: { beginAtZero: false, title: { display: true, text: 'Prijsindex (2019 = 100)' } } } }
                 });
              }
+             
+            destroyChart('country-comparison-chart');
+            const comparisonCtx = document.getElementById('country-comparison-chart');
+            if (comparisonCtx) {
+               charts['country-comparison-chart'] = new Chart(comparisonCtx, {
+                   type: 'bar',
+                   data: {
+                       labels: Object.keys(countryData),
+                       datasets: [
+                           { 
+                               label: 'Netto Huurrendement', 
+                               data: Object.values(countryData).map(d => d.yield * 100), 
+                               backgroundColor: Object.values(countryData).map(d => d.color) 
+                           },
+                       ]
+                   },
+                   options: { ...sharedOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: value => value + '%' } } } }
+               });
+            }
         }
         if(panelId === 'financial'){
              destroyChart('investment-breakdown-chart');
@@ -1606,26 +1626,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         datasets: [{ data: costsData, backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#F0B429'], borderWidth: 0 }]
                     },
                     options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
-                });
-             }
-        }
-        if(panelId === 'comparison') {
-             destroyChart('country-comparison-chart');
-             const comparisonCtx = document.getElementById('country-comparison-chart');
-             if (comparisonCtx) {
-                charts['country-comparison-chart'] = new Chart(comparisonCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: Object.keys(countryData),
-                        datasets: [
-                            { 
-                                label: 'Netto Huurrendement', 
-                                data: Object.values(countryData).map(d => d.yield * 100), 
-                                backgroundColor: Object.values(countryData).map(d => d.color) 
-                            },
-                        ]
-                    },
-                    options: { ...sharedOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: value => value + '%' } } } }
                 });
              }
         }
