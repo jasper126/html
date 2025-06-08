@@ -585,12 +585,19 @@
         .country-badge.portugal { background-color: var(--primary-turquoise); }
         .country-badge.italie { background-color: var(--success); }
 
+        /* AANGEPAST: CSS voor uitlijning van tooltip iconen */
+        .country-cell {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         /* Tooltip styles */
         .tooltip {
             position: relative;
             display: inline-block;
             cursor: pointer;
-            vertical-align: middle; /* Zorgt voor betere uitlijning */
+            vertical-align: middle;
         }
 
         .tooltip .tooltip-icon {
@@ -1450,10 +1457,14 @@ document.addEventListener('DOMContentLoaded', function () {
                      <tr><td>Beheerkosten (${formatPercent(montenegro.managementFeeRate, 0)})</td><td>-${formatCurrency(montenegro.rentalManagementFee)}</td></tr>
                      <tr class="total-row"><td>Netto Huurinkomsten</td><td>${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
                  </tbody>`;
+
+             // AANGEPAST: Gedetailleerde uitsplitsing in "Netto Verhuurresultaat"
              document.getElementById('net-rental-result-table').innerHTML = `<tbody>
                      <tr><td>Netto Huurinkomsten</td><td>${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
-                     <tr><td>Totale Jaarlijkse Kosten</td><td>-${formatCurrency(totalAnnualCosts)}</td></tr>
-                     <tr class="total-row"><td>Netto Cashflow</td><td>${formatCurrency(montenegro.netAnnualCashflow)}</td></tr>
+                     <tr><td style="padding-left: 2rem;">- Operationele Kosten (VvE, etc.)</td><td>-${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing)}</td></tr>
+                     <tr><td style="padding-left: 2rem;">- Financieringskosten</td><td>-${formatCurrency(montenegro.annualFinancingCost)}</td></tr>
+                     <tr><td style="padding-left: 2rem;">- Inkomstenbelasting</td><td>-${formatCurrency(montenegro.taxAmount)}</td></tr>
+                     <tr class="total-row"><td>Netto Cashflow (Eindresultaat)</td><td>${formatCurrency(montenegro.netAnnualCashflow)}</td></tr>
                  </tbody>`;
         } else {
             rentalIncomeTable.style.display = 'none';
@@ -1517,7 +1528,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             return `<tr>
-                     <td>
+                     <td class="country-cell">
                         <span class="country-badge ${countryClass}">${country}</span>
                         <span class="tooltip">
                             <i class="tooltip-icon">i</i>
