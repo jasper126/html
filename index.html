@@ -215,126 +215,15 @@
             outline: 0;
             box-shadow: 0 0 0 0.2rem rgba(0, 165, 207, 0.25);
         }
-
-        /* Custom styling for range inputs */
-        input[type="range"] {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 100%;
-            height: 8px;
-            background: var(--secondary-medium);
-            border-radius: 5px;
-            outline: none;
-            opacity: 0.7;
-            transition: opacity .2s;
-        }
         
-        input[type="range"]:hover {
-            opacity: 1;
-        }
-        
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 24px;
-            height: 24px;
-            background: var(--primary-orange);
-            cursor: pointer;
-            border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 0 5px rgba(0,0,0,0.2);
-        }
-        
-        input[type="range"]::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
-            background: var(--primary-orange);
-            cursor: pointer;
-            border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 0 5px rgba(0,0,0,0.2);
-        }
-
-
-        .range-value {
+        .label-with-tooltip {
             display: flex;
             justify-content: space-between;
-            margin-top: 0.5rem;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-        
-        .range-value .current-value {
-            font-weight: 700;
-            color: var(--primary-blue);
-            background-color: var(--bg-highlight);
-            padding: 0.1rem 0.5rem;
-            border-radius: 4px;
-        }
-        
-        .toggle-switch-container {
-            display: flex;
             align-items: center;
-            justify-content: space-between;
-            background-color: var(--secondary-light);
-            padding: 0.75rem;
-            border-radius: 8px;
+            margin-bottom: 0.5rem;
         }
-
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--secondary-dark);
-            transition: .4s;
-            border-radius: 34px;
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background-color: var(--primary-orange);
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(26px);
-        }
-        
-        .toggle-label-text {
-            font-weight: 600;
-            color: var(--text-secondary);
-            transition: color 0.3s ease;
-        }
-        
-        .toggle-label-text.inactive {
-            color: var(--text-light);
-            font-weight: 500;
+        .label-with-tooltip label {
+            margin-bottom: 0;
         }
 
         .form-navigation {
@@ -755,24 +644,26 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>Staat van de woning</label>
-                    <div class="toggle-switch-container">
-                        <span class="toggle-label-text" id="existing-label">Bestaande bouw</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="propertyCondition" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span class="toggle-label-text active" id="new-label">Nieuwbouw</span>
-                    </div>
+                    <label for="propertyCondition">Staat van de woning</label>
+                    <select id="propertyCondition" class="form-control">
+                        <option value="new">Nieuwbouw</option>
+                        <option value="existing">Bestaande bouw</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
                     <label for="propertySize">Woonoppervlakte (m²)</label>
                     <input type="number" id="propertySize" class="form-control" min="20" placeholder="bv. 80" value="80">
                 </div>
-
-                 <div class="form-group">
-                    <label for="region">Regio</label>
+                
+                <div class="form-group">
+                    <div class="label-with-tooltip">
+                        <label for="region">Regio</label>
+                        <span class="tooltip">
+                            <i class="tooltip-icon">i</i>
+                            <span class="tooltip-text">De gekozen regio beïnvloedt de geschatte huurprijzen en de bezettingsgraad, wat direct impact heeft op het berekende rendement. Kustgebieden hebben doorgaans een hoger toeristisch potentieel.</span>
+                        </span>
+                    </div>
                     <select id="region" class="form-control">
                         <option value="Kotor">Baai van Kotor</option>
                         <option value="Budva">Budva Riviera</option>
@@ -787,7 +678,6 @@
                     <select id="propertyType" class="form-control">
                         <option value="Appartement">Appartement</option>
                         <option value="Villa">Villa</option>
-                        <option value="Townhouse">Townhouse</option>
                         <option value="Landhuis">Landhuis</option>
                     </select>
                 </div>
@@ -1041,10 +931,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const rentalDetails = document.querySelector('.rental-details');
     const personalUsageWeeksSlider = document.getElementById('personalUsageWeeks');
 
-    const propertyConditionToggle = document.getElementById('propertyCondition');
     const contactForm = document.getElementById('contact-form');
 
-    // --- AANGEPAST: Elementen voor validatie
     const purchasePriceInput = document.getElementById('purchasePrice');
     const ownCapitalInput = document.getElementById('ownCapital');
     const capitalWarningDiv = document.getElementById('capital-warning');
@@ -1094,9 +982,10 @@ document.addEventListener('DOMContentLoaded', function () {
             calculateBtn.style.display = 'none';
         }
         
-        // Voer validaties uit afhankelijk van de stap
         if (currentStep === 1) {
             validateStep1();
+        } else {
+            nextBtn.disabled = false; // Zorg dat de knop op andere stappen niet geblokkeerd blijft
         }
         if (currentStep === 2) {
             checkCapitalWarning();
@@ -1117,10 +1006,9 @@ document.addEventListener('DOMContentLoaded', function () {
             updateFormState();
         }
     });
-
+    
     // --- UI INTERACTION LOGIC & EVENT LISTENERS ---
     
-    // AANGEPAST: Real-time validatie
     purchasePriceInput.addEventListener('input', () => {
         if (currentStep === 1) validateStep1();
         if (currentStep === 2) checkCapitalWarning();
@@ -1131,20 +1019,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     needFinancingToggle.addEventListener('change', () => {
         financingDetails.style.display = needFinancingToggle.checked ? 'block' : 'none';
-        document.getElementById('yes-financing-label').classList.toggle('active', needFinancingToggle.checked);
-        document.getElementById('yes-financing-label').classList.toggle('inactive', !needFinancingToggle.checked);
-        document.getElementById('no-financing-label').classList.toggle('active', !needFinancingToggle.checked);
-        document.getElementById('no-financing-label').classList.toggle('inactive', needFinancingToggle.checked);
     });
     
-    propertyConditionToggle.addEventListener('change', () => {
-        const isNewBuild = propertyConditionToggle.checked;
-        document.getElementById('new-label').classList.toggle('active', isNewBuild);
-        document.getElementById('new-label').classList.toggle('inactive', !isNewBuild);
-        document.getElementById('existing-label').classList.toggle('active', !isNewBuild);
-        document.getElementById('existing-label').classList.toggle('inactive', isNewBuild);
-    });
-
     usageTypeSelect.addEventListener('change', () => {
         const usage = usageTypeSelect.value;
         rentalDetails.style.display = (usage === 'Combinatie') ? 'block' : 'none';
@@ -1205,7 +1081,7 @@ document.addEventListener('DOMContentLoaded', function () {
          return {
             purchasePrice: parseFloat(document.getElementById('purchasePrice').value) || 0,
             furnishingCosts: parseFloat(document.getElementById('furnishingCosts').value) || 0,
-            isNewBuild: document.getElementById('propertyCondition').checked,
+            isNewBuild: document.getElementById('propertyCondition').value === 'new',
             propertySize: parseFloat(document.getElementById('propertySize').value) || 0,
             region: document.getElementById('region').value,
             propertyType: document.getElementById('propertyType').value,
@@ -1581,7 +1457,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }).join('')}
             </tbody>`;
 
-        drawChartsForPanel('summary', inputs, allResults, countryData);
+        drawChartsForPanel('summary');
     }
     
     function destroyChart(chartId) {
@@ -1682,7 +1558,6 @@ document.addEventListener('DOMContentLoaded', function () {
     updateFormState();
     // Initialize toggles and sliders
     needFinancingToggle.dispatchEvent(new Event('change'));
-    propertyConditionToggle.dispatchEvent(new Event('change'));
     usageTypeSelect.dispatchEvent(new Event('change'));
 });
 
