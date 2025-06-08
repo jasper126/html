@@ -1358,6 +1358,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 5000);
     }
     
+    // DEFINITIEVE, GECORRIGEERDE VERSIE: PDF wordt programmatisch opgebouwd voor maximale betrouwbaarheid.
     async function generatePdfReport() {
         const statusDiv = document.getElementById('form-status');
         const submitBtn = document.getElementById('submit-form-btn');
@@ -1397,8 +1398,11 @@ document.addEventListener('DOMContentLoaded', function () {
             };
 
             const addChapterTitle = (title) => {
-                checkPageBreak(22);
-                y += 15; // Ruimte boven de titel
+                y += 15;
+                if (y > doc.internal.pageSize.getHeight() - 40) { // Zorg dat titel niet onderaan bungelt
+                    doc.addPage();
+                    y = pageMargin;
+                }
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(16);
                 doc.setTextColor(4, 41, 67); // --primary-blue
@@ -1440,7 +1444,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 "Dit rapport is speciaal voor u samengesteld om een helder en begrijpelijk inzicht te geven in de financiële aspecten van uw mogelijke vastgoedinvestering. We nemen u stap voor stap mee door de eenmalige kosten, de jaarlijkse exploitatie en het te verwachten rendement. Het doel is om complexe financiële concepten te vertalen naar duidelijke taal, zodat u een weloverwogen beslissing kunt maken."
             );
             
-            // --- HOOFDSTUK 2: UW INVOER ---
             addChapterTitle("Hoofdstuk 1: Uw Investering in Vogelvlucht");
             addParagraph("Dit is een overzicht van de belangrijkste gegevens die u heeft ingevoerd. Deze waarden vormen de basis voor alle berekeningen in dit rapport.");
 
@@ -1457,11 +1460,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 head: [['Onderwerp', 'Uw Invoer']],
                 body: inputData,
                 theme: 'grid',
-                headStyles: { fillColor: [4, 41, 67] } // --primary-blue
+                headStyles: { fillColor: [4, 41, 67] }
             });
             y = doc.autoTable.previous.finalY;
 
-            // --- HOOFDSTUK 3: EENMALIGE KOSTEN ---
             addChapterTitle("Hoofdstuk 2: De Eenmalige Investering");
             addParagraph(
                 "Bij de aankoop van een woning zijn er naast de koopsom altijd bijkomende kosten, ook wel 'Kosten Koper' genoemd. Deze tabel specificeert alle eenmalige uitgaven. Het totaal van deze kosten, opgeteld bij de aankoopprijs en eventuele inrichtingskosten, vormt uw totale investering."
@@ -1489,7 +1491,6 @@ document.addEventListener('DOMContentLoaded', function () {
             
             doc.addPage(); y = pageMargin;
 
-            // --- HOOFDSTUK 4: JAARLIJKSE EXPLOITATIE ---
             addChapterTitle("Hoofdstuk 3: De Jaarlijkse Exploitatie");
             addParagraph(
                 "Een woning bezitten brengt jaarlijkse kosten en (indien van toepassing) inkomsten met zich mee. Hieronder splitsen we deze uit om tot een netto resultaat per jaar te komen. Dit netto resultaat wordt ook wel 'cashflow' genoemd: het bedrag dat u jaarlijks daadwerkelijk overhoudt of moet bijleggen."
@@ -1507,32 +1508,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 ['Inkomstenbelasting over verhuur', `- ${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.taxAmount)}`],
             ];
 
-            doc.autoTable({
-                startY: y,
-                head: [['Jaarlijkse Inkomsten', '']],
-                body: incomeBody,
-                foot: [['Netto Huurinkomsten', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.netAnnualRentalIncome)]],
-                theme: 'striped', headStyles: { fillColor: [4, 41, 67] }, footStyles: { fontStyle: 'bold' },
+            doc.autoTable({ startY: y, head: [['Jaarlijkse Inkomsten', '']], body: incomeBody, foot: [['Netto Huurinkomsten', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.netAnnualRentalIncome)]],
+                theme: 'striped', headStyles: { fillColor: [4, 41, 67] }, footStyles: { fontStyle: 'bold' }
             });
             y = doc.autoTable.previous.finalY + 7;
 
-            doc.autoTable({
-                startY: y,
-                head: [['Jaarlijkse Kosten & Vaste Lasten', '']],
-                body: costsBody,
-                theme: 'striped', headStyles: { fillColor: [4, 41, 67] },
+            doc.autoTable({ startY: y, head: [['Jaarlijkse Kosten & Vaste Lasten', '']], body: costsBody,
+                theme: 'striped', headStyles: { fillColor: [4, 41, 67] }
             });
             y = doc.autoTable.previous.finalY;
             
-             doc.autoTable({
-                startY: y,
-                body: [['NETTO CASHFLOW PER JAAR', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.netAnnualCashflow)]],
-                theme: 'grid',
-                bodyStyles: { fillColor: [212, 145, 95], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12, halign: 'center' },
+            doc.autoTable({ startY: y, body: [['NETTO CASHFLOW PER JAAR', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.netAnnualCashflow)]],
+                theme: 'grid', bodyStyles: { fillColor: [212, 145, 95], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12, halign: 'center' }
             });
             y = doc.autoTable.previous.finalY;
 
-            // --- HOOFDSTUK 5: RENDEMENT ---
             addChapterTitle("Hoofdstuk 4: Wat is uw Rendement?");
             addParagraph("Rendement drukt in een percentage uit hoe winstgevend uw investering is. We kijken naar twee belangrijke soorten rendement:");
 
@@ -1541,18 +1531,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 ['Cash-on-Cash Rendement', `${(me.cashOnCashReturn * 100).toFixed(2)}%`, 'Dit is misschien wel het belangrijkste getal. Het vergelijkt de jaarlijkse cashflow met alleen het geld dat u *zelf uit eigen zak* heeft ingelegd. Dit toont het werkelijke rendement op uw eigen vermogen.']
             ];
 
-            doc.autoTable({
-                startY: y,
-                head: [['Kengetal', 'Percentage', 'Uitleg voor de niet-investeerder']],
-                body: roiBody,
+            doc.autoTable({ startY: y, head: [['Kengetal', 'Percentage', 'Uitleg voor de niet-investeerder']], body: roiBody,
                 theme: 'grid', headStyles: { fillColor: [4, 41, 67] },
-                columnStyles: { 0: {cellWidth: 40}, 1: {cellWidth: 25}, 2: { cellWidth: 'auto' } },
+                columnStyles: { 0: {cellWidth: 40}, 1: {cellWidth: 25}, 2: { cellWidth: 'auto' } }
             });
             y = doc.autoTable.previous.finalY;
             
             doc.addPage(); y = pageMargin;
 
-            // --- HOOFDSTUK 6: VISUELE VERGELIJKING ---
             addChapterTitle("Hoofdstuk 5: Visuele Marktvergelijking");
             addParagraph("Hoe verhoudt uw investering in Montenegro zich tot andere populaire Zuid-Europese landen? De onderstaande grafieken en tabel geven een indicatie op basis van algemene marktgegevens voor een vergelijkbare aankoopprijs.");
             
@@ -1561,7 +1547,6 @@ document.addEventListener('DOMContentLoaded', function () {
             doc.addImage(comparisonChartImg, 'PNG', pageMargin, y, pageWidth - (pageMargin*2), 80);
             y += 85;
 
-            // AANGEPAST: De landentabel wordt nu ook programmatisch gebouwd voor stabiliteit.
             const countryData = {
                 'Montenegro': { yield: results.montenegro.netRentalYield, tax: results.montenegro.taxAmount, taxBase: '15% op netto (forfaitair)', netCashflow: results.montenegro.netAnnualCashflow },
                 'Spanje': { yield: results.spanje.netRentalYield, tax: results.spanje.taxAmount, taxBase: '19% op netto', netCashflow: results.spanje.netAnnualCashflow },
@@ -1570,20 +1555,15 @@ document.addEventListener('DOMContentLoaded', function () {
             };
             const comparisonBody = Object.keys(countryData).map(country => {
                 const data = countryData[country];
-                return [
-                    country,
+                return [ country,
                     new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(data.netCashflow),
                     `${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(data.tax)} (${data.taxBase})`,
                     `${(data.yield * 100).toFixed(2)}%`
                 ];
             });
 
-            doc.autoTable({
-                startY: y,
-                head: [['Land', `Netto Inkomen`, 'Inkomstenbelasting', 'Netto Rendement']],
-                body: comparisonBody,
-                theme: 'grid',
-                headStyles: { fillColor: [4, 41, 67] },
+            doc.autoTable({ startY: y, head: [['Land', `Netto Inkomen`, 'Inkomstenbelasting', 'Netto Rendement']], body: comparisonBody,
+                theme: 'grid', headStyles: { fillColor: [4, 41, 67] },
                 columnStyles: { 2: { cellWidth: 50 } }
             });
             y = doc.autoTable.previous.finalY;
