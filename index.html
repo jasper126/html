@@ -1358,7 +1358,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 5000);
     }
     
-    // DEFINITIEVE VERSIE: PDF wordt programmatisch opgebouwd voor maximale betrouwbaarheid.
     async function generatePdfReport() {
         const statusDiv = document.getElementById('form-status');
         const submitBtn = document.getElementById('submit-form-btn');
@@ -1392,7 +1391,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (y + yOffset > doc.internal.pageSize.getHeight() - 20) { // 20mm marge onderaan
                     doc.addPage();
                     y = pageMargin;
+                    return true;
                 }
+                return false;
             };
 
             const addChapterTitle = (title) => {
@@ -1511,7 +1512,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 head: [['Jaarlijkse Inkomsten', '']],
                 body: incomeBody,
                 foot: [['Netto Huurinkomsten', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.netAnnualRentalIncome)]],
-                theme: 'striped', headStyles: { fillColor: [4, 41, 67] }, footStyles: { fontStyle: 'bold' }
+                theme: 'striped', headStyles: { fillColor: [4, 41, 67] }, footStyles: { fontStyle: 'bold' },
             });
             y = doc.autoTable.previous.finalY + 7;
 
@@ -1519,7 +1520,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 startY: y,
                 head: [['Jaarlijkse Kosten & Vaste Lasten', '']],
                 body: costsBody,
-                theme: 'striped', headStyles: { fillColor: [4, 41, 67] }
+                theme: 'striped', headStyles: { fillColor: [4, 41, 67] },
             });
             y = doc.autoTable.previous.finalY;
             
@@ -1527,7 +1528,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 startY: y,
                 body: [['NETTO CASHFLOW PER JAAR', new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(me.netAnnualCashflow)]],
                 theme: 'grid',
-                bodyStyles: { fillColor: [212, 145, 95], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12, halign: 'center' }
+                bodyStyles: { fillColor: [212, 145, 95], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12, halign: 'center' },
             });
             y = doc.autoTable.previous.finalY;
 
@@ -1560,8 +1561,31 @@ document.addEventListener('DOMContentLoaded', function () {
             doc.addImage(comparisonChartImg, 'PNG', pageMargin, y, pageWidth - (pageMargin*2), 80);
             y += 85;
 
-            checkPageBreak(40);
-            doc.autoTable({ html: '#country-comparison-table', startY: y, theme: 'grid', headStyles: { fillColor: [4, 41, 67] } });
+            // AANGEPAST: De landentabel wordt nu ook programmatisch gebouwd voor stabiliteit.
+            const countryData = {
+                'Montenegro': { yield: results.montenegro.netRentalYield, tax: results.montenegro.taxAmount, taxBase: '15% op netto (forfaitair)', netCashflow: results.montenegro.netAnnualCashflow },
+                'Spanje': { yield: results.spanje.netRentalYield, tax: results.spanje.taxAmount, taxBase: '19% op netto', netCashflow: results.spanje.netAnnualCashflow },
+                'Portugal': { yield: results.portugal.netRentalYield, tax: results.portugal.taxAmount, taxBase: '28% op netto', netCashflow: results.portugal.netAnnualCashflow },
+                'Italië': { yield: results.italië.netRentalYield, tax: results.italië.taxAmount, taxBase: '21% op bruto', netCashflow: results.italië.netAnnualCashflow }
+            };
+            const comparisonBody = Object.keys(countryData).map(country => {
+                const data = countryData[country];
+                return [
+                    country,
+                    new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(data.netCashflow),
+                    `${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(data.tax)} (${data.taxBase})`,
+                    `${(data.yield * 100).toFixed(2)}%`
+                ];
+            });
+
+            doc.autoTable({
+                startY: y,
+                head: [['Land', `Netto Inkomen`, 'Inkomstenbelasting', 'Netto Rendement']],
+                body: comparisonBody,
+                theme: 'grid',
+                headStyles: { fillColor: [4, 41, 67] },
+                columnStyles: { 2: { cellWidth: 50 } }
+            });
             y = doc.autoTable.previous.finalY;
             
             checkPageBreak(85);
