@@ -1286,7 +1286,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     totalTransactionCostRate: 0.116,
                     grossYieldRate: 0.06, 
                     managementFeeRate: 0.10,
-                    effectiveTaxRate: 0.15,
+                    effectiveTaxRate: 0.19, // AANGEPAST naar 19%
                     taxOnGross: false
                 };
                 break;
@@ -1481,7 +1481,6 @@ document.addEventListener('DOMContentLoaded', function () {
             'Italië': { yield: allResults.italië.netRentalYield, tax: allResults.italië.taxAmount, taxRate: allResults.italië.effectiveTaxRate, taxBase: allResults.italië.taxOnGross ? 'bruto' : 'netto', netCashflow: allResults.italië.netAnnualCashflow, color: '#31C48D' }
         };
 
-        // AANGEPAST: Tabelgeneratie met de nieuwe kolom "Netto Inkomen"
         const comparisonTable = document.getElementById('country-comparison-table');
         comparisonTable.innerHTML = `
             <thead>
