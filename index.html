@@ -51,7 +51,7 @@
 
         .baysight-calculator-container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1160px; /* Aangepaste breedte voor desktop */
             margin: 0 auto;
             background-color: var(--bg-light);
             border-radius: 8px;
@@ -635,6 +635,15 @@
         }
 
 
+        @media (max-width: 1159px) { /* Adjust breakpoint for smaller screens */
+            .baysight-calculator-container {
+                max-width: 100%;
+            }
+             .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
         @media (max-width: 768px) {
             body { padding: 0; }
             .baysight-calculator-container { border-radius: 0; }
@@ -645,10 +654,6 @@
                 border-bottom: none;
                 gap: 0.5rem;
                 padding-bottom: 0;
-            }
-
-            .summary-grid {
-                grid-template-columns: 1fr;
             }
 
             .progress-step {
@@ -676,17 +681,12 @@
                 box-sizing: border-box;
             }
             .results-tabs {
-                 flex-direction: column;
-                 border-bottom: none;
+                 flex-wrap: nowrap;
+                 overflow-x: auto;
             }
             .result-tab {
-                 border-bottom: 1px solid var(--secondary-medium);
-                 text-align: left;
+                white-space: nowrap;
             }
-             .result-tab.active {
-                 border-bottom-color: var(--secondary-medium);
-                 border-left: 3px solid var(--primary-orange);
-             }
         }
     </style>
 </head>
@@ -1437,7 +1437,17 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function drawChartsForPanel(panelId, inputs, results, countryData) {
+    function drawChartsForPanel(panelId) {
+        const { inputs, results } = lastCalculation;
+        if (!inputs || !results) return;
+
+        const countryData = {
+            'Montenegro': { yield: results.montenegro.netRentalYield, color: '#d4915f' },
+            'Spanje': { yield: results.spanje.netRentalYield, color: '#F0B429' },
+            'Portugal': { yield: results.portugal.netRentalYield, color: '#00A5CF' },
+            'Italië': { yield: results.italië.netRentalYield, color: '#31C48D' }
+        };
+
          const { montenegro } = results;
          Chart.defaults.font.family = "'Open Sans', sans-serif";
          Chart.defaults.color = 'var(--text-secondary)';
