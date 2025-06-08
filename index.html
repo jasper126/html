@@ -1239,9 +1239,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const { purchasePrice, isNewBuild, propertySize, furnishingCosts, managementPreference, usageType, personalUsageWeeks, needFinancing, financingInterestRate, financingTerm, ownCapital } = inputs;
         
         let params = {};
+        // Parameters from the report
         switch(country) {
             case 'Montenegro':
-                params = { transferTaxRate: 0.03, notaryRate: 0.005, registrationRate: 0.003, brokerageRate: 0.0225, lawyerFee: 500, grossYieldRate: 0.09, managementFeeRate: { "Volledig uitbesteden": 0.20, "Gedeeltelijk uitbesteden": 0.10, "Zelf actief beheren": 0 }[managementPreference] };
+                params = { transferTaxRate: 0.03, notaryRate: 0.005, registrationRate: 0.003, brokerageRate: 0.0225, lawyerFee: 500, grossYieldRate: 0.09, managementFeeRate: { "Volledig uitbesteden": 0.20, "Gedeeltelijk uitbesteden": 0.10, "Zelf actief beheren": 0.05 }[managementPreference] };
                 break;
             case 'Spanje':
                 params = { totalTransactionCostRate: 0.108, grossYieldRate: 0.055, managementFeeRate: 0.225 };
@@ -1254,6 +1255,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
         }
 
+        results.purchasePrice = purchasePrice;
         let totalAdditionalCosts;
         if (country === 'Montenegro') {
             results.transferTax = isNewBuild ? 0 : purchasePrice * params.transferTaxRate;
@@ -1279,7 +1281,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 results.annualFinancingCost = (results.financingAmount * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)) * 12 || 0;
             }
         }
-         results.ownCapitalContribution = results.totalInvestment - (results.financingAmount || 0);
+        results.ownCapitalContribution = results.totalInvestment - (results.financingAmount || 0);
 
         const annualPropertyTaxRate = 0.007;
         const annualInsuranceRate = 0.002;
