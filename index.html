@@ -431,7 +431,7 @@
 
         .summary-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
@@ -640,6 +640,10 @@
                 padding-bottom: 0;
             }
 
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
             .progress-step {
                 text-align: left;
                 padding: 0.5rem 0;
@@ -841,7 +845,6 @@
                 <div class="result-tab" data-result="financial">Investering & Kosten</div>
                 <div class="result-tab" data-result="rental">Verhuurpotentieel</div>
                 <div class="result-tab" data-result="roi">Rendement Analyse</div>
-                <div class="result-tab" data-result="appreciation">Prijsontwikkeling</div>
                 <div class="result-tab" data-result="comparison">Landenvergelijking</div>
             </div>
             
@@ -883,17 +886,12 @@
                 </div>
                 
                 <div class="panel-section">
-                   <h4>Netto Huurrendement Vergelijking</h4>
-                    <div class="summary-chart-container">
-                        <canvas id="summary-comparison-chart"></canvas>
+                   <h4>Cumulatieve Prijsontwikkeling (2019-2024)</h4>
+                    <p>Gebaseerd op officieel onderzoek (zie PDF hieronder) toont deze grafiek de totale vastgoedwaardestijging, vergeleken met andere populaire Zuid-Europese landen.</p>
+                    <div class="chart-container">
+                        <canvas id="cumulative-appreciation-chart"></canvas>
                     </div>
-                </div>
-
-                <div class="considerations-list">
-                    <h4>Disclaimer</h4>
-                    <ul>
-                        <li>Deze berekening is een prognose op basis van de ingevoerde gegevens en openbare marktdata. Het is bedoeld om u een indicatie te geven en dient niet te worden beschouwd als financieel advies. Werkelijke resultaten kunnen afwijken. Neem contact op voor persoonlijk advies.</li>
-                    </ul>
+                     <a href="https://cdn.prod.website-files.com/66ab26a563f36a02518a48ae/68455b46f6f777ddab5082bf_montenegro_vastgoed_rapport_baysight.pdf" target="_blank" class="btn btn-primary" style="margin-bottom: 1.5rem; width: auto; display: inline-block;">Download Vergelijkend Rapport (PDF)</a>
                 </div>
 
             </div>
@@ -945,25 +943,6 @@
                         <li><b>Netto Huurrendement:</b> Dit is het directe, jaarlijkse rendement uit verhuurinkomsten, afgezet tegen uw totale investering. Het toont de directe winstgevendheid van het pand.</li>
                         <li><b>Cash-on-Cash Rendement:</b> Dit belangrijke kengetal meet hoeveel cash u jaarlijks overhoudt (na alle kosten, inclusief financiering) ten opzichte van het eigen geld dat u daadwerkelijk heeft ingelegd.</li>
                    </ul>
-                </div>
-            </div>
-
-             <div class="result-panel" id="appreciation-panel">
-                 <div class="panel-section">
-                    <h4>Cumulatieve Prijsontwikkeling (2019-2024)</h4>
-                    <p>Gebaseerd op officieel onderzoek (zie PDF) toont deze grafiek de totale vastgoedwaardestijging in de periode 2019-2024, vergeleken met andere populaire Zuid-Europese landen. Klik hieronder om het volledige onderzoek te downloaden.</p>
-                    <a href="https://cdn.prod.website-files.com/66ab26a563f36a02518a48ae/68455b46f6f777ddab5082bf_montenegro_vastgoed_rapport_baysight.pdf" target="_blank" class="btn btn-primary" style="margin-bottom: 1.5rem; width: auto; display: inline-block;">Download Vergelijkend Rapport (PDF)</a>
-                    <div class="chart-container">
-                        <canvas id="cumulative-appreciation-chart"></canvas>
-                    </div>
-                </div>
-                <div class="considerations-list">
-                    <h4>Disclaimer bij Prognose</h4>
-                    <ul>
-                        <li>Historische prijsontwikkeling biedt geen garantie voor de toekomst.</li>
-                        <li>Deze data is gebaseerd op een vergelijkend rapport en is bedoeld om een algemeen marktbeeld te geven.</li>
-                        <li>Deze prognose is bedoeld als hulpmiddel en vormt geen financieel advies.</li>
-                    </ul>
                 </div>
             </div>
             
@@ -1262,16 +1241,16 @@ document.addEventListener('DOMContentLoaded', function () {
         let params = {};
         switch(country) {
             case 'Montenegro':
-                params = { transferTaxRate: 0.03, notaryRate: 0.005, registrationRate: 0.003, brokerageRate: 0.0225, lawyerFee: 500, grossYieldRate: 0.07, managementFeeRate: { "Volledig uitbesteden": 0.20, "Gedeeltelijk uitbesteden": 0.10, "Zelf actief beheren": 0 }[managementPreference] };
+                params = { transferTaxRate: 0.03, notaryRate: 0.005, registrationRate: 0.003, brokerageRate: 0.0225, lawyerFee: 500, grossYieldRate: 0.09, managementFeeRate: { "Volledig uitbesteden": 0.20, "Gedeeltelijk uitbesteden": 0.10, "Zelf actief beheren": 0 }[managementPreference] };
                 break;
             case 'Spanje':
-                params = { totalTransactionCostRate: 0.108, grossYieldRate: 0.06, managementFeeRate: 0.225 };
+                params = { totalTransactionCostRate: 0.108, grossYieldRate: 0.055, managementFeeRate: 0.225 };
                 break;
             case 'Portugal':
-                params = { totalTransactionCostRate: 0.068, grossYieldRate: 0.05, managementFeeRate: 0.275 };
+                params = { totalTransactionCostRate: 0.068, grossYieldRate: 0.0625, managementFeeRate: 0.275 };
                 break;
             case 'Italië':
-                params = { totalTransactionCostRate: 0.074, grossYieldRate: 0.04, managementFeeRate: 0.20 };
+                params = { totalTransactionCostRate: 0.074, grossYieldRate: 0.0475, managementFeeRate: 0.20 };
                 break;
         }
 
@@ -1324,8 +1303,7 @@ document.addEventListener('DOMContentLoaded', function () {
         results.netRentalYield = (results.totalInvestment > 0) ? results.netAnnualCashflow / results.totalInvestment : 0;
         results.cashOnCashReturn = (results.ownCapitalContribution > 0) ? results.netAnnualCashflow / results.ownCapitalContribution : 0;
         
-        results.appreciationRates = { worst: 0.04, average: 0.125, best: 0.20 };
-
+        results.avgAppreciation = 0.125; // Historical average from report
 
         return results;
     }
@@ -1341,7 +1319,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('summary-total-investment').textContent = formatCurrency(montenegro.totalInvestment);
         document.getElementById('summary-annual-result').textContent = formatCurrency(montenegro.netAnnualCashflow);
         document.getElementById('summary-rental-yield').textContent = formatPercent(montenegro.netRentalYield);
-        document.getElementById('summary-appreciation').textContent = formatPercent(montenegro.appreciationRates.average);
+        document.getElementById('summary-appreciation').textContent = formatPercent(montenegro.avgAppreciation);
         
         document.getElementById('investment-table').innerHTML = `
             <tbody>
@@ -1445,13 +1423,14 @@ document.addEventListener('DOMContentLoaded', function () {
         Chart.defaults.font.family = "'Open Sans', sans-serif";
         Chart.defaults.color = 'var(--text-secondary)';
         const sharedOptions = { responsive: true, maintainAspectRatio: false };
+        const { montenegro } = results;
 
         destroyChart('investment-breakdown-chart');
         charts['investment-breakdown-chart'] = new Chart(document.getElementById('investment-breakdown-chart'), {
             type: 'doughnut',
             data: {
                 labels: ['Aankoopprijs', 'Belastingen', 'Notaris/Reg.', 'Makelaar', 'Advocaat', 'Inrichting'],
-                datasets: [{ data: [results.montenegro.purchasePrice, results.montenegro.transferTax, results.montenegro.notaryCosts + results.montenegro.registrationCosts, results.montenegro.brokerageCosts, results.montenegro.lawyerCosts, results.montenegro.furnishingCosts], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#F0B429', '#31C48D'], borderWidth: 0 }]
+                datasets: [{ data: [montenegro.purchasePrice, montenegro.transferTax, montenegro.notaryCosts + montenegro.registrationCosts, montenegro.brokerageCosts, montenegro.lawyerCosts, montenegro.furnishingCosts], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#F0B429', '#31C48D'], borderWidth: 0 }]
             },
             options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
         });
@@ -1461,7 +1440,7 @@ document.addEventListener('DOMContentLoaded', function () {
             type: 'doughnut',
             data: {
                 labels: ['Vastgoedbelasting', 'Verzekering', 'Onderhoud/VvE', 'Financiering'],
-                datasets: [{ data: [results.montenegro.annualPropertyTax, results.montenegro.annualInsurance, results.montenegro.annualMaintenance, results.montenegro.annualFinancingCost], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98'], borderWidth: 0 }]
+                datasets: [{ data: [montenegro.annualPropertyTax, montenegro.annualInsurance, montenegro.annualMaintenance, montenegro.annualFinancingCost], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98'], borderWidth: 0 }]
             },
             options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
         });
