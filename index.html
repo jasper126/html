@@ -1451,27 +1451,22 @@ document.addEventListener('DOMContentLoaded', function () {
             options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
         });
         
-        // Data from the comparative report
-        const cumulativeGrowthData = {
-            'Montenegro': { growth: 80.1, color: '#d4915f' },
-            'Spanje': { growth: 28.1, color: '#F0B429' },
-            'Portugal': { growth: 9.1, color: '#00A5CF' },
-            'Italië': { growth: 15.1, color: '#31C48D' }
+        // Data from the comparative report for line chart
+        const priceDevelopmentData = {
+            labels: ['2019', '2020', '2021', '2022', '2023', '2024'],
+            datasets: [
+                { label: 'Montenegro', data: [100, 92.9, 116.7, 134.4, 160.6, 180.2], borderColor: '#d4915f', backgroundColor: 'transparent', pointBackgroundColor: '#d4915f', tension: 0.1 },
+                { label: 'Spanje', data: [100, 102.1, 105.9, 113.7, 118.3, 128.2], borderColor: '#F0B429', backgroundColor: 'transparent', pointBackgroundColor: '#F0B429', tension: 0.1 },
+                { label: 'Portugal', data: [100, 106.0, 117.8, 128.0, 139.1, 150.8], borderColor: '#00A5CF', backgroundColor: 'transparent', pointBackgroundColor: '#00A5CF', tension: 0.1 },
+                { label: 'Italië', data: [100, 101.5, 103.5, 105.7, 107.9, 110.1], borderColor: '#31C48D', backgroundColor: 'transparent', pointBackgroundColor: '#31C48D', tension: 0.1 }
+            ]
         };
 
         destroyChart('cumulative-appreciation-chart');
         charts['cumulative-appreciation-chart'] = new Chart(document.getElementById('cumulative-appreciation-chart'), {
-            type: 'bar',
-            data: {
-                labels: Object.keys(cumulativeGrowthData),
-                datasets: [
-                {
-                    label: 'Cumulatieve Prijsontwikkeling (2019-2024)',
-                    data: Object.values(cumulativeGrowthData).map(d => d.growth),
-                    backgroundColor: Object.values(cumulativeGrowthData).map(d => d.color),
-                }]
-            },
-            options: { ...sharedOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: value => value + '%' } } } }
+            type: 'line',
+            data: priceDevelopmentData,
+            options: { ...sharedOptions, scales: { y: { beginAtZero: false, title: { display: true, text: 'Prijsindex (2019 = 100)' } } } }
         });
 
 
