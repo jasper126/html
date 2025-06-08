@@ -391,10 +391,19 @@
 
         .results-tabs {
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            overflow-x: auto;
             margin-bottom: 1.5rem;
             border-bottom: 1px solid var(--secondary-medium);
         }
+        .results-tabs::-webkit-scrollbar {
+            height: 5px;
+        }
+        .results-tabs::-webkit-scrollbar-thumb {
+            background: var(--secondary-medium); 
+            border-radius: 10px;
+        }
+
 
         .result-tab {
             padding: 0.75rem 1.25rem;
@@ -404,6 +413,7 @@
             transition: all 0.3s ease;
             border-bottom: 2px solid transparent;
             margin-bottom: -1px; /* Align with border */
+            white-space: nowrap;
         }
 
         .result-tab:hover {
@@ -679,13 +689,6 @@
             .btn {
                 width: 100%;
                 box-sizing: border-box;
-            }
-            .results-tabs {
-                 flex-wrap: nowrap;
-                 overflow-x: auto;
-            }
-            .result-tab {
-                white-space: nowrap;
             }
         }
     </style>
