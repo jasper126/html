@@ -972,8 +972,8 @@
             
             <div class="result-panel" id="comparison-panel">
                  <div class="panel-section">
-                    <h4>Netto Huurrendement Vergelijking</h4>
-                    <p>Uw geschatte netto huurrendement in Montenegro vergeleken met vergelijkbare investeringen in andere populaire landen.</p>
+                    <h4>Resultaten Vergelijking</h4>
+                    <p>Uw geschatte resultaten in Montenegro vergeleken met vergelijkbare investeringen in andere populaire landen, gebaseerd op de ingevoerde aankoopprijs.</p>
                     <div class="chart-container" style="height: 400px;">
                         <canvas id="country-comparison-chart"></canvas>
                     </div>
@@ -1291,7 +1291,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 };
                 break;
             case 'Portugal':
-                // AANGEPAST: Belasting op netto ipv bruto
                 params = { 
                     totalTransactionCostRate: 0.073,
                     grossYieldRate: 0.055, 
@@ -1482,12 +1481,13 @@ document.addEventListener('DOMContentLoaded', function () {
             'Italië': { yield: allResults.italië.netRentalYield, tax: allResults.italië.taxAmount, taxRate: allResults.italië.effectiveTaxRate, taxBase: allResults.italië.taxOnGross ? 'bruto' : 'netto', netCashflow: allResults.italië.netAnnualCashflow, color: '#31C48D' }
         };
 
+        // AANGEPAST: Tabelgeneratie met dynamische kolomkop
         const comparisonTable = document.getElementById('country-comparison-table');
         comparisonTable.innerHTML = `
             <thead>
               <tr>
                 <th>Land</th>
-                <th>Netto Inkomen (Jaarlijks)</th>
+                <th>Netto Inkomen (bij ${formatCurrency(inputs.purchasePrice)})</th>
                 <th>Inkomstenbelasting (Jaarlijks)</th>
                 <th>Netto Huurrendement</th>
               </tr>
@@ -1510,7 +1510,6 @@ document.addEventListener('DOMContentLoaded', function () {
             </tbody>`;
 
         drawChartsForPanel('summary', inputs, allResults, countryData);
-        // Ensure all charts are drawn initially
         Object.keys(charts).forEach(key => charts[key].destroy());
         charts = {};
         drawChartsForPanel('summary', inputs, allResults, countryData);
