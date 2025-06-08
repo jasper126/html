@@ -1267,38 +1267,81 @@ document.addEventListener('DOMContentLoaded', function () {
         return { montenegro, spanje, portugal, italië };
     }
 
-    // ==================================================================
-    // START VAN DE GECORRIGEERDE FUNCTIE
-    // ==================================================================
     function calculateCountry(inputs, country) {
         const results = {};
         const { purchasePrice, isNewBuild, propertySize, furnishingCosts, managementPreference, usageType, personalUsageWeeks, needFinancing, financingInterestRate, financingTerm, ownCapital } = inputs;
 
         let params = {};
-        // Parameters from the report
+        
+        // Based on "Documentanalyse en gegevensverificatie vier landen_.pdf"
         switch(country) {
             case 'Montenegro':
-                params = { transferTaxRate: 0.03, notaryRate: 0.005, registrationRate: 0.003, brokerageRate: 0.0225, lawyerFee: 500, grossYieldRate: 0.09, managementFeeRate: { "Volledig uitbesteden": 0.20, "Gedeeltelijk uitbesteden": 0.10, "Zelf actief beheren": 0.05 }[managementPreference] };
+                // Using conservative average from document 
+                // Beheerkosten 10% lange termijn 
+                // Belasting ~11.87% op bruto 
+                params = { 
+                    grossYieldRate: 0.065, 
+                    managementFeeRate: { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0.05 }[managementPreference],
+                    effectiveTaxRate: 0.1187,
+                    taxOnGross: true
+                };
                 break;
             case 'Spanje':
-                params = { totalTransactionCostRate: 0.108, grossYieldRate: 0.055, managementFeeRate: 0.225 };
+                // Using Valencia example 
+                // Beheerkosten 10% lange termijn 
+                // Belasting ~15% op netto 
+                params = { 
+                    totalTransactionCostRate: 0.116,
+                    grossYieldRate: 0.06, 
+                    managementFeeRate: 0.10,
+                    effectiveTaxRate: 0.15,
+                    taxOnGross: false
+                };
                 break;
             case 'Portugal':
-                params = { totalTransactionCostRate: 0.068, grossYieldRate: 0.0625, managementFeeRate: 0.275 };
+                 // Using average for cities/coast 
+                 // Beheerkosten 8% lange termijn 
+                 // Belasting 28% op bruto 
+                params = { 
+                    totalTransactionCostRate: 0.073,
+                    grossYieldRate: 0.055, 
+                    managementFeeRate: 0.08,
+                    effectiveTaxRate: 0.28,
+                    taxOnGross: true
+                };
                 break;
             case 'Italië':
-                params = { totalTransactionCostRate: 0.074, grossYieldRate: 0.0475, managementFeeRate: 0.20 };
+                // Using recenter average 
+                // Beheerkosten 10% lange termijn 
+                // Belasting 21% (Cedolare Secca) op bruto 
+                params = { 
+                    totalTransactionCostRate: 0.106,
+                    grossYieldRate: 0.055, 
+                    managementFeeRate: 0.10,
+                    effectiveTaxRate: 0.21,
+                    taxOnGross: true
+                };
                 break;
         }
 
         results.purchasePrice = purchasePrice || 0;
         let totalAdditionalCosts = 0;
+        
         if (country === 'Montenegro') {
-            results.transferTax = isNewBuild ? 0 : results.purchasePrice * params.transferTaxRate;
-            results.notaryCosts = results.purchasePrice * params.notaryRate;
-            results.registrationCosts = results.purchasePrice * params.registrationRate;
-            results.brokerageCosts = results.purchasePrice * params.brokerageRate;
-            results.lawyerCosts = params.lawyerFee;
+            // Progressive tax based on document 
+            if (results.purchasePrice <= 150000) {
+                results.transferTax = results.purchasePrice * 0.03;
+            } else if (results.purchasePrice <= 500000) {
+                results.transferTax = 4500 + (results.purchasePrice - 150000) * 0.05;
+            } else {
+                results.transferTax = 22000 + (results.purchasePrice - 500000) * 0.06;
+            }
+            if(isNewBuild) results.transferTax = 0; // No transfer tax on new build 
+
+            results.notaryCosts = 400; // Estimate from doc 
+            results.registrationCosts = 50; // Estimate from doc 
+            results.brokerageCosts = 0; // Not typically paid by buyer
+            results.lawyerCosts = results.purchasePrice * 0.01; // Estimate from doc 
             results.furnishingCosts = furnishingCosts;
             totalAdditionalCosts = results.transferTax + results.notaryCosts + results.registrationCosts + results.brokerageCosts + results.lawyerCosts + results.furnishingCosts;
         } else {
@@ -1307,28 +1350,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
         results.totalInvestment = results.purchasePrice + totalAdditionalCosts;
 
-        // --- START GECORRIGEERDE FINANCIERINGSSECTIE ---
-        results.annualFinancingCost = 0; // Standaard op 0
-        results.financingAmount = 0;     // Standaard op 0
+        results.annualFinancingCost = 0;
+        results.financingAmount = 0;
 
         if(country === 'Montenegro' && needFinancing) {
             results.financingAmount = Math.max(0, results.totalInvestment - ownCapital);
             if (results.financingAmount > 0 && financingTerm > 0) {
-                // Alleen berekenen als er een rentepercentage is om NaN te voorkomen
                 if (financingInterestRate > 0) {
-                    const r = financingInterestRate / 12; // Maandelijkse rente
-                    const n = financingTerm * 12;       // Totaal aantal maanden
+                    const r = financingInterestRate / 12;
+                    const n = financingTerm * 12;
                     const monthlyPayment = (results.financingAmount * (r * Math.pow(1 + r, n))) / (Math.pow(1 + r, n) - 1);
-                    
-                    // Controleer of de berekening een geldig getal is, voordat we vermenigvuldigen
                     if (isFinite(monthlyPayment)) {
                         results.annualFinancingCost = monthlyPayment * 12;
                     }
                 }
-                // Als financingInterestRate 0 is, blijft annualFinancingCost 0.
             }
         }
-        // --- EINDE GECORRIGEERDE FINANCIERINGSSECTIE ---
         
         results.ownCapitalContribution = results.totalInvestment - (results.financingAmount || 0);
 
@@ -1348,21 +1385,28 @@ document.addEventListener('DOMContentLoaded', function () {
         
         results.grossAnnualRentalIncome = grossAnnualRentalIncome; 
         results.managementFeeRate = params.managementFeeRate; 
-        results.rentalManagementFee = grossAnnualRentalIncome * params.managementFeeRate;
+        results.rentalManagementFee = grossAnnualRentalIncome * results.managementFeeRate;
         results.netAnnualRentalIncome = grossAnnualRentalIncome - results.rentalManagementFee;
 
-        results.netAnnualCashflow = results.netAnnualRentalIncome - results.totalAnnualCostsBeforeFinancing - results.annualFinancingCost;
+        let taxAmount = 0;
+        if(params.taxOnGross){
+            taxAmount = results.grossAnnualRentalIncome * params.effectiveTaxRate;
+        } else {
+            // Tax on net income (Spain scenario)
+            const netIncomeBeforeTax = results.netAnnualRentalIncome - results.totalAnnualCostsBeforeFinancing;
+            taxAmount = Math.max(0, netIncomeBeforeTax) * params.effectiveTaxRate;
+        }
+        results.taxAmount = taxAmount;
+
+        results.netAnnualCashflow = results.netAnnualRentalIncome - results.totalAnnualCostsBeforeFinancing - results.annualFinancingCost - results.taxAmount;
         
         results.netRentalYield = (results.totalInvestment > 0) ? results.netAnnualCashflow / results.totalInvestment : 0;
         results.cashOnCashReturn = (results.ownCapitalContribution > 0) ? results.netAnnualCashflow / results.ownCapitalContribution : 0;
         
-        results.avgAppreciation = 0.125; // Historical average from report
+        results.avgAppreciation = 0.125; 
 
         return results;
     }
-    // ==================================================================
-    // EINDE VAN DE GECORRIGEERDE FUNCTIE
-    // ==================================================================
 
 
     function displayResults(inputs, allResults) {
@@ -1380,10 +1424,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('investment-table').innerHTML = `
             <tbody>
                 <tr><td>Aankoopprijs</td><td>${formatCurrency(montenegro.purchasePrice)}</td></tr>
-                <tr><td>Overdrachtsbelasting (3%)</td><td>${formatCurrency(montenegro.transferTax)}</td></tr>
-                <tr><td>Notariskosten (~0.5%)</td><td>${formatCurrency(montenegro.notaryCosts)}</td></tr>
-                <tr><td>Registratiekosten (~0.3%)</td><td>${formatCurrency(montenegro.registrationCosts)}</td></tr>
-                <tr><td>Makelaarskosten (~2.25%)</td><td>${formatCurrency(montenegro.brokerageCosts)}</td></tr>
+                <tr><td>Overdrachtsbelasting</td><td>${formatCurrency(montenegro.transferTax)}</td></tr>
+                <tr><td>Notariskosten</td><td>${formatCurrency(montenegro.notaryCosts)}</td></tr>
+                <tr><td>Registratiekosten</td><td>${formatCurrency(montenegro.registrationCosts)}</td></tr>
                 <tr><td>Advocaatkosten</td><td>${formatCurrency(montenegro.lawyerCosts)}</td></tr>
                 <tr><td>Inrichtingskosten</td><td>${formatCurrency(montenegro.furnishingCosts)}</td></tr>
                 <tr class="total-row"><td>Totale Investering</td><td>${formatCurrency(montenegro.totalInvestment)}</td></tr>
@@ -1391,14 +1434,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 <tr><td>Financiering</td><td>${formatCurrency(montenegro.financingAmount || 0)}</td></tr>
             </tbody>`;
 
+        const totalAnnualCosts = montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost + montenegro.taxAmount;
         document.getElementById('costs-table').innerHTML = `
                  <tbody>
                     <tr><td>Onroerendgoedbelasting</td><td>${formatCurrency(montenegro.annualPropertyTax)}</td></tr>
                     <tr><td>Verzekering</td><td>${formatCurrency(montenegro.annualInsurance)}</td></tr>
                     <tr><td>Onderhoud & VvE</td><td>${formatCurrency(montenegro.annualMaintenance)}</td></tr>
-                    <tr class="total-row"><td>Operationele Kosten</td><td>${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing)}</td></tr>
                     <tr><td>Jaarlijkse Financieringskosten</td><td>${formatCurrency(montenegro.annualFinancingCost)}</td></tr>
-                    <tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td>${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost)}</td></tr>
+                    <tr><td>Inkomstenbelasting</td><td>${formatCurrency(montenegro.taxAmount)}</td></tr>
+                    <tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td>${formatCurrency(totalAnnualCosts)}</td></tr>
                 </tbody>`;
         
         const rentalIncomeTable = document.getElementById('rental-income-table').parentElement;
@@ -1414,7 +1458,7 @@ document.addEventListener('DOMContentLoaded', function () {
                  </tbody>`;
              document.getElementById('net-rental-result-table').innerHTML = `<tbody>
                      <tr><td>Netto Huurinkomsten</td><td>${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
-                     <tr><td>Totale Jaarlijkse Kosten</td><td>-${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost)}</td></tr>
+                     <tr><td>Totale Jaarlijkse Kosten</td><td>-${formatCurrency(totalAnnualCosts)}</td></tr>
                      <tr class="total-row"><td>Netto Cashflow</td><td>${formatCurrency(montenegro.netAnnualCashflow)}</td></tr>
                  </tbody>`;
         } else {
@@ -1422,7 +1466,7 @@ document.addEventListener('DOMContentLoaded', function () {
             netRentalResultTable.style.display = 'block';
             document.getElementById('net-rental-result-table').innerHTML = `<tbody>
                      <tr><td>Gebruik</td><td>Alleen eigen gebruik</td></tr>
-                     <tr><td>Jaarlijkse Kosten</td><td>-${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost)}</td></tr>
+                     <tr><td>Jaarlijkse Kosten</td><td>-${formatCurrency(totalAnnualCosts)}</td></tr>
                      <tr class="total-row"><td>Netto Jaarlijkse Kosten</td><td>${formatCurrency(montenegro.netAnnualCashflow)}</td></tr>
                  </tbody>`;
         }
@@ -1445,22 +1489,28 @@ document.addEventListener('DOMContentLoaded', function () {
             </tbody>`;
         
         const countryData = {
-            'Montenegro': { yield: allResults.montenegro.netRentalYield, color: '#d4915f' },
-            'Spanje': { yield: allResults.spanje.netRentalYield, color: '#F0B429' },
-            'Portugal': { yield: allResults.portugal.netRentalYield, color: '#00A5CF' },
-            'Italië': { yield: allResults.italië.netRentalYield, color: '#31C48D' }
+            'Montenegro': { yield: allResults.montenegro.netRentalYield, tax: allResults.montenegro.taxAmount, color: '#d4915f' },
+            'Spanje': { yield: allResults.spanje.netRentalYield, tax: allResults.spanje.taxAmount, color: '#F0B429' },
+            'Portugal': { yield: allResults.portugal.netRentalYield, tax: allResults.portugal.taxAmount, color: '#00A5CF' },
+            'Italië': { yield: allResults.italië.netRentalYield, tax: allResults.italië.taxAmount, color: '#31C48D' }
         };
 
-        const comparisonTableBody = document.querySelector('#country-comparison-table');
-        comparisonTableBody.innerHTML = `<thead>
-              <tr><th>Land</th><th>Netto Huurrendement</th></tr>
+        const comparisonTable = document.getElementById('country-comparison-table');
+        comparisonTable.innerHTML = `
+            <thead>
+              <tr>
+                <th>Land</th>
+                <th>Inkomstenbelasting (Jaarlijks)</th>
+                <th>Netto Huurrendement</th>
+              </tr>
             </thead>
             <tbody>
             ${Object.keys(countryData).map(country => {
             const data = countryData[country];
-            const countryClass = country.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); // Make class names safe
+            const countryClass = country.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             return `<tr>
                      <td><span class="country-badge ${countryClass}">${country}</span></td>
+                     <td><strong>${formatCurrency(data.tax)}</strong></td>
                      <td><strong>${formatPercent(data.yield)}</strong></td>
                  </tr>`;
             }).join('')}
@@ -1487,10 +1537,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!inputs || !results) return;
 
         const countryData = {
-            'Montenegro': { yield: results.montenegro.netRentalYield, color: '#d4915f' },
-            'Spanje': { yield: results.spanje.netRentalYield, color: '#F0B429' },
-            'Portugal': { yield: results.portugal.netRentalYield, color: '#00A5CF' },
-            'Italië': { yield: results.italië.netRentalYield, color: '#31C48D' }
+            'Montenegro': { yield: results.montenegro.netRentalYield, tax: results.montenegro.taxAmount, color: '#d4915f' },
+            'Spanje': { yield: results.spanje.netRentalYield, tax: results.spanje.taxAmount, color: '#F0B429' },
+            'Portugal': { yield: results.portugal.netRentalYield, tax: results.portugal.taxAmount, color: '#00A5CF' },
+            'Italië': { yield: results.italië.netRentalYield, tax: results.italië.taxAmount, color: '#31C48D' }
         };
 
          const { montenegro } = results;
@@ -1499,23 +1549,6 @@ document.addEventListener('DOMContentLoaded', function () {
           const sharedOptions = { responsive: true, maintainAspectRatio: false };
 
         if(panelId === 'summary'){
-            destroyChart('summary-comparison-chart');
-            const summaryCtx = document.getElementById('summary-comparison-chart');
-            if (summaryCtx) {
-                charts['summary-comparison-chart'] = new Chart(summaryCtx, {
-                     type: 'bar',
-                    data: {
-                        labels: Object.keys(countryData),
-                        datasets: [ {
-                            label: 'Netto Huurrendement',
-                            data: Object.values(countryData).map(d => d.yield * 100),
-                            backgroundColor: Object.values(countryData).map(d => d.color),
-                        }]
-                    },
-                    options: { ...sharedOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: value => value + '%' } } } }
-                });
-            }
-
             destroyChart('cumulative-appreciation-chart');
             const appreciationCtx = document.getElementById('cumulative-appreciation-chart');
              if(appreciationCtx) {
@@ -1542,8 +1575,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 charts['investment-breakdown-chart'] = new Chart(investmentCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Aankoopprijs', 'Belastingen', 'Notaris/Reg.', 'Makelaar', 'Advocaat', 'Inrichting'],
-                        datasets: [{ data: [montenegro.purchasePrice, montenegro.transferTax, montenegro.notaryCosts + montenegro.registrationCosts, montenegro.brokerageCosts, montenegro.lawyerCosts, montenegro.furnishingCosts], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#F0B429', '#31C48D'], borderWidth: 0 }]
+                        labels: ['Aankoopprijs', 'Belastingen', 'Notaris/Reg.', 'Advocaat', 'Inrichting'],
+                        datasets: [{ data: [montenegro.purchasePrice, montenegro.transferTax, montenegro.notaryCosts + montenegro.registrationCosts, montenegro.lawyerCosts, montenegro.furnishingCosts], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#F0B429'], borderWidth: 0 }]
                     },
                     options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
                 });
@@ -1552,11 +1585,14 @@ document.addEventListener('DOMContentLoaded', function () {
             destroyChart('annual-costs-chart');
              const costsCtx = document.getElementById('annual-costs-chart');
              if (costsCtx) {
+                const costsData = [montenegro.annualPropertyTax, montenegro.annualInsurance, montenegro.annualMaintenance, montenegro.annualFinancingCost, montenegro.taxAmount].filter(v => v > 0);
+                const costsLabels = ['Vastgoedbelasting', 'Verzekering', 'Onderhoud/VvE', 'Financiering', 'Inkomstenbelasting'].filter((_, i) => [montenegro.annualPropertyTax, montenegro.annualInsurance, montenegro.annualMaintenance, montenegro.annualFinancingCost, montenegro.taxAmount][i] > 0);
+
                 charts['annual-costs-chart'] = new Chart(costsCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Vastgoedbelasting', 'Verzekering', 'Onderhoud/VvE', 'Financiering'],
-                        datasets: [{ data: [montenegro.annualPropertyTax, montenegro.annualInsurance, montenegro.annualMaintenance, montenegro.annualFinancingCost], backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98'], borderWidth: 0 }]
+                        labels: costsLabels,
+                        datasets: [{ data: costsData, backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#F0B429'], borderWidth: 0 }]
                     },
                     options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
                 });
