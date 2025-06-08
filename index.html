@@ -1286,17 +1286,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     totalTransactionCostRate: 0.116,
                     grossYieldRate: 0.06, 
                     managementFeeRate: 0.10,
-                    effectiveTaxRate: 0.19, // AANGEPAST naar 19%
+                    effectiveTaxRate: 0.19,
                     taxOnGross: false
                 };
                 break;
             case 'Portugal':
+                // AANGEPAST: Belasting op netto ipv bruto
                 params = { 
                     totalTransactionCostRate: 0.073,
                     grossYieldRate: 0.055, 
                     managementFeeRate: 0.08,
                     effectiveTaxRate: 0.28,
-                    taxOnGross: true
+                    taxOnGross: false 
                 };
                 break;
             case 'Italië':
