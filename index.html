@@ -1119,12 +1119,61 @@ document.addEventListener('DOMContentLoaded', function () {
     const personalUsageWeeksSlider = document.getElementById('personalUsageWeeks');
     const contactForm = document.getElementById('contact-form');
     const purchasePriceInput = document.getElementById('purchasePrice');
-    const ownCapitalInput = document.getElementById('ownCapital');
     
-    // =========================================================================================
-    // START HERSTELDE EN VEREENVOUDIGDE EVENT LISTENERS
-    // =========================================================================================
-    
+    // --- Event Listeners ---
+    function setupListeners() {
+        nextBtn.addEventListener('click', () => {
+            const totalForms = document.querySelectorAll('.input-form').length - 1;
+            if (currentStep < totalForms) {
+                currentStep++;
+                updateFormState();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                updateFormState();
+            }
+        });
+        
+        calculateBtn.addEventListener('click', runCalculation);
+
+        purchasePriceInput.addEventListener('input', () => {
+            if (currentStep === 1) updateFormState();
+        });
+
+        if (contactForm) {
+            contactForm.addEventListener('submit', handleFormSubmit);
+        }
+        
+        mainTabs.forEach(tab => tab.addEventListener('click', () => switchMainTab(tab)));
+        resultTabs.forEach(tab => tab.addEventListener('click', () => switchResultTab(tab)));
+        
+        document.getElementById('back-to-input').addEventListener('click', () => {
+            switchMainTab(document.querySelector('.tab[data-tab="input"]'));
+        });
+
+        needFinancingToggle.addEventListener('change', () => {
+            financingDetails.style.display = needFinancingToggle.checked ? 'block' : 'none';
+            document.getElementById('yes-financing-label').classList.toggle('active', needFinancingToggle.checked);
+            document.getElementById('yes-financing-label').classList.toggle('inactive', !needFinancingToggle.checked);
+            document.getElementById('no-financing-label').classList.toggle('active', !needFinancingToggle.checked);
+            document.getElementById('no-financing-label').classList.toggle('inactive', needFinancingToggle.checked);
+        });
+        
+        usageTypeSelect.addEventListener('change', () => {
+            const usage = usageTypeSelect.value;
+            rentalDetails.style.display = (usage === 'Combinatie') ? 'block' : 'none';
+            if (usage !== 'Combinatie' && usage !== 'Vakantiewoning') {
+                 personalUsageWeeksSlider.value = 0;
+                 personalUsageWeeksSlider.dispatchEvent(new Event('input'));
+            }
+        });
+        
+        setupRangeSlider('personalUsageWeeks', 'personalUsageWeeksValue');
+    }
+
     // --- Navigatie & UI Functies ---
     function updateFormState() {
         const isStartScreen = currentStep === 0;
@@ -1145,111 +1194,42 @@ document.addEventListener('DOMContentLoaded', function () {
         nextBtn.style.display = currentStep === totalForms ? 'none' : 'inline-block';
         calculateBtn.style.display = currentStep === totalForms ? 'inline-block' : 'none';
         
-        if (currentStep === 1) {
-            nextBtn.disabled = (parseFloat(purchasePriceInput.value) || 0) <= 0;
-        } else {
-            nextBtn.disabled = false;
-        }
-    }
-
-    nextBtn.addEventListener('click', () => {
-        const totalForms = document.querySelectorAll('.input-form').length - 1;
-        if (currentStep < totalForms) {
-            currentStep++;
-            updateFormState();
-        }
-    });
-
-    prevBtn.addEventListener('click', () => {
-        if (currentStep > 0) {
-            currentStep--;
-            updateFormState();
-        }
-    });
-    
-    calculateBtn.addEventListener('click', () => {
-        const inputs = gatherInputs();
-        const results = calculateAll(inputs);
-        lastCalculation = { inputs, results }; 
-        displayResults(inputs, results);
-        const resultsTab = document.querySelector('.tab[data-tab="results"]');
-        resultsTab.classList.remove('disabled');
-        resultsTab.click();
-    });
-
-    // Overige listeners
-    purchasePriceInput.addEventListener('input', () => {
-        if (currentStep === 1) updateFormState();
-    });
-
-    if (contactForm) {
-        contactForm.addEventListener('submit', handleFormSubmit);
+        nextBtn.disabled = (currentStep === 1 && (parseFloat(purchasePriceInput.value) || 0) <= 0);
     }
     
-    mainTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            if (tab.classList.contains('disabled')) return;
-            mainTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            calculatorSections.forEach(s => s.classList.remove('active'));
-            document.getElementById(`${tab.dataset.tab}-section`).classList.add('active');
-            if (tab.dataset.tab === 'input') {
-                currentStep = 0;
-                updateFormState();
-            }
-        });
-    });
-
-    resultTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            resultTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            resultPanels.forEach(p => p.classList.remove('active'));
-            const activePanel = document.getElementById(`${tab.dataset.result}-panel`);
-            if (activePanel) {
-                activePanel.classList.add('active');
-                drawChartsForPanel(tab.dataset.result);
-            }
-        });
-    });
-    
-    document.getElementById('back-to-input').addEventListener('click', () => {
-        document.querySelector('.tab[data-tab="input"]').click();
-    });
-
-    needFinancingToggle.addEventListener('change', () => {
-        financingDetails.style.display = needFinancingToggle.checked ? 'block' : 'none';
-        const yesLabel = document.getElementById('yes-financing-label');
-        const noLabel = document.getElementById('no-financing-label');
-        yesLabel.classList.toggle('active', needFinancingToggle.checked);
-        yesLabel.classList.toggle('inactive', !needFinancingToggle.checked);
-        noLabel.classList.toggle('active', !needFinancingToggle.checked);
-        noLabel.classList.toggle('inactive', needFinancingToggle.checked);
-    });
-    
-    usageTypeSelect.addEventListener('change', () => {
-        const usage = usageTypeSelect.value;
-        const slider = document.getElementById('personalUsageWeeks');
-        rentalDetails.style.display = (usage === 'Combinatie') ? 'block' : 'none';
-        if (usage !== 'Combinatie' && usage !== 'Vakantiewoning') {
-             slider.value = 0;
-             slider.dispatchEvent(new Event('input'));
+    function switchMainTab(tab) {
+        if (tab.classList.contains('disabled')) return;
+        mainTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        calculatorSections.forEach(s => s.classList.remove('active'));
+        document.getElementById(`${tab.dataset.tab}-section`).classList.add('active');
+        if (tab.dataset.tab === 'input') {
+            currentStep = 0;
+            updateFormState();
         }
-    });
-
+    }
+    
+    function switchResultTab(tab) {
+        resultTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        resultPanels.forEach(p => p.classList.remove('active'));
+        const activePanel = document.getElementById(`${tab.dataset.result}-panel`);
+        if (activePanel) {
+            activePanel.classList.add('active');
+            drawChartsForPanel(tab.dataset.result);
+        }
+    }
+    
     function setupRangeSlider(sliderId, displayId) {
         const slider = document.getElementById(sliderId);
         const display = document.getElementById(displayId);
-        const update = () => { if(display) display.textContent = slider.value; };
+        if(!slider || !display) return;
+        const update = () => { display.textContent = slider.value; };
         slider.addEventListener('input', update);
         update();
     }
-    // =========================================================================================
-    // EINDE HERSTELDE NAVIGATIE
-    // =========================================================================================
-    
 
-    // --- CTA Formulier Afhandeling (zonder PDF) ---
+    // --- CTA Formulier Afhandeling ---
     function handleFormSubmit(event) {
         event.preventDefault();
         const statusDiv = document.getElementById('form-status');
@@ -1282,6 +1262,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // --- Kernberekeningen ---
+    function runCalculation() {
+        const inputs = gatherInputs();
+        const results = calculateAll(inputs);
+        lastCalculation = { inputs, results }; 
+        displayResults(inputs, results);
+        const resultsTab = document.querySelector('.tab[data-tab="results"]');
+        resultsTab.classList.remove('disabled');
+        switchMainTab(resultsTab);
+        switchResultTab(document.querySelector('.result-tab.active'));
+    }
+    
     function gatherInputs() {
         return {
             purchasePrice: parseFloat(document.getElementById('purchasePrice').value) || 0,
@@ -1301,11 +1292,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     function calculateAll(inputs) {
-        const montenegro = calculateCountry(inputs, 'Montenegro');
-        const spanje = calculateCountry(inputs, 'Spanje');
-        const portugal = calculateCountry(inputs, 'Portugal');
-        const italië = calculateCountry(inputs, 'Italië');
-        return { montenegro, spanje, portugal, italië };
+        return {
+            montenegro: calculateCountry(inputs, 'Montenegro'),
+            spanje: calculateCountry(inputs, 'Spanje'),
+            portugal: calculateCountry(inputs, 'Portugal'),
+            italië: calculateCountry(inputs, 'Italië')
+        };
     }
 
     function calculateCountry(inputs, country) {
@@ -1387,6 +1379,7 @@ document.addEventListener('DOMContentLoaded', function () {
              results.annualPropertyTax = purchasePrice * propertyTaxAndInsuranceRate * 0.7;
              results.annualInsurance = purchasePrice * propertyTaxAndInsuranceRate * 0.3;
              annualMaintenance = purchasePrice * 0.008;
+             results.annualMaintenanceDescription = 'Onderhoud (schatting)';
         }
         results.annualMaintenance = annualMaintenance;
         results.totalAnnualCostsBeforeFinancing = results.annualPropertyTax + results.annualInsurance + results.annualMaintenance;
@@ -1428,7 +1421,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('summary-total-investment').textContent = formatCurrency(montenegro.totalInvestment);
         document.getElementById('summary-annual-result').textContent = formatCurrency(montenegro.netAnnualCashflow);
         document.getElementById('summary-rental-yield').textContent = formatPercent(montenegro.netRentalYield, 2);
-        document.getElementById('summary-appreciation').textContent = formatPercent(montenegro.avgAppreciation, 2);
+        document.getElementById('summary-appreciation').textContent = formatPercent(montenegro.avgAppreciation, 1);
         
         const totalAnnualCosts = montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost + montenegro.taxAmount;
         document.getElementById('costs-table').innerHTML = `<tbody>
@@ -1443,8 +1436,8 @@ document.addEventListener('DOMContentLoaded', function () {
         displayOnetimeCostComparison(allResults, inputs.purchasePrice, formatCurrency, formatPercent);
         displayRentalAndRoi(inputs, montenegro, totalAnnualCosts, formatCurrency, formatPercent);
         
-        drawChartsForPanel('summary', allResults);
-        drawChartsForPanel('financial', allResults);
+        drawChartsForPanel('summary');
+        drawChartsForPanel('financial');
     }
     
     function displayOnetimeCostComparison(allResults, purchasePrice, formatCurrency, formatPercent) {
@@ -1484,7 +1477,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function displayRentalAndRoi(inputs, montenegro, totalAnnualCosts, formatCurrency, formatPercent) {
-        // This function bundles the remaining table displays
         const rentalIncomeTable = document.getElementById('rental-income-table').parentElement;
         const netRentalResultTable = document.getElementById('net-rental-result-table').parentElement;
         if (inputs.usageType !== 'Vakantiewoning') {
@@ -1500,11 +1492,109 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('roi-table').innerHTML = `<tbody><tr><td>Netto Huurrendement</td><td class="numeric-cell">${formatPercent(montenegro.netRentalYield, 2)}</td></tr><tr><td>Cash-on-Cash Rendement</td><td class="numeric-cell">${formatPercent(montenegro.cashOnCashReturn, 2)}</td></tr></tbody>`;
     }
     
-    function drawChartsForPanel(panelId, allResults) { /* Functie blijft ongewijzigd */ }
+    // =========================================================================================
+    // START HERSTELDE GRAFIEK FUNCTIES
+    // =========================================================================================
+    function destroyChart(chartId) {
+        if (charts[chartId]) {
+            charts[chartId].destroy();
+        }
+    }
+
+    function drawChartsForPanel(panelId) {
+        const { inputs, results } = lastCalculation;
+        if (!inputs || !results) return;
+
+        Chart.defaults.font.family = "'Open Sans', sans-serif";
+        Chart.defaults.color = 'var(--text-secondary)';
+        const sharedOptions = { responsive: true, maintainAspectRatio: false, animation: { duration: 800 } };
+
+        if (panelId === 'summary') {
+            destroyChart('country-comparison-chart');
+            const comparisonCtx = document.getElementById('country-comparison-chart');
+            if (comparisonCtx) {
+                charts['country-comparison-chart'] = new Chart(comparisonCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Montenegro', 'Spanje', 'Portugal', 'Italië'],
+                        datasets: [{
+                            label: 'Netto Huurrendement',
+                            data: [
+                                results.montenegro.netRentalYield * 100,
+                                results.spanje.netRentalYield * 100,
+                                results.portugal.netRentalYield * 100,
+                                results.italië.netRentalYield * 100
+                            ],
+                            backgroundColor: ['#d4915f', '#F0B429', '#00A5CF', '#31C48D']
+                        }]
+                    },
+                    options: { ...sharedOptions, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: value => value.toFixed(1) + '%' } } } }
+                });
+            }
+
+            destroyChart('cumulative-appreciation-chart');
+            const appreciationCtx = document.getElementById('cumulative-appreciation-chart');
+            if (appreciationCtx) {
+                 charts['cumulative-appreciation-chart'] = new Chart(appreciationCtx, { type: 'line',
+                    data: { labels: ['2019', '2020', '2021', '2022', '2023', '2024'], datasets: [
+                        { label: 'Montenegro', data: [100, 92.9, 116.7, 134.4, 160.6, 180.1], borderColor: '#d4915f', tension: 0.1, pointBackgroundColor: '#d4915f' },
+                        { label: 'Spanje', data: [100, 102.1, 105.9, 113.7, 118.3, 128.1], borderColor: '#F0B429', tension: 0.1, pointBackgroundColor: '#F0B429' },
+                        { label: 'Portugal', data: [100, 106.0, 117.8, 128.0, 139.1, 150.8], borderColor: '#00A5CF', tension: 0.1, pointBackgroundColor: '#00A5CF' },
+                        { label: 'Italië', data: [100, 101.5, 103.5, 105.7, 107.9, 115.1], borderColor: '#31C48D', tension: 0.1, pointBackgroundColor: '#31C48D' }
+                    ]}, options: { ...sharedOptions, scales: { y: { title: { display: true, text: 'Prijsindex (2019 = 100)' } } } }
+                });
+            }
+        }
+
+        if (panelId === 'financial') {
+            destroyChart('investment-breakdown-chart');
+            const investmentCtx = document.getElementById('investment-breakdown-chart');
+            if (investmentCtx) {
+                const breakdown = results.montenegro.costBreakdown;
+                const chartDataPoints = {
+                    'Aankoopprijs': results.montenegro.purchasePrice,
+                    'Belasting': breakdown.transferTax || 0,
+                    'Notaris/Reg.': (breakdown.notaryCosts || 0) + (breakdown.registrationCosts || 0),
+                    'Advocaat': breakdown.lawyerCosts || 0,
+                    'Inrichting': inputs.furnishingCosts || 0
+                };
+                const chartLabels = Object.keys(chartDataPoints).filter(key => chartDataPoints[key] > 0);
+                const chartData = Object.values(chartDataPoints).filter(value => value > 0);
+
+                charts['investment-breakdown-chart'] = new Chart(investmentCtx, { type: 'doughnut',
+                    data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: ['#042943', '#d4915f', '#627D98', '#31C48D', '#F0B429'], borderWidth: 0 }] },
+                    options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
+                });
+            }
+            
+            destroyChart('annual-costs-chart');
+            const costsCtx = document.getElementById('annual-costs-chart');
+            if (costsCtx) {
+                const { montenegro } = results;
+                const costPoints = {
+                    'Vastgoedbelasting': montenegro.annualPropertyTax,
+                    'Verzekering': montenegro.annualInsurance,
+                    [montenegro.annualMaintenanceDescription || 'Onderhoud/VvE']: montenegro.annualMaintenance,
+                    'Financiering': montenegro.annualFinancingCost,
+                    'Inkomstenbelasting': montenegro.taxAmount
+                };
+                const costsLabels = Object.keys(costPoints).filter(key => costPoints[key] > 0);
+                const costsData = Object.values(costPoints).filter(value => value > 0);
+                
+                charts['annual-costs-chart'] = new Chart(costsCtx, { type: 'doughnut',
+                    data: { labels: costsLabels, datasets: [{ data: costsData, backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#F0B429'], borderWidth: 0 }] },
+                    options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
+                });
+            }
+        }
+    }
+    // =========================================================================================
+    // EINDE HERSTELDE GRAFIEK FUNCTIES
+    // =========================================================================================
     
     // Start de applicatie
+    setupListeners();
     updateFormState();
-    setupRangeSlider('personalUsageWeeks', 'personalUsageWeeksValue');
     needFinancingToggle.dispatchEvent(new Event('change'));
     usageTypeSelect.dispatchEvent(new Event('change'));
 });
