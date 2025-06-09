@@ -1301,7 +1301,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     // =========================================================================================
-    // START GECORRIGEERDE CALCULATIE FUNCTIE
+    // START GECORRIGEERDE CALCULATIE FUNCTIE (GEBASEERD OP NIEUWSTE DATA)
     // =========================================================================================
     function calculateCountry(inputs, country) {
         const results = {};
@@ -1311,48 +1311,39 @@ document.addEventListener('DOMContentLoaded', function () {
         let params = {};
         let costBreakdown = {};
 
-        // Standaard 2% Baysight kosten voor alle landen
-        costBreakdown.baysightFee = purchasePrice * 0.02;
-
         switch(country) {
             case 'Montenegro':
                 params = { managementFeeRate: { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0.05 }[managementPreference]};
-                costBreakdown.tax = isNewBuild ? purchasePrice * 0.21 : purchasePrice * 0.03;
-                // Dynamische notariskosten
-                let notaryFeeME;
-                if (purchasePrice <= 120000) {
-                    notaryFeeME = 350 * 1.21;
-                } else {
-                    const baseFee = 350;
-                    const additionalFee = Math.floor((purchasePrice - 120000) / 15000) * 10;
-                    notaryFeeME = (baseFee + additionalFee) * 1.21;
-                }
-                costBreakdown.notaryCosts = notaryFeeME;
-                costBreakdown.translatorCosts = 250;
+                // Belasting: 3% op bestaand, 0% voor koper bij nieuwbouw (BTW zit in prijs)
+                costBreakdown.tax = isNewBuild ? 0 : purchasePrice * 0.03;
+                costBreakdown.notaryCosts = 550; // Gemiddelde van €300-€800
+                costBreakdown.registrationCosts = 100; // Gemiddelde van €50-€150
+                costBreakdown.legalCosts = 550; // Gemiddelde van €300-€800
+                costBreakdown.translatorCosts = 150; // Gemiddelde van €100-€200
                 break;
             case 'Spanje':
                 params = { managementFeeRate: 0.10, effectiveTaxRate: 0.19 };
-                costBreakdown.tax = isNewBuild ? purchasePrice * 0.115 : purchasePrice * 0.08; // 10% VAT + 1.5% Stamp Duty vs 8% ITP
-                costBreakdown.notaryCosts = purchasePrice * 0.01;
-                costBreakdown.registrationCosts = 550;
+                // Belasting: 10% BTW + 1.5% Zegelrecht (nieuw) vs 8% overdracht (bestaand)
+                costBreakdown.tax = isNewBuild ? purchasePrice * 0.115 : purchasePrice * 0.08;
+                costBreakdown.notaryCosts = purchasePrice * 0.0075; // Gemiddelde 0.5-1%
+                costBreakdown.registrationCosts = purchasePrice * 0.0075; // Gemiddelde 0.5-1%
+                costBreakdown.legalCosts = purchasePrice * 0.0125; // Gemiddelde 1-1.5%
+                costBreakdown.otherCosts = 200; // NIE
                 break;
             case 'Portugal':
                 params = { managementFeeRate: 0.08, effectiveTaxRate: 0.28 };
-                let imtRate = 0.01;
-                if (purchasePrice > 101917) imtRate = 0.02;
-                if (purchasePrice > 139412) imtRate = 0.05;
-                if (purchasePrice > 190086) imtRate = 0.07;
-                if (purchasePrice > 287213) imtRate = 0.08;
-                costBreakdown.tax = purchasePrice * imtRate;
+                costBreakdown.tax = purchasePrice * 0.045; // Gemiddelde van 1-8%
                 costBreakdown.stampDuty = purchasePrice * 0.008;
-                costBreakdown.notaryRegistrationCosts = 1000;
+                costBreakdown.notaryRegistrationCosts = 1500; // Gemiddelde van €1000-€2000
+                costBreakdown.legalCosts = purchasePrice * 0.0125; // Gemiddelde 1-1.5%
                 break;
             case 'Italië':
                 params = { managementFeeRate: 0.10, taxOnGross: true };
-                const cadastralValue = purchasePrice * 0.60;
-                costBreakdown.tax = isNewBuild ? purchasePrice * 0.10 : Math.max(1000, cadastralValue * 0.09);
-                costBreakdown.notaryCosts = Math.min(3500, cadastralValue * 0.01);
-                costBreakdown.otherCosts = 100;
+                // Belasting: 9% voor tweede huis
+                costBreakdown.tax = purchasePrice * 0.09;
+                costBreakdown.notaryCosts = 3500; // Gemiddelde van €2000-€5000
+                costBreakdown.brokerageCosts = purchasePrice * 0.025; // Gemiddelde van 2-3%
+                costBreakdown.otherCosts = (125 + 500); // Kadaster + vertaling
                 break;
         }
         results.costBreakdown = costBreakdown;
@@ -1360,7 +1351,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const totalOneTimeCosts = Object.values(costBreakdown).reduce((sum, val) => sum + (val || 0), 0);
         results.totalInvestment = purchasePrice + totalOneTimeCosts + furnishingCosts;
         
-        // Financiering en jaarlijkse kosten (blijft grotendeels gelijk)
+        // Financiering en jaarlijkse kosten
         results.annualFinancingCost = 0;
         if(needFinancing) {
             const financingAmount = Math.max(0, results.totalInvestment - ownCapital);
@@ -1420,14 +1411,15 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function displayOnetimeCostComparison(allResults, purchasePrice, formatCurrency, formatPercent) {
         const costKeys = [
-            { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: 'Belasting op de aankoop. Tarief verschilt per land en of het nieuwbouw of bestaand is. Voor Italië gebaseerd op een geschatte kadastrale waarde (60% van marktwaarde).' },
-            { key: 'baysightFee', label: 'Baysight Kosten', tooltip: 'Servicekosten voor aankoopbegeleiding, vastgesteld op 2% van de aankoopprijs voor alle landen.' },
-            { key: 'stampDuty', label: 'Zegelrecht', tooltip: 'Een vaste of procentuele belasting op juridische documenten, van toepassing in Portugal en bij nieuwbouw in Spanje.' },
-            { key: 'notaryCosts', label: 'Notariskosten', tooltip: 'Kosten voor de notaris die de transactie officieel maakt. Sterk verschillend per land.' },
+            { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: 'Belasting op aankoop. Voor bestaande bouw is dit 3% in ME, ca. 8% in ES, ca. 4.5% in PT, en 9% in IT. Voor nieuwbouw is dit 0% in ME (BTW in prijs), 11.5% in ES (BTW+zegelrecht).' },
+            { key: 'stampDuty', label: 'Zegelrecht', tooltip: 'Belasting op juridische documenten, van toepassing in Portugal (0.8%).' },
+            { key: 'brokerageCosts', label: 'Makelaarskosten', tooltip: 'Commissie voor de makelaar. Alleen voor koper in Italië (ca. 2.5%).' },
+            { key: 'legalCosts', label: 'Advocaatkosten', tooltip: 'Kosten voor juridische controle. Vast bedrag in Montenegro, percentage in Spanje en Portugal.' },
+            { key: 'notaryCosts', label: 'Notariskosten', tooltip: 'Kosten voor de notaris. Vast bedrag in ME en IT, percentage in ES.' },
             { key: 'notaryRegistrationCosts', label: 'Notaris & Registratie', tooltip: 'Gecombineerde post voor notaris- en registratiekosten in Portugal.' },
-            { key: 'registrationCosts', label: 'Kadaster registratie', tooltip: 'Kosten voor het registreren van de woning op uw naam in het officiële kadaster.' },
-            { key: 'translatorCosts', label: 'Tolk (verplicht)', tooltip: 'Verplichte kosten voor een beëdigd vertaler bij de notaris in Montenegro (€200-€300).' },
-            { key: 'otherCosts', label: 'Overige kosten', tooltip: 'Extra kosten zoals een verplicht identificatienummer (Spanje) of diverse administratieve heffingen.' }
+            { key: 'registrationCosts', label: 'Kadaster registratie', tooltip: 'Kosten voor registratie in het eigendomsregister.' },
+            { key: 'translatorCosts', label: 'Tolk (verplicht)', tooltip: 'Verplichte kosten voor een beëdigd vertaler bij de notaris in Montenegro.' },
+            { key: 'otherCosts', label: 'Overige kosten', tooltip: 'Extra kosten zoals een verplicht NIE-nummer in Spanje of administratieve heffingen in Italië.' }
         ];
 
         let tableHTML = `<thead><tr><th>Kostenpost</th><th class="numeric-cell">Montenegro</th><th class="numeric-cell">Spanje</th><th class="numeric-cell">Portugal</th><th class="numeric-cell">Italië</th></tr></thead><tbody>`;
@@ -1491,7 +1483,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (charts[chartId]) charts[chartId].destroy();
     }
 
-    function drawChartsForPanel(panelId, allResults) {
+    function drawChartsForPanel(panelId) {
         const { inputs, results } = lastCalculation;
         if (!inputs || !results) return;
 
@@ -1532,15 +1524,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 const chartDataPoints = {
                     'Aankoopprijs': results.montenegro.purchasePrice,
                     'Belasting': breakdown.tax,
-                    'Baysight Kosten': breakdown.baysightFee,
+                    'Advocaat': breakdown.legalCosts,
                     'Notaris': breakdown.notaryCosts,
+                    'Registratie': breakdown.registrationCosts,
                     'Tolk': breakdown.translatorCosts,
                     'Inrichting': inputs.furnishingCosts
                 };
                 const chartLabels = Object.keys(chartDataPoints).filter(key => chartDataPoints[key] > 0);
                 const chartData = Object.values(chartDataPoints).filter(value => value > 0);
                 charts['investment-breakdown-chart'] = new Chart(investmentCtx, { type: 'doughnut',
-                    data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#E12D39', '#F0B429'], borderWidth: 0 }] },
+                    data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#E12D39', '#F0B429', '#31C48D'], borderWidth: 0 }] },
                     options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
                 });
             }
