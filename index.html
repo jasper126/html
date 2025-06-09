@@ -1027,6 +1027,15 @@
                     </div>
                     <table class="data-table" id="costs-table"></table>
                 </div>
+                <div class="considerations-list" style="border-left-color: var(--primary-turquoise);">
+                    <h4>Toelichting op de Kosten</h4>
+                     <ul>
+                        <li>De berekeningen van de eenmalige aankoopkosten zijn gebaseerd op de door u aangeleverde onderzoeksdocumenten voor 2024.</li>
+                        <li>Voor kosten die in de documenten als een percentage-range werden opgegeven (bv. 6-10%), is voor de berekening een gemiddelde of representatief tarief gebruikt.</li>
+                        <li><b>Belangrijke Aanname (Italië):</b> De registratiebelasting en notariskosten in Italië zijn gebaseerd op de kadastrale waarde. Aangezien deze niet bekend is, is voor deze berekening een realistische schatting gebruikt waarbij de kadastrale waarde 60% van de marktwaarde (aankoopprijs) bedraagt.</li>
+                        <li>Deze cijfers dienen als een nauwkeurige indicatie, maar kunnen in de praktijk afwijken. Raadpleeg altijd een lokale specialist voor een definitieve kostenopgave.</li>
+                     </ul>
+                </div>
             </div>
 
             <div class="result-panel" id="rental-panel">
@@ -1292,34 +1301,43 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     // =========================================================================================
-    // START VERNIEUWDE CALCULATIE FUNCTIE (GEBASEERD OP NIEUWE DOCUMENTEN)
+    // START GECORRIGEERDE CALCULATIE FUNCTIE
     // =========================================================================================
     function calculateCountry(inputs, country) {
         const results = {};
-        const { purchasePrice, isNewBuild, propertyType, region, furnishingCosts, managementPreference, usageType, needFinancing, financingInterestRate, financingTerm, ownCapital } = inputs;
+        const { purchasePrice, isNewBuild, region, furnishingCosts, managementPreference, usageType, needFinancing, financingInterestRate, financingTerm, ownCapital } = inputs;
         
         results.purchasePrice = purchasePrice || 0;
         let params = {};
         let costBreakdown = {};
 
+        // Standaard 2% Baysight kosten voor alle landen
+        costBreakdown.baysightFee = purchasePrice * 0.02;
+
         switch(country) {
             case 'Montenegro':
                 params = { managementFeeRate: { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0.05 }[managementPreference]};
                 costBreakdown.tax = isNewBuild ? purchasePrice * 0.21 : purchasePrice * 0.03;
-                costBreakdown.notaryCosts = 424; // €350 + 21% BTW
-                costBreakdown.legalBrokerCosts = purchasePrice * 0.03;
-                costBreakdown.translatorCosts = 250; // Gemiddelde van €200-€300, verplicht
+                // Dynamische notariskosten
+                let notaryFeeME;
+                if (purchasePrice <= 120000) {
+                    notaryFeeME = 350 * 1.21;
+                } else {
+                    const baseFee = 350;
+                    const additionalFee = Math.floor((purchasePrice - 120000) / 15000) * 10;
+                    notaryFeeME = (baseFee + additionalFee) * 1.21;
+                }
+                costBreakdown.notaryCosts = notaryFeeME;
+                costBreakdown.translatorCosts = 250;
                 break;
             case 'Spanje':
                 params = { managementFeeRate: 0.10, effectiveTaxRate: 0.19 };
-                costBreakdown.tax = isNewBuild ? purchasePrice * 0.115 : purchasePrice * 0.08; // 10% VAT + 1.5% Stamp Duty (avg) vs 8% ITP (avg)
+                costBreakdown.tax = isNewBuild ? purchasePrice * 0.115 : purchasePrice * 0.08; // 10% VAT + 1.5% Stamp Duty vs 8% ITP
                 costBreakdown.notaryCosts = purchasePrice * 0.01;
-                costBreakdown.registrationCosts = 550; // Gemiddelde van €400-€700
-                costBreakdown.legalCosts = purchasePrice * 0.015;
+                costBreakdown.registrationCosts = 550;
                 break;
             case 'Portugal':
                 params = { managementFeeRate: 0.08, effectiveTaxRate: 0.28 };
-                // Vereenvoudigde IMT voor 2e woning
                 let imtRate = 0.01;
                 if (purchasePrice > 101917) imtRate = 0.02;
                 if (purchasePrice > 139412) imtRate = 0.05;
@@ -1328,16 +1346,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 costBreakdown.tax = purchasePrice * imtRate;
                 costBreakdown.stampDuty = purchasePrice * 0.008;
                 costBreakdown.notaryRegistrationCosts = 1000;
-                costBreakdown.legalCosts = 2250;
-                costBreakdown.brokerageCosts = purchasePrice * 0.05;
                 break;
             case 'Italië':
                 params = { managementFeeRate: 0.10, taxOnGross: true };
-                const cadastralValue = purchasePrice * 0.60; // Aanname: kadastrale waarde is 60% van marktwaarde
-                costBreakdown.tax = Math.max(1000, cadastralValue * 0.09); // 9% voor 2e woning, min €1000
+                const cadastralValue = purchasePrice * 0.60;
+                costBreakdown.tax = isNewBuild ? purchasePrice * 0.10 : Math.max(1000, cadastralValue * 0.09);
                 costBreakdown.notaryCosts = Math.min(3500, cadastralValue * 0.01);
-                costBreakdown.brokerageCosts = purchasePrice * 0.0366; // 3% + 22% BTW
-                costBreakdown.otherCosts = 100; // Hypotheek/kadaster rechten
+                costBreakdown.otherCosts = 100;
                 break;
         }
         results.costBreakdown = costBreakdown;
@@ -1345,18 +1360,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const totalOneTimeCosts = Object.values(costBreakdown).reduce((sum, val) => sum + (val || 0), 0);
         results.totalInvestment = purchasePrice + totalOneTimeCosts + furnishingCosts;
         
+        // Financiering en jaarlijkse kosten (blijft grotendeels gelijk)
         results.annualFinancingCost = 0;
-        results.financingAmount = 0;
         if(needFinancing) {
-            results.financingAmount = Math.max(0, results.totalInvestment - ownCapital);
-            if (results.financingAmount > 0 && financingTerm > 0 && financingInterestRate > 0) {
+            const financingAmount = Math.max(0, results.totalInvestment - ownCapital);
+            if (financingAmount > 0 && financingTerm > 0 && financingInterestRate > 0) {
                 const r = financingInterestRate / 12;
                 const n = financingTerm * 12;
-                const monthlyPayment = (results.financingAmount * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+                const monthlyPayment = (financingAmount * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
                 if (isFinite(monthlyPayment)) results.annualFinancingCost = monthlyPayment * 12;
             }
         }
-        results.ownCapitalContribution = results.totalInvestment - results.financingAmount;
         
         const regionYieldMultipliers = { 'Kotor': 1.05, 'Budva': 1.15, 'Tivat': 1.10, 'Bar': 0.95, 'Noord': 0.80 };
         const regionMultiplier = regionYieldMultipliers[region] || 1.0;
@@ -1367,8 +1381,7 @@ document.addEventListener('DOMContentLoaded', function () {
         results.rentalManagementFee = grossAnnualRentalIncome * params.managementFeeRate;
         results.netAnnualRentalIncome = grossAnnualRentalIncome - results.rentalManagementFee;
         
-        // Jaarlijkse kosten en belasting op huurinkomsten
-        results.annualPropertyTax = purchasePrice * (0.1/100); // Vereenvoudigde 0.1% voor alle landen
+        results.annualPropertyTax = purchasePrice * (0.25/100);
         results.annualInsurance = purchasePrice * 0.002;
         results.annualMaintenance = purchasePrice * 0.008;
         results.totalAnnualCostsBeforeFinancing = results.annualPropertyTax + results.annualInsurance + results.annualMaintenance;
@@ -1385,9 +1398,6 @@ document.addEventListener('DOMContentLoaded', function () {
         
         return results;
     }
-    // =========================================================================================
-    // EINDE VERNIEUWDE CALCULATIE FUNCTIE
-    // =========================================================================================
 
     // --- Weergave Functies ---
     function displayResults(inputs, allResults) {
@@ -1411,10 +1421,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function displayOnetimeCostComparison(allResults, purchasePrice, formatCurrency, formatPercent) {
         const costKeys = [
             { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: 'Belasting op de aankoop. Tarief verschilt per land en of het nieuwbouw of bestaand is. Voor Italië gebaseerd op een geschatte kadastrale waarde (60% van marktwaarde).' },
+            { key: 'baysightFee', label: 'Baysight Kosten', tooltip: 'Servicekosten voor aankoopbegeleiding, vastgesteld op 2% van de aankoopprijs voor alle landen.' },
             { key: 'stampDuty', label: 'Zegelrecht', tooltip: 'Een vaste of procentuele belasting op juridische documenten, van toepassing in Portugal en bij nieuwbouw in Spanje.' },
-            { key: 'brokerageCosts', label: 'Makelaarskosten', tooltip: 'Commissie voor de makelaar. In de meeste landen voor rekening van de verkoper, maar in Italië expliciet voor de koper (3.66% incl. BTW).' },
-            { key: 'legalBrokerCosts', label: 'Juridisch advies / Makelaar', tooltip: 'Gecombineerd tarief voor juridische diensten en makelaardij in Montenegro (3%).' },
-            { key: 'legalCosts', label: 'Advocaatkosten', tooltip: 'Aanbevolen voor juridische controle van contracten en eigendomstitels. In Spanje en Portugal een percentage van de koopsom.' },
             { key: 'notaryCosts', label: 'Notariskosten', tooltip: 'Kosten voor de notaris die de transactie officieel maakt. Sterk verschillend per land.' },
             { key: 'notaryRegistrationCosts', label: 'Notaris & Registratie', tooltip: 'Gecombineerde post voor notaris- en registratiekosten in Portugal.' },
             { key: 'registrationCosts', label: 'Kadaster registratie', tooltip: 'Kosten voor het registreren van de woning op uw naam in het officiële kadaster.' },
@@ -1442,6 +1450,11 @@ document.addEventListener('DOMContentLoaded', function () {
         countryKeys.forEach(ck => tableHTML += `<td class="numeric-cell">${formatCurrency(totals[ck])}</td>`);
         tableHTML += `</tr><tr class="total-row"><td>Totaal als % van Koopsom</td>`;
         countryKeys.forEach(ck => tableHTML += `<td class="numeric-cell">${formatPercent(purchasePrice > 0 ? totals[ck] / purchasePrice : 0, 1)}</td>`);
+        tableHTML += `</tr><tr class="total-row"><td><strong>Totale Aankoopsom (incl. kosten)</strong></td>`;
+        countryKeys.forEach(ck => {
+            const totalPurchasePrice = purchasePrice + totals[ck];
+            tableHTML += `<td class="numeric-cell"><strong>${formatCurrency(totalPurchasePrice)}</strong></td>`;
+        });
         tableHTML += `</tr></tfoot>`;
         
         document.getElementById('onetime-costs-comparison-table').innerHTML = tableHTML;
@@ -1451,7 +1464,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const { montenegro } = allResults;
         const totalAnnualCosts = montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost + montenegro.taxAmount;
         document.getElementById('costs-table').innerHTML = `<tbody>
-            <tr><td>Onroerendgoedbelasting<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse belasting op onroerend goed, betaald aan de gemeente. Geschat op 0.1% van de waarde.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualPropertyTax)}</td></tr>
+            <tr><td>Onroerendgoedbelasting<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse belasting op onroerend goed, betaald aan de gemeente. Geschat op 0.25% van de waarde.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualPropertyTax)}</td></tr>
             <tr><td>Verzekering<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Geschatte jaarlijkse premie voor een opstalverzekering.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualInsurance)}</td></tr>
             <tr><td>Onderhoud<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse reservering voor onderhoudskosten.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualMaintenance)}</td></tr>
             <tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td class="numeric-cell">${formatCurrency(totalAnnualCosts)}</td></tr>
@@ -1478,7 +1491,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (charts[chartId]) charts[chartId].destroy();
     }
 
-    function drawChartsForPanel(panelId) {
+    function drawChartsForPanel(panelId, allResults) {
         const { inputs, results } = lastCalculation;
         if (!inputs || !results) return;
 
@@ -1519,15 +1532,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 const chartDataPoints = {
                     'Aankoopprijs': results.montenegro.purchasePrice,
                     'Belasting': breakdown.tax,
+                    'Baysight Kosten': breakdown.baysightFee,
                     'Notaris': breakdown.notaryCosts,
-                    'Advies/Makelaar': breakdown.legalBrokerCosts,
                     'Tolk': breakdown.translatorCosts,
                     'Inrichting': inputs.furnishingCosts
                 };
                 const chartLabels = Object.keys(chartDataPoints).filter(key => chartDataPoints[key] > 0);
                 const chartData = Object.values(chartDataPoints).filter(value => value > 0);
                 charts['investment-breakdown-chart'] = new Chart(investmentCtx, { type: 'doughnut',
-                    data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: ['#042943', '#d4915f', '#627D98', '#31C48D', '#F0B429', '#E12D39'], borderWidth: 0 }] },
+                    data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#E12D39', '#F0B429'], borderWidth: 0 }] },
                     options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
                 });
             }
