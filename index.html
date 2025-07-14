@@ -1594,6 +1594,7 @@ document.addEventListener('DOMContentLoaded', function () {
         results.netAnnualCashflow = results.netAnnualRentalIncome - results.totalAnnualCostsBeforeFinancing - results.annualFinancingCost - results.taxAmount;
         results.netRentalYield = (results.totalInvestment > 0) ? (results.netAnnualCashflow / results.totalInvestment) : 0;
         
+        results.managementFeeRate = params.managementFeeRate;
         return results;
     }
 
@@ -1701,6 +1702,7 @@ document.addEventListener('DOMContentLoaded', function () {
             netRentalResultTableContainer.style.display = 'block';
             rentalSummarySection.style.display = 'block';
             
+            // Populate rental summary
             const rentalWeeks = 52 - inputs.personalUsageWeeks;
             let summaryHTML = `
                 <div class="panel-section">
@@ -1722,11 +1724,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             summaryHTML += `
                 <tr>
-                    <td>Bruto Rendement <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">(Bruto Huur / Totale Investering). Rendement vóór aftrek van alle jaarlijkse kosten.</span></span></td>
+                    <td>Bruto Rendement <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">(Bruto Huurinkomsten / Totale Investering). Dit kengetal toont het rendement vóór aftrek van alle jaarlijkse kosten.</span></span></td>
                     <td class="numeric-cell">${formatPercent(grossYield, 2)}</td>
                 </tr>
                 <tr>
-                    <td>Netto Huurrendement <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">(Netto Resultaat / Totale Investering). Rendement na aftrek van alle jaarlijkse kosten (incl. belasting en financiering).</span></span></td>
+                    <td>Netto Huurrendement <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">(Netto Jaarlijks Resultaat / Totale Investering). Dit is het rendement na aftrek van alle kosten, inclusief belastingen en financiering.</span></span></td>
                     <td class="numeric-cell">${formatPercent(netYield, 2)}</td>
                 </tr>
             </tbody></table></div>`;
@@ -1735,13 +1737,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
             document.getElementById('rental-income-table').innerHTML = `<tbody>
                 <tr><td>Bruto Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.grossAnnualRentalIncome)}</td></tr>
-                <tr><td>Beheerkosten (${formatPercent(params.managementFeeRate || 0, 0)})</td><td class="numeric-cell">-${formatCurrency(montenegro.rentalManagementFee)}</td></tr>
+                <tr><td>Beheerkosten (${formatPercent(montenegro.managementFeeRate || 0, 0)})</td><td class="numeric-cell">${formatCurrency(montenegro.rentalManagementFee * -1)}</td></tr>
                 <tr class="total-row"><td>Netto Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
             </tbody>`;
             
             document.getElementById('net-rental-result-table').innerHTML = `<tbody>
                 <tr><td>Netto Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
-                <tr><td style="padding-left: 2rem;">- Jaarlijkse Kosten (excl. financiering)</td><td class="numeric-cell">-${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing + montenegro.taxAmount)}</td></tr>
+                <tr><td style="padding-left: 2rem;">- Jaarlijkse Operationele Kosten</td><td class="numeric-cell">-${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing)}</td></tr>
+                <tr><td style="padding-left: 2rem;">- Belasting op Huurinkomsten</td><td class="numeric-cell">-${formatCurrency(montenegro.taxAmount)}</td></tr>
                 ${montenegro.annualFinancingCost > 0 ? `<tr><td style="padding-left: 2rem;">- Financieringskosten</td><td class="numeric-cell">-${formatCurrency(montenegro.annualFinancingCost)}</td></tr>` : ''}
                 <tr class="total-row"><td>Netto Cashflow (Eindresultaat)</td><td class="numeric-cell">${formatCurrency(montenegro.netAnnualCashflow)}</td></tr>
             </tbody>`;
@@ -1775,7 +1778,6 @@ document.addEventListener('DOMContentLoaded', function () {
             destroyChart('cumulative-appreciation-chart');
             const appreciationCtx = document.getElementById('cumulative-appreciation-chart');
             if (appreciationCtx) {
-                // Calculate Montenegro index based on absolute prices from MONSTAT, with 2019 as base 100
                 const me_base = 1113;
                 const me_prices = [1113, 951, 1194, 1339, 1532, 1844];
                 const me_index = me_prices.map(p => (p / me_base) * 100);
