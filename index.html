@@ -565,6 +565,37 @@
         .considerations-list li {
             margin-bottom: 0.75rem;
         }
+        
+        .rental-summary-info {
+            background-color: var(--bg-highlight);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .rental-summary-info div {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .rental-summary-info .info-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: block;
+            font-size: 0.9rem;
+        }
+        
+        .rental-summary-info .info-value {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary-blue);
+        }
+
 
         .result-actions {
             display: flex;
@@ -1022,7 +1053,6 @@
                 <div class="result-tab active" data-result="summary">Samenvatting</div>
                 <div class="result-tab" data-result="financial">Investering & Kosten</div>
                 <div class="result-tab" data-result="rental">Verhuurpotentieel</div>
-                <div class="result-tab" data-result="roi">Rendement Analyse</div>
             </div>
             
             <div class="result-panel active" id="summary-panel">
@@ -1109,46 +1139,16 @@
             </div>
 
             <div class="result-panel" id="rental-panel">
+                <div id="rental-summary-section"></div>
+                
                 <div class="panel-section">
                     <h4>Verhuurinkomsten Prognose (Jaarlijks)</h4>
                     <table class="data-table" id="rental-income-table"></table>
                 </div>
+                
                 <div class="panel-section">
                     <h4>Netto Verhuurresultaat</h4>
                     <table class="data-table" id="net-rental-result-table"></table>
-                </div>
-                <div class="panel-section">
-                    <div class="considerations-list">
-                        <h4>Marktanalyse & Overwegingen</h4>
-                        <ul>
-                            <li><b>Regulering Korte Termijn Verhuur:</b> In Spanje, Italië en Portugal worden de regels voor korte termijn verhuur (KTV) steeds strenger. Dit verhoogt de operationele complexiteit, maar kan voordelig zijn voor professionele partijen door verminderde concurrentie.</li>
-                            <li><b>Rendementscompressie:</b> Vooral in Portugal en Spaanse hotspots stijgen de vastgoedprijzen sneller dan de huren. Dit betekent dat het rendement meer afhankelijk wordt van toekomstige waardestijging, wat een hoger risico met zich meebrengt.</li>
-                            <li><b>Montenegro's EU-Katalysator:</b> Het vooruitzicht op EU-lidmaatschap is een unieke drijfveer voor de Montenegrijnse markt, wat investeerders aantrekt die speculeren op een stijging van de vastgoedprijzen. Dit maakt het een "high-risk, high-reward" propositie.</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="result-panel" id="roi-panel">
-                <div class="panel-section">
-                    <h4>Analyse van Rendement</h4>
-                    <table class="data-table" id="roi-table"></table>
-                </div>
-                <div class="considerations-list">
-                    <h4>Toelichting Rendement</h4>
-                    <ul>
-                        <li>
-                            <b>Bruto Rendement:</b> (Bruto Jaarlijkse Huurinkomsten / Totale Investering) * 100%.
-                            <br>Dit kengetal toont het rendement voordat jaarlijkse kosten zoals belastingen, verzekering en financiering in mindering zijn gebracht.
-                        </li>
-                        <li>
-                            <b>Netto Huurrendement:</b> (Jaarlijks Netto Resultaat / Totale Investering) * 100%.
-                            <br>Dit is het directe, jaarlijkse rendement uit verhuurinkomsten, afgezet tegen uw totale investering. Het toont de directe winstgevendheid van het pand.
-                        </li>
-                        <li>
-                            <b>Cash-on-Cash Rendement:</b> Dit belangrijke kengetal meet hoeveel cash u jaarlijks overhoudt (na alle kosten, inclusief financiering) ten opzichte van het eigen geld dat u daadwerkelijk heeft ingelegd.
-                        </li>
-                    </ul>
                 </div>
             </div>
             
@@ -1462,7 +1462,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         switch(country) {
             case 'Montenegro':
-                params = { managementFeeRate: { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0.05 }[managementPreference], effectiveTaxRate: 0.15 };
+                params = { managementFeeRate: { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0 }[managementPreference], effectiveTaxRate: 0.15 };
                 if (!isNewBuild) {
                     if (purchasePrice <= 150000) { costBreakdown.tax = purchasePrice * 0.03; } 
                     else if (purchasePrice <= 500000) { costBreakdown.tax = 4500 + (purchasePrice - 150000) * 0.05; } 
@@ -1525,7 +1525,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const regionYieldMultipliers = { 'Kotor': 1.05, 'Budva': 1.15, 'Tivat': 1.10, 'Bar': 0.95, 'Noord': 0.80 };
         const regionMultiplier = regionYieldMultipliers[region] || 1.0;
         
-        // Updated yield calculations based on the new research document (averages of ranges)
         let grossYieldRate = 0;
         if (usageType === 'LangeTermijnVerhuur') {
             const ltvYields = { 'Montenegro': 0.055, 'Spanje': 0.06, 'Portugal': 0.0525, 'Italië': 0.06 };
@@ -1678,20 +1677,55 @@ document.addEventListener('DOMContentLoaded', function () {
         
         document.getElementById('costs-table').innerHTML = `<tbody>${costsTableBody}</tbody>`;
         
+        const rentalSummarySection = document.getElementById('rental-summary-section');
         const rentalIncomeTableContainer = document.getElementById('rental-income-table').closest('.panel-section');
         const netRentalResultTableContainer = document.getElementById('net-rental-result-table').closest('.panel-section');
 
         if (inputs.usageType === 'Vakantiewoning') {
             rentalIncomeTableContainer.style.display = 'none';
             netRentalResultTableContainer.style.display = 'block';
+            rentalSummarySection.style.display = 'none';
             const totalCostsOwnUse = montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost;
             document.getElementById('net-rental-result-table').innerHTML = `<tbody><tr class="total-row"><td>Netto Jaarlijkse Kosten (eigen gebruik)</td><td class="numeric-cell">${formatCurrency(totalCostsOwnUse * -1)}</td></tr></tbody>`;
-            document.getElementById('roi-panel').style.display = 'none';
         } else {
             rentalIncomeTableContainer.style.display = 'block';
             netRentalResultTableContainer.style.display = 'block';
-            document.getElementById('roi-panel').style.display = 'block';
+            rentalSummarySection.style.display = 'block';
             
+            // Populate rental summary
+            const rentalWeeks = 52 - inputs.personalUsageWeeks;
+            let summaryHTML = `
+                <div class="panel-section">
+                    <div class="rental-summary-info">
+                        <div>
+                            <span class="info-label">Weken Eigen Gebruik</span>
+                            <span class="info-value">${inputs.personalUsageWeeks}</span>
+                        </div>
+                        <div>
+                            <span class="info-label">Weken Beschikbaar voor Verhuur</span>
+                            <span class="info-value">${rentalWeeks}</span>
+                        </div>
+                    </div>
+                    <table class="data-table">
+                        <tbody>`;
+            
+            const grossYield = montenegro.totalInvestment > 0 ? (montenegro.grossAnnualRentalIncome / montenegro.totalInvestment) : 0;
+            const netYield = montenegro.netRentalYield;
+
+            summaryHTML += `
+                <tr>
+                    <td>Bruto Rendement <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">(Bruto Huur / Totale Investering). Rendement vóór aftrek van alle jaarlijkse kosten.</span></span></td>
+                    <td class="numeric-cell">${formatPercent(grossYield, 2)}</td>
+                </tr>
+                <tr>
+                    <td>Netto Huurrendement <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">(Netto Resultaat / Totale Investering). Rendement na aftrek van alle jaarlijkse kosten (incl. belasting en financiering).</span></span></td>
+                    <td class="numeric-cell">${formatPercent(netYield, 2)}</td>
+                </tr>
+            </tbody></table></div>`;
+
+            rentalSummarySection.innerHTML = summaryHTML;
+
+            // Populate other tables
             document.getElementById('rental-income-table').innerHTML = `<tbody>
                 <tr><td>Bruto Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.grossAnnualRentalIncome)}</td></tr>
                 <tr><td>Beheerkosten (${formatPercent(montenegro.managementFeeRate || 0, 0)})</td><td class="numeric-cell">-${formatCurrency(montenegro.rentalManagementFee)}</td></tr>
@@ -1700,19 +1734,9 @@ document.addEventListener('DOMContentLoaded', function () {
             
             document.getElementById('net-rental-result-table').innerHTML = `<tbody>
                 <tr><td>Netto Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
-                <tr><td style="padding-left: 2rem;">- Jaarlijkse Kosten (excl. financiering & belasting)</td><td class="numeric-cell">-${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing)}</td></tr>
+                <tr><td style="padding-left: 2rem;">- Jaarlijkse Kosten (excl. financiering)</td><td class="numeric-cell">-${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing + montenegro.taxAmount)}</td></tr>
                 ${montenegro.annualFinancingCost > 0 ? `<tr><td style="padding-left: 2rem;">- Financieringskosten</td><td class="numeric-cell">-${formatCurrency(montenegro.annualFinancingCost)}</td></tr>` : ''}
-                ${montenegro.taxAmount > 0 ? `<tr><td style="padding-left: 2rem;">- Belasting op Huurinkomsten</td><td class="numeric-cell">-${formatCurrency(montenegro.taxAmount)}</td></tr>` : ''}
                 <tr class="total-row"><td>Netto Cashflow (Eindresultaat)</td><td class="numeric-cell">${formatCurrency(montenegro.netAnnualCashflow)}</td></tr>
-            </tbody>`;
-
-            const cashOnCashYield = inputs.ownCapital > 0 ? (montenegro.netAnnualCashflow / inputs.ownCapital) : 0;
-            const grossYield = montenegro.totalInvestment > 0 ? (montenegro.grossAnnualRentalIncome / montenegro.totalInvestment) : 0;
-            
-            document.getElementById('roi-table').innerHTML = `<tbody>
-                <tr><td>Bruto Rendement</td><td class="numeric-cell">${formatPercent(grossYield, 2)}</td></tr>
-                <tr><td>Netto Huurrendement</td><td class="numeric-cell">${formatPercent(montenegro.netRentalYield, 2)}</td></tr>
-                <tr><td>Cash-on-Cash Rendement</td><td class="numeric-cell">${formatPercent(cashOnCashYield, 2)}</td></tr>
             </tbody>`;
         }
     }
