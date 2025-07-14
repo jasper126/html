@@ -1151,13 +1151,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (currentStep === 1) updateFormState();
         });
 
-        // Changed to use the Formspree endpoint directly on the form
         if (contactForm) {
             contactForm.addEventListener('submit', async function(event) {
-                event.preventDefault(); // Prevent default form submission
+                event.preventDefault(); 
                 const statusDiv = document.getElementById('form-status');
                 const submitBtn = document.getElementById('submit-form-btn');
-
                 const userName = document.getElementById('userName').value;
                 const userEmail = document.getElementById('userEmail').value;
 
@@ -1221,10 +1219,9 @@ document.addEventListener('DOMContentLoaded', function () {
         usageTypeSelect.addEventListener('change', () => {
             const usage = usageTypeSelect.value;
             rentalDetails.style.display = (usage === 'Combinatie' || usage === 'LangeTermijnVerhuur' || usage === 'KorteTermijnVerhuur') ? 'block' : 'none';
-            // If not "Combinatie", set personal usage to 0 as it's not applicable
             if (usage !== 'Combinatie') {
                 personalUsageWeeksSlider.value = 0;
-                personalUsageWeeksSlider.dispatchEvent(new Event('input')); // Update display
+                personalUsageWeeksSlider.dispatchEvent(new Event('input'));
             }
         });
         
@@ -1309,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', function () {
             financingInterestRate: parseFloat(document.getElementById('financingInterestRate').value) / 100 || 0,
             financingTerm: parseInt(document.getElementById('financingTerm').value) || 0,
             usageType: document.getElementById('usageType').value,
-            personalUsageWeeks: parseInt(document.getElementById('personalUsageWeeks').value) || 0, // Get value from slider
+            personalUsageWeeks: parseInt(document.getElementById('personalUsageWeeks').value) || 0,
             managementPreference: document.getElementById('managementPreference').value,
         };
     }
@@ -1323,12 +1320,8 @@ document.addEventListener('DOMContentLoaded', function () {
         };
     }
     
-    // =========================================================================================
-    // START GECORRIGEERDE CALCULATIE FUNCTIE (GEBASEERD OP NIEUWSTE DATA)
-    // =========================================================================================
     function calculateCountry(inputs, country) {
         const results = {};
-        // Destructure all required inputs, including propertySize
         const { purchasePrice, isNewBuild, region, furnishingCosts, managementPreference, usageType, personalUsageWeeks, needFinancing, financingInterestRate, financingTerm, ownCapital, propertySize } = inputs;
         
         results.purchasePrice = purchasePrice || 0;
@@ -1339,12 +1332,11 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'Montenegro':
                 params = { 
                     managementFeeRate: { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0.05 }[managementPreference],
-                    effectiveTaxRate: 0.15 // Corrected from 0.09 to 0.15
+                    effectiveTaxRate: 0.15
                 };
                 
-                // Corrected Transfer Tax (RETT) with progressive scale
                 if (isNewBuild) {
-                    costBreakdown.tax = 0; // VAT is included in purchase price
+                    costBreakdown.tax = 0; 
                 } else {
                     if (purchasePrice <= 150000) {
                         costBreakdown.tax = purchasePrice * 0.03;
@@ -1355,23 +1347,21 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
                 
-                costBreakdown.notaryAndRegistrationCosts = 750; // More realistic fixed estimate
-                costBreakdown.legalCosts = Math.max(1200, purchasePrice * 0.0075); // Corrected to realistic minimum / percentage
-                costBreakdown.translatorCosts = 200; // Corrected from 150
+                costBreakdown.notaryAndRegistrationCosts = 750;
+                costBreakdown.legalCosts = Math.max(1200, purchasePrice * 0.0075);
+                costBreakdown.translatorCosts = 200;
                 break;
 
             case 'Spanje':
                 params = { managementFeeRate: 0.10, effectiveTaxRate: 0.19 };
-                // Using 7% ITP for existing build as a more representative rate. 11.5% for new build is a plausible high-end estimate.
                 costBreakdown.tax = isNewBuild ? purchasePrice * 0.115 : purchasePrice * 0.07;
-                costBreakdown.notaryAndRegistrationCosts = purchasePrice * 0.008; // Corrected from 1.5% to a more realistic 0.8%
-                costBreakdown.legalCosts = purchasePrice * 0.0125; // This was deemed correct
-                costBreakdown.otherCosts = 200; // NIE
+                costBreakdown.notaryAndRegistrationCosts = purchasePrice * 0.008;
+                costBreakdown.legalCosts = purchasePrice * 0.0125;
+                costBreakdown.otherCosts = 200;
                 break;
 
             case 'Portugal':
                 params = { managementFeeRate: 0.08, effectiveTaxRate: 0.28 };
-                // Corrected Transfer Tax (IMT) with progressive scale for second homes/investment
                 let imt = 0;
                 if (purchasePrice <= 104261) {
                     imt = purchasePrice * 0.01;
@@ -1384,32 +1374,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else if (purchasePrice <= 621501) {
                     imt = (purchasePrice * 0.08) - 12450.89;
                 } else if (purchasePrice <= 1128287) {
-                    imt = purchasePrice * 0.06; // Fixed rate in this bracket
+                    imt = purchasePrice * 0.06;
                 } else {
-                    imt = purchasePrice * 0.075; // Fixed rate in this bracket
+                    imt = purchasePrice * 0.075;
                 }
                 costBreakdown.tax = imt;
-                costBreakdown.stampDuty = purchasePrice * 0.008; // This was deemed correct
-                costBreakdown.notaryAndRegistrationCosts = 1500; // This was deemed reasonable
-                costBreakdown.legalCosts = purchasePrice * 0.0125; // This was deemed reasonable
+                costBreakdown.stampDuty = purchasePrice * 0.008;
+                costBreakdown.notaryAndRegistrationCosts = 1500;
+                costBreakdown.legalCosts = purchasePrice * 0.0125;
                 break;
 
             case 'Italië':
-                // Corrected logic for tax: 9% on cadastral value for existing, 10% VAT on purchase price for new.
-                // Added effectiveTaxRate for Cedolare Secca.
                 params = { managementFeeRate: 0.10, taxOnGross: true, effectiveTaxRate: 0.21 }; 
-                const estimatedCadastralValue = purchasePrice * 0.50; // Using 50% as the estimation
+                const estimatedCadastralValue = purchasePrice * 0.50;
                 if (isNewBuild) {
-                    costBreakdown.tax = purchasePrice * 0.10; // 10% VAT on new builds
+                    costBreakdown.tax = purchasePrice * 0.10;
                 } else {
-                    costBreakdown.tax = estimatedCadastralValue * 0.09; // 9% Registration tax on cadastral value
+                    costBreakdown.tax = estimatedCadastralValue * 0.09;
                 }
                 
-                // Corrected Notary & Registration costs
-                const registrationFixedCosts = isNewBuild ? 400 : 100; // Simplified fixed fees
+                const registrationFixedCosts = isNewBuild ? 400 : 100;
                 costBreakdown.notaryAndRegistrationCosts = (purchasePrice * 0.015) + registrationFixedCosts;
-                
-                costBreakdown.brokerageCosts = purchasePrice * 0.025; // This was deemed plausible
+                costBreakdown.brokerageCosts = purchasePrice * 0.025;
                 costBreakdown.otherCosts = 0;
                 break;
         }
@@ -1450,30 +1436,26 @@ document.addEventListener('DOMContentLoaded', function () {
         results.rentalManagementFee = results.grossAnnualRentalIncome * (params.managementFeeRate || 0);
         results.netAnnualRentalIncome = results.grossAnnualRentalIncome - results.rentalManagementFee;
         
-        // Corrected annual property tax calculations based on audit
         switch(country) {
             case 'Montenegro':
-                results.annualPropertyTax = purchasePrice * (0.6/100); // Corrected rate
-                results.annualInsurance = (propertySize || 0) * 1.35; // Corrected based on m²
-                results.annualMaintenance = purchasePrice * 0.01; // Corrected rate
+                results.annualPropertyTax = purchasePrice * (0.6/100);
+                results.annualInsurance = (propertySize || 0) * 1.35;
+                results.annualMaintenance = purchasePrice * 0.01;
                 break;
             case 'Spanje':
-                // Corrected based on estimated cadastral value
                 results.annualPropertyTax = (purchasePrice * 0.5) * 0.007; 
                 results.annualInsurance = purchasePrice * 0.002;
-                results.annualMaintenance = purchasePrice * 0.01; // Using a more standard 1%
+                results.annualMaintenance = purchasePrice * 0.01;
                 break;
             case 'Portugal':
-                // Corrected based on estimated VPT
                 results.annualPropertyTax = (purchasePrice * 0.6) * 0.00375;
                 results.annualInsurance = purchasePrice * 0.002;
-                results.annualMaintenance = purchasePrice * 0.01; // Using a more standard 1%
+                results.annualMaintenance = purchasePrice * 0.01;
                 break;
             case 'Italië':
-                 // Corrected based on estimated cadastral value and avg rate
                 results.annualPropertyTax = (purchasePrice * 0.5) * 0.0096;
                 results.annualInsurance = purchasePrice * 0.002;
-                results.annualMaintenance = purchasePrice * 0.01; // Using a more standard 1%
+                results.annualMaintenance = purchasePrice * 0.01;
                 break;
         }
 
@@ -1481,10 +1463,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         let taxAmount = 0;
         if (usageType !== 'Vakantiewoning' && results.grossAnnualRentalIncome > 0) {
-            if (params.taxOnGross) { // Italy
+            if (params.taxOnGross) {
                 taxAmount = results.grossAnnualRentalIncome * params.effectiveTaxRate;
-            } else { // Montenegro, Spain, Portugal (on net)
-                // Simplified net taxable income (more detailed deductions could be implemented)
+            } else {
                 const netTaxableIncome = Math.max(0, results.netAnnualRentalIncome - results.totalAnnualCostsBeforeFinancing);
                 taxAmount = netTaxableIncome * params.effectiveTaxRate;
             }
@@ -1508,21 +1489,18 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('summary-total-investment').textContent = formatCurrency(montenegro.totalInvestment);
         document.getElementById('summary-annual-result').textContent = formatCurrency(montenegro.netAnnualCashflow);
         document.getElementById('summary-rental-yield').textContent = formatPercent(montenegro.netRentalYield, 2);
-        // Assuming a fixed appreciation for now, as it's not calculated based on inputs
-        document.getElementById('summary-appreciation').textContent = formatPercent(0.04, 1); // Example 4% annual appreciation
+        document.getElementById('summary-appreciation').textContent = formatPercent(0.04, 1);
 
-        displayOnetimeCostComparison(allResults, inputs.purchasePrice, formatCurrency, formatPercent);
+        displayOnetimeCostComparison(inputs, allResults, inputs.purchasePrice, formatCurrency, formatPercent);
         displayAnnualAndRoi(inputs, allResults, formatCurrency, formatPercent);
         
         drawChartsForPanel('summary', allResults);
-        // Only draw financial charts if the panel is active or about to be active
         if (document.getElementById('financial-panel').classList.contains('active')) {
             drawChartsForPanel('financial', allResults);
         }
     }
     
-    function displayOnetimeCostComparison(allResults, purchasePrice, formatCurrency, formatPercent) {
-        // Updated costKeys with corrected tooltips
+    function displayOnetimeCostComparison(inputs, allResults, purchasePrice, formatCurrency, formatPercent) {
         const costKeys = [
             { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: 'Belasting op aankoop. De calculator gebruikt de officiële progressieve schalen voor Montenegro en Portugal, en representatieve tarieven voor Spanje (7% ITP) en Italië (9% op geschatte kadastrale waarde).' },
             { key: 'stampDuty', label: 'Zegelrecht', tooltip: 'Belasting op juridische documenten, van toepassing in Portugal (0.8%).' },
@@ -1539,10 +1517,18 @@ document.addEventListener('DOMContentLoaded', function () {
         
         costKeys.forEach(item => {
             const values = countryKeys.map(ck => allResults[ck].costBreakdown[item.key] || 0);
-            if (values.some(v => v > 0)) {
+            if (values.some(v => v > 0) || (item.key === 'tax' && inputs.isNewBuild)) {
                 tableHTML += `<tr><td>${item.label}<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">${item.tooltip}</span></span></td>`;
                 values.forEach((val, i) => {
-                    tableHTML += `<td class="numeric-cell">${formatCurrency(val)}</td>`;
+                    let cellHTML = '';
+                    // Special case for Montenegro New Build VAT
+                    if (item.key === 'tax' && countryKeys[i] === 'montenegro' && inputs.isNewBuild) {
+                        const vatAmount = purchasePrice * 0.21;
+                        cellHTML = `21% (${formatCurrency(vatAmount)})<br><small><i>(inbegrepen in koopsom)</i></small>`;
+                    } else {
+                        cellHTML = formatCurrency(val);
+                    }
+                    tableHTML += `<td class="numeric-cell">${cellHTML}</td>`;
                     totals[countryKeys[i]] += val;
                 });
                 tableHTML += `</tr>`;
@@ -1566,12 +1552,13 @@ document.addEventListener('DOMContentLoaded', function () {
     function displayAnnualAndRoi(inputs, allResults, formatCurrency, formatPercent) {
         const { montenegro } = allResults;
         const totalAnnualCosts = montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost + montenegro.taxAmount;
+        // Corrected the display of tax on rental income to be consistent (removed the minus sign)
         document.getElementById('costs-table').innerHTML = `<tbody>
             <tr><td>Onroerendgoedbelasting<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse belasting op onroerend goed. De berekening is gebaseerd op een realistisch, gemiddeld tarief (ca. 0.6% in Montenegro) op de marktwaarde.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualPropertyTax)}</td></tr>
             <tr><td>Verzekering<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Geschatte jaarlijkse premie voor een opstalverzekering.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualInsurance)}</td></tr>
             <tr><td>Onderhoud<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse reservering voor onderhoudskosten.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualMaintenance)}</td></tr>
-            ${montenegro.annualFinancingCost > 0 ? `<tr><td>Financieringskosten</td><td class="numeric-cell">-${formatCurrency(montenegro.annualFinancingCost)}</td></tr>` : ''}
-            ${montenegro.taxAmount > 0 ? `<tr><td>Belasting op Huurinkomsten</td><td class="numeric-cell">-${formatCurrency(montenegro.taxAmount)}</td></tr>` : ''}
+            ${montenegro.annualFinancingCost > 0 ? `<tr><td>Financieringskosten</td><td class="numeric-cell">${formatCurrency(montenegro.annualFinancingCost)}</td></tr>` : ''}
+            ${montenegro.taxAmount > 0 ? `<tr><td>Belasting op Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.taxAmount)}</td></tr>` : ''}
             <tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td class="numeric-cell">${formatCurrency(totalAnnualCosts)}</td></tr>
         </tbody>`;
         
@@ -1583,11 +1570,11 @@ document.addEventListener('DOMContentLoaded', function () {
             netRentalResultTableContainer.style.display = 'block';
             const totalCostsOwnUse = montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost;
             document.getElementById('net-rental-result-table').innerHTML = `<tbody><tr class="total-row"><td>Netto Jaarlijkse Kosten (eigen gebruik)</td><td class="numeric-cell">${formatCurrency(totalCostsOwnUse * -1)}</td></tr></tbody>`;
-            document.getElementById('roi-panel').style.display = 'none'; // Hide ROI panel for own use
+            document.getElementById('roi-panel').style.display = 'none';
         } else {
             rentalIncomeTableContainer.style.display = 'block';
             netRentalResultTableContainer.style.display = 'block';
-            document.getElementById('roi-panel').style.display = 'block'; // Show ROI panel for rental
+            document.getElementById('roi-panel').style.display = 'block';
             
             document.getElementById('rental-income-table').innerHTML = `<tbody>
                 <tr><td>Bruto Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.grossAnnualRentalIncome)}</td></tr>
@@ -1653,17 +1640,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const investmentCtx = document.getElementById('investment-breakdown-chart');
             if (investmentCtx) {
                 const breakdown = results.montenegro.costBreakdown;
-                // Updated chartDataPoints to use combined notary and registration
                 const chartDataPoints = {
                     'Aankoopprijs': results.montenegro.purchasePrice,
                     'Belasting': breakdown.tax,
                     'Advocaat': breakdown.legalCosts,
-                    'Notaris- en Registratiekosten': breakdown.notaryAndRegistrationCosts, // Updated label
+                    'Notaris- en Registratiekosten': breakdown.notaryAndRegistrationCosts,
                     'Tolk': breakdown.translatorCosts,
                     'Inrichting': inputs.furnishingCosts,
-                    'Zegelrecht': breakdown.stampDuty, // Add stamp duty if present
-                    'Makelaarskosten': breakdown.brokerageCosts, // Add brokerage costs if present
-                    'Overige kosten': breakdown.otherCosts // Add other costs if present
+                    'Zegelrecht': breakdown.stampDuty,
+                    'Makelaarskosten': breakdown.brokerageCosts,
+                    'Overige kosten': breakdown.otherCosts
                 };
                 const chartLabels = Object.keys(chartDataPoints).filter(key => chartDataPoints[key] > 0);
                 const chartData = Object.values(chartDataPoints).filter(value => value > 0);
@@ -1678,7 +1664,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (costsCtx) {
                 const { montenegro } = results;
                 const costPoints = { 'Vastgoedbelasting': montenegro.annualPropertyTax, 'Verzekering': montenegro.annualInsurance, 'Onderhoud': montenegro.annualMaintenance };
-                // Only add financing and tax on rental income if they are applicable/greater than 0
                 if (montenegro.annualFinancingCost > 0) costPoints['Financiering'] = montenegro.annualFinancingCost;
                 if (montenegro.taxAmount > 0) costPoints['Huur-belasting'] = montenegro.taxAmount;
 
