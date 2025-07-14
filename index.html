@@ -1092,8 +1092,8 @@
                 </div>
                 
                 <div class="panel-section">
-                    <h4>Prijsontwikkeling Nieuwbouw Montenegro (€/m²)</h4>
-                    <p>Gebaseerd op officieel onderzoek van MONSTAT (2019-2024) toont deze grafiek de gemiddelde prijsontwikkeling per vierkante meter voor nieuwbouwwoningen.</p>
+                    <h4>Historische Prijsontwikkeling (2019-2024)</h4>
+                    <p>Gebaseerd op officieel onderzoek toont deze grafiek de vastgoedwaardestijging, vergeleken met andere populaire Zuid-Europese landen. De data voor Montenegro is gebaseerd op de nieuwbouwprijzen van MONSTAT.</p>
                     <div class="chart-container">
                         <canvas id="cumulative-appreciation-chart"></canvas>
                     </div>
@@ -1410,14 +1410,13 @@ document.addEventListener('DOMContentLoaded', function () {
     function runCalculation() {
         const inputs = gatherInputs();
         
-        // Calculate regional appreciation
-        let baseAppreciation = 0.204; // YoY 2023-2024 from MONSTAT
+        let baseAppreciation = 0.204;
         let appreciationMultiplier = 1.0;
         const coastalRegions = ['Kotor', 'Budva', 'Tivat', 'Bar'];
         if (coastalRegions.includes(inputs.region)) {
-            appreciationMultiplier = 1.10; // +10% premium for coastal
+            appreciationMultiplier = 1.10;
         } else if (inputs.region === 'Noord') {
-            appreciationMultiplier = 1 - 0.292; // -29.2% for northern
+            appreciationMultiplier = 1 - 0.292;
         }
         const finalAppreciation = baseAppreciation * appreciationMultiplier;
 
@@ -1463,12 +1462,15 @@ document.addEventListener('DOMContentLoaded', function () {
         const results = { purchasePrice: purchasePrice || 0 };
         let params = {};
         let costBreakdown = {};
+        
+        const managementFeeRates = { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0 };
+        params.managementFeeRate = managementFeeRates[managementPreference];
 
         costBreakdown.baySightCosts = Math.max(3000, purchasePrice * 0.015);
 
         switch(country) {
             case 'Montenegro':
-                params = { managementFeeRate: { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0 }[managementPreference], effectiveTaxRate: 0.15 };
+                params.effectiveTaxRate = 0.15;
                 if (!isNewBuild) {
                     if (purchasePrice <= 150000) { costBreakdown.tax = purchasePrice * 0.03; } 
                     else if (purchasePrice <= 500000) { costBreakdown.tax = 4500 + (purchasePrice - 150000) * 0.05; } 
@@ -1480,7 +1482,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
 
             case 'Spanje':
-                params = { managementFeeRate: 0.10, effectiveTaxRate: 0.19 };
+                params.effectiveTaxRate = 0.19;
                 costBreakdown.tax = isNewBuild ? purchasePrice * 0.115 : purchasePrice * 0.07;
                 costBreakdown.notaryAndRegistrationCosts = purchasePrice * 0.008;
                 costBreakdown.legalCosts = purchasePrice * 0.0125;
@@ -1488,7 +1490,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
 
             case 'Portugal':
-                params = { managementFeeRate: 0.08, effectiveTaxRate: 0.28 };
+                params.effectiveTaxRate = 0.28;
                 let imt = 0;
                 if (purchasePrice <= 104261) { imt = purchasePrice * 0.01; } 
                 else if (purchasePrice <= 142618) { imt = (purchasePrice * 0.02) - 1042.61; } 
@@ -1504,7 +1506,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
 
             case 'Italië':
-                params = { managementFeeRate: 0.10, taxOnGross: true, effectiveTaxRate: 0.21 }; 
+                params.taxOnGross = true;
+                params.effectiveTaxRate = 0.21; 
                 const estimatedCadastralValue = purchasePrice * 0.50;
                 if (isNewBuild) { costBreakdown.tax = purchasePrice * 0.10; } 
                 else { costBreakdown.tax = estimatedCadastralValue * 0.09; }
@@ -1698,7 +1701,6 @@ document.addEventListener('DOMContentLoaded', function () {
             netRentalResultTableContainer.style.display = 'block';
             rentalSummarySection.style.display = 'block';
             
-            // Populate rental summary
             const rentalWeeks = 52 - inputs.personalUsageWeeks;
             let summaryHTML = `
                 <div class="panel-section">
@@ -1731,10 +1733,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             rentalSummarySection.innerHTML = summaryHTML;
 
-            // Populate other tables
             document.getElementById('rental-income-table').innerHTML = `<tbody>
                 <tr><td>Bruto Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.grossAnnualRentalIncome)}</td></tr>
-                <tr><td>Beheerkosten (${formatPercent(montenegro.managementFeeRate || 0, 0)})</td><td class="numeric-cell">-${formatCurrency(montenegro.rentalManagementFee)}</td></tr>
+                <tr><td>Beheerkosten (${formatPercent(params.managementFeeRate || 0, 0)})</td><td class="numeric-cell">-${formatCurrency(montenegro.rentalManagementFee)}</td></tr>
                 <tr class="total-row"><td>Netto Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
             </tbody>`;
             
@@ -1774,23 +1775,48 @@ document.addEventListener('DOMContentLoaded', function () {
             destroyChart('cumulative-appreciation-chart');
             const appreciationCtx = document.getElementById('cumulative-appreciation-chart');
             if (appreciationCtx) {
+                // Calculate Montenegro index based on absolute prices from MONSTAT, with 2019 as base 100
+                const me_base = 1113;
+                const me_prices = [1113, 951, 1194, 1339, 1532, 1844];
+                const me_index = me_prices.map(p => (p / me_base) * 100);
+
                 charts['cumulative-appreciation-chart'] = new Chart(appreciationCtx, { type: 'line',
                     data: { 
                         labels: ['2019', '2020', '2021', '2022', '2023', '2024'], 
                         datasets: [
                             { 
-                                label: 'Gemiddelde Prijs (€/m²)', 
-                                data: [1113, 951, 1194, 1339, 1532, 1844], 
+                                label: 'Montenegro', 
+                                data: me_index,
                                 borderColor: '#d4915f', 
                                 tension: 0.1, 
                                 pointBackgroundColor: '#d4915f' 
+                            },
+                            { 
+                                label: 'Spanje', 
+                                data: [100, 102.1, 105.9, 113.7, 118.3, 128.1], 
+                                borderColor: '#F0B429', 
+                                tension: 0.1, 
+                                pointBackgroundColor: '#F0B429' 
+                            },
+                            { 
+                                label: 'Portugal', 
+                                data: [100, 106.0, 117.8, 128.0, 139.1, 150.8], 
+                                borderColor: '#00A5CF', 
+                                tension: 0.1, 
+                                pointBackgroundColor: '#00A5CF' 
+                            },
+                            { 
+                                label: 'Italië', 
+                                data: [100, 101.5, 103.5, 105.7, 107.9, 115.1], 
+                                borderColor: '#31C48D', 
+                                tension: 0.1, 
+                                pointBackgroundColor: '#31C48D' 
                             }
                         ]
                     }, 
                     options: { 
                         ...sharedOptions, 
-                        plugins: { legend: { display: false } },
-                        scales: { y: { title: { display: true, text: 'Prijs per m² (€)' } } } 
+                        scales: { y: { title: { display: true, text: 'Prijsindex (2019 = 100)' } } } 
                     }
                 });
             }
