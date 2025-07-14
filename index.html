@@ -62,17 +62,17 @@
         .calculator-header {
             background-color: var(--primary-blue);
             color: white;
-            padding: 2rem 1.5rem; /* Meer padding voor grotere titel */
+            padding: 2rem 1.5rem;
             text-align: center;
         }
 
         .calculator-header h2 {
             margin: 0;
-            font-size: 3.5rem; /* Groter lettertype */
+            font-size: 3.5rem;
             font-family: 'DM Serif Display', serif;
             font-weight: 400;
             color: var(--primary-orange);
-            text-transform: uppercase; /* Titel in hoofdletters */
+            text-transform: uppercase;
         }
 
         .calculator-tabs {
@@ -715,6 +715,79 @@
             padding: 1rem;
             font-size: 1.1rem;
         }
+        
+        /* STYLES FOR CUSTOM MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(4, 41, 67, 0.6);
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.visible {
+            display: block;
+            opacity: 1;
+        }
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            background-color: var(--bg-light);
+            padding: 0;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1001;
+            width: 90%;
+            max-width: 500px;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .modal.visible {
+            display: block;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--secondary-medium);
+            padding: 1rem 1.5rem;
+        }
+        .modal-header h3 {
+            margin: 0;
+            color: var(--primary-blue);
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.5rem;
+        }
+        .modal-close-btn {
+            background: none;
+            border: none;
+            font-size: 2.5rem;
+            font-weight: 300;
+            line-height: 1;
+            color: var(--text-light);
+            cursor: pointer;
+            padding: 0;
+        }
+        .modal-close-btn:hover {
+            color: var(--error);
+        }
+        .modal-body {
+            padding: 1.5rem;
+            line-height: 1.6;
+        }
+        .modal-body p {
+            margin: 0;
+        }
+
 
         @media (max-width: 1159px) {
             .summary-grid {
@@ -1104,6 +1177,18 @@
         </div>
     </div>
 
+    <div id="custom-modal-overlay" class="modal-overlay"></div>
+    <div id="custom-modal" class="modal">
+        <div class="modal-header">
+            <h3>Financiële Waarschuwing</h3>
+            <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="modal-message"></p>
+        </div>
+    </div>
+
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // --- STATE VARIABLES ---
@@ -1128,6 +1213,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const personalUsageWeeksSlider = document.getElementById('personalUsageWeeks');
     const contactForm = document.getElementById('contact-form');
     const purchasePriceInput = document.getElementById('purchasePrice');
+    const modalOverlay = document.getElementById('custom-modal-overlay');
+    const modal = document.getElementById('custom-modal');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const modalMessage = document.getElementById('modal-message');
     
     // --- Event Listeners & Setup ---
     function setupListeners() {
@@ -1166,6 +1255,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 personalUsageWeeksSlider.dispatchEvent(new Event('input'));
             }
         });
+        
+        modalCloseBtn.addEventListener('click', hideModal);
+        modalOverlay.addEventListener('click', hideModal);
         
         setupRangeSlider('personalUsageWeeks', 'personalUsageWeeksValue');
     }
@@ -1242,7 +1334,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const preliminaryInvestment = calculatePreliminaryInvestment(inputs);
 
         if (inputs.ownCapital < preliminaryInvestment && !inputs.needFinancing) {
-            alert('Uw eigen vermogen is niet toereikend voor de geschatte totale investering (ca. €' + Math.round(preliminaryInvestment).toLocaleString('nl-NL') + '). Selecteer \'Ja\' bij \'Heeft u financiering nodig?\' om door te gaan, of verhoog uw eigen vermogen.');
+            const pPriceStr = (inputs.purchasePrice || 0).toLocaleString('nl-NL');
+            const ownCapStr = (inputs.ownCapital || 0).toLocaleString('nl-NL');
+            const totalInvStr = Math.round(preliminaryInvestment).toLocaleString('nl-NL');
+
+            const message = `Uw eigen vermogen (€ ${ownCapStr}) is niet toereikend. Voor een woning met een aankoopprijs van € ${pPriceStr} is de geschatte totale investering circa € ${totalInvStr}.<br><br>Verhoog uw eigen vermogen of selecteer 'Ja' bij 'Heeft u financiering nodig?' om door te gaan.`;
+            showModal(message);
             return false;
         }
         return true;
@@ -1288,6 +1385,17 @@ document.addEventListener('DOMContentLoaded', function () {
         nextBtn.disabled = (currentStep === 1 && (parseFloat(purchasePriceInput.value) || 0) <= 0);
     }
     
+    function showModal(message) {
+        modalMessage.innerHTML = message;
+        modalOverlay.classList.add('visible');
+        modal.classList.add('visible');
+    }
+
+    function hideModal() {
+        modalOverlay.classList.remove('visible');
+        modal.classList.remove('visible');
+    }
+
     function switchMainTab(tab) {
         if (tab.classList.contains('disabled')) return;
         mainTabs.forEach(t => t.classList.remove('active'));
@@ -1364,24 +1472,18 @@ document.addEventListener('DOMContentLoaded', function () {
         let params = {};
         let costBreakdown = {};
 
-        // Bay Sight Kosten are now universal
         costBreakdown.baySightCosts = purchasePrice * 0.015;
 
         switch(country) {
             case 'Montenegro':
-                params = { 
-                    managementFeeRate: { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0.05 }[managementPreference],
-                    effectiveTaxRate: 0.15
-                };
-                if (isNewBuild) {
-                    costBreakdown.tax = 0; 
-                } else {
+                params = { managementFeeRate: { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0.05 }[managementPreference], effectiveTaxRate: 0.15 };
+                if (!isNewBuild) {
                     if (purchasePrice <= 150000) { costBreakdown.tax = purchasePrice * 0.03; } 
                     else if (purchasePrice <= 500000) { costBreakdown.tax = 4500 + (purchasePrice - 150000) * 0.05; } 
                     else { costBreakdown.tax = 22000 + (purchasePrice - 500000) * 0.06; }
-                }
+                } else { costBreakdown.tax = 0; }
                 costBreakdown.notaryAndRegistrationCosts = Math.max(500, purchasePrice * 0.0025);
-                costBreakdown.legalCosts = 500; // Fixed amount as per new request
+                costBreakdown.legalCosts = 500;
                 costBreakdown.translatorCosts = 200;
                 break;
 
@@ -1459,22 +1561,22 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'Montenegro':
                 results.annualPropertyTax = purchasePrice * (0.6/100);
                 results.annualInsurance = (propertySize || 0) * 1.35;
-                results.annualMaintenance = purchasePrice * 0.01;
+                results.annualMaintenance = 0; // Removed as per request
                 break;
             case 'Spanje':
                 results.annualPropertyTax = (purchasePrice * 0.5) * 0.007; 
                 results.annualInsurance = 225;
-                results.annualMaintenance = purchasePrice * 0.01;
+                results.annualMaintenance = 0; // Removed as per request
                 break;
             case 'Portugal':
                 results.annualPropertyTax = (purchasePrice * 0.6) * 0.00375;
                 results.annualInsurance = 300;
-                results.annualMaintenance = purchasePrice * 0.01;
+                results.annualMaintenance = 0; // Removed as per request
                 break;
             case 'Italië':
                 results.annualPropertyTax = (purchasePrice * 0.5) * 0.0096;
                 results.annualInsurance = 350;
-                results.annualMaintenance = purchasePrice * 0.01;
+                results.annualMaintenance = 0; // Removed as per request
                 break;
         }
 
@@ -1521,7 +1623,6 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function displayOnetimeCostComparison(inputs, allResults, purchasePrice, formatCurrency, formatPercent) {
         const costKeys = [
-            // Row for tax is now conditional
             { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: 'Belasting op aankoop.' },
             { key: 'stampDuty', label: 'Zegelrecht', tooltip: 'Belasting op juridische documenten, van toepassing in Portugal (0.8%).' },
             { key: 'baySightCosts', label: 'Bay Sight Kosten', tooltip: 'Servicekosten voor de begeleiding en aankoop door Bay Sight.' },
@@ -1536,9 +1637,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const countryKeys = ['montenegro', 'spanje', 'portugal', 'italië'];
         
         costKeys.forEach(item => {
-            // Hide tax row if new build is selected
             if (item.key === 'tax' && inputs.isNewBuild) {
-                return; // Skip this iteration
+                return; 
             }
 
             const values = countryKeys.map(ck => allResults[ck].costBreakdown[item.key] || 0);
@@ -1569,14 +1669,23 @@ document.addEventListener('DOMContentLoaded', function () {
     function displayAnnualAndRoi(inputs, allResults, formatCurrency, formatPercent) {
         const { montenegro } = allResults;
         const totalAnnualCosts = montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost + montenegro.taxAmount;
-        document.getElementById('costs-table').innerHTML = `<tbody>
+        let costsTableBody = `
             <tr><td>Onroerendgoedbelasting<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse belasting op onroerend goed.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualPropertyTax)}</td></tr>
-            <tr><td>Verzekering<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Geschatte jaarlijkse premie voor een opstalverzekering.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualInsurance)}</td></tr>
-            <tr><td>Onderhoud<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse reservering voor onderhoudskosten.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualMaintenance)}</td></tr>
-            ${montenegro.annualFinancingCost > 0 ? `<tr><td>Financieringskosten</td><td class="numeric-cell">${formatCurrency(montenegro.annualFinancingCost)}</td></tr>` : ''}
-            ${montenegro.taxAmount > 0 ? `<tr><td>Belasting op Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.taxAmount)}</td></tr>` : ''}
-            <tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td class="numeric-cell">${formatCurrency(totalAnnualCosts)}</td></tr>
-        </tbody>`;
+            <tr><td>Verzekering<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Geschatte jaarlijkse premie voor een opstalverzekering.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualInsurance)}</td></tr>`;
+        
+        if (montenegro.annualMaintenance > 0) {
+            costsTableBody += `<tr><td>Onderhoud<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse reservering voor onderhoudskosten.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualMaintenance)}</td></tr>`;
+        }
+
+        if (montenegro.annualFinancingCost > 0) {
+            costsTableBody += `<tr><td>Financieringskosten</td><td class="numeric-cell">${formatCurrency(montenegro.annualFinancingCost)}</td></tr>`;
+        }
+        if (montenegro.taxAmount > 0) {
+            costsTableBody += `<tr><td>Belasting op Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.taxAmount)}</td></tr>`;
+        }
+        costsTableBody += `<tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td class="numeric-cell">${formatCurrency(totalAnnualCosts)}</td></tr>`;
+        
+        document.getElementById('costs-table').innerHTML = `<tbody>${costsTableBody}</tbody>`;
         
         const rentalIncomeTableContainer = document.getElementById('rental-income-table').closest('.panel-section');
         const netRentalResultTableContainer = document.getElementById('net-rental-result-table').closest('.panel-section');
@@ -1680,7 +1789,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const costsCtx = document.getElementById('annual-costs-chart');
             if (costsCtx) {
                 const { montenegro } = results;
-                const costPoints = { 'Vastgoedbelasting': montenegro.annualPropertyTax, 'Verzekering': montenegro.annualInsurance, 'Onderhoud': montenegro.annualMaintenance };
+                const costPoints = { 'Vastgoedbelasting': montenegro.annualPropertyTax, 'Verzekering': montenegro.annualInsurance };
+                if (montenegro.annualMaintenance > 0) costPoints['Onderhoud'] = montenegro.annualMaintenance;
                 if (montenegro.annualFinancingCost > 0) costPoints['Financiering'] = montenegro.annualFinancingCost;
                 if (montenegro.taxAmount > 0) costPoints['Huur-belasting'] = montenegro.taxAmount;
 
