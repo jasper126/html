@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAY SIGHT Woning Calculator - Internationaal (2025)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #042943;
+            --primary-orange: #d4915f;
+            --primary-turquoise: #00A5CF;
+            --secondary-light: #F0F4F8;
+            --secondary-medium: #D9E2EC;
+            --secondary-dark: #627D98;
+            --success: #31C48D;
+            --warning: #F0B429;
+            --error: #E12D39;
+            --text-primary: #102A43;
+            --text-secondary: #486581;
+            --text-light: #829AB1;
+            --bg-light: #FFFFFF;
+            --bg-off-white: #F8FAFC;
+            --bg-highlight: #EFF6FF;
+        }
+
+        body {
+            font-family: 'Scheherazade New', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            color: var(--text-primary);
+            background-color: var(--bg-off-white);
+            margin: 0;
+            padding: 0;
+        }
+
+        .baysight-calculator-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            background-color: var(--bg-light);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .calculator-header {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .calculator-header h2 {
+            margin: 0;
+            font-size: 1.75rem;
+        }
+        
+        .calculator-header .bay-sight {
+            color: var(--primary-orange);
+            font-weight: 700;
+        }
+
+        .calculator-tabs {
+            display: flex;
+            background-color: var(--secondary-light);
+            border-bottom: 1px solid var(--secondary-medium);
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .tab:hover {
+            background-color: var(--bg-highlight);
+        }
+
+        .tab.active {
+            color: var(--primary-blue);
+            border-bottom: 3px solid var(--primary-orange);
+            background-color: var(--bg-light);
+        }
+
+        .calculator-section {
+            display: none;
+            padding: 2rem;
+        }
+
+        .calculator-section.active {
+            display: block;
+        }
+
+        .progress-indicator {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--secondary-medium);
+            padding-bottom: 1rem;
+        }
+
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem;
+            position: relative;
+            color: var(--text-light);
+        }
+
+        .progress-step.active {
+            color: var(--primary-blue);
+            font-weight: 600;
+        }
+
+        .progress-step.completed {
+            color: var(--success);
+        }
+
+        .progress-step::after {
+            content: '';
+            position: absolute;
+            bottom: -1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1rem;
+            height: 1rem;
+            background-color: var(--secondary-medium);
+            border-radius: 50%;
+        }
+
+        .progress-step.active::after {
+            background-color: var(--primary-orange);
+        }
+
+        .progress-step.completed::after {
+            background-color: var(--success);
+        }
+
+        .input-form {
+            display: none;
+        }
+
+        .input-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-control {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            background-color: var(--bg-light);
+            border: 1px solid var(--secondary-medium);
+            border-radius: 4px;
+            transition: border-color 0.15s ease-in-out;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-turquoise);
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 165, 207, 0.25);
+        }
+
+        .form-range {
+            width: 100%;
+            height: 1.5rem;
+            padding: 0;
+            background-color: transparent;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        .form-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            background: var(--primary-orange);
+            cursor: pointer;
+        }
+
+        .form-range::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 0.5rem;
+            background: var(--secondary-medium);
+            border-radius: 0.25rem;
+        }
+
+        .range-value {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .toggle-container {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-label {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--secondary-medium);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-label:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .toggle-input:checked + .toggle-label {
+            background-color: var(--primary-orange);
+        }
+
+        .toggle-input:checked + .toggle-label:before {
+            transform: translateX(26px);
+        }
+
+        .form-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-orange);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #c07e4d;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-medium);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--secondary-dark);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .results-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--secondary-medium);
+        }
+
+        .result-tab {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .result-tab:hover {
+            color: var(--primary-blue);
+        }
+
+        .result-tab.active {
+            color: var(--primary-blue);
+            border-bottom: 2px solid var(--primary-orange);
+        }
+
+        .result-panel {
+            display: none;
+        }
+
+        .result-panel.active {
+            display: block;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background-color: var(--bg-highlight);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .summary-card h4 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: var(--primary-blue);
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .data-table th, .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--secondary-medium);
+        }
+
+        .data-table th {
+            background-color: var(--secondary-light);
+            font-weight: 600;
+        }
+
+        .key-considerations {
+            background-color: var(--bg-highlight);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .key-considerations h4 {
+            margin-top: 0;
+            color: var(--primary-blue);
+        }
+
+        .key-considerations ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+
+        .key-considerations li {
+            margin-bottom: 0.5rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            border: 1px solid transparent;
+        }
+
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+
+        .country-comparison {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: var(--bg-highlight);
+            border-radius: 8px;
+        }
+
+        .country-comparison h4 {
+            margin-top: 0;
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .calculator-tabs {
+                flex-direction: column;
+            }
+
+            .progress-indicator {
+                flex-direction: column;
+                border-bottom: none;
+            }
+
+            .progress-step {
+                text-align: left;
+                padding: 0.5rem 0;
+                margin-bottom: 0.5rem;
+                border-bottom: 1px solid var(--secondary-medium);
+            }
+
+            .progress-step::after {
+                display: none;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-navigation {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .results-tabs {
+                flex-direction: column;
+            }
+
+            .result-tab {
+                border-bottom: 1px solid var(--secondary-medium);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="baysight-calculator-container">
+        <div class="calculator-header">
+            <h2><span class="bay-sight">BAY SIGHT</span> Internationale Woning Calculator 2025</h2>
+            <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Gebaseerd op actuele CBS-cijfers en marktdata</p>
+        </div>
+
+        <div class="calculator-tabs">
+            <div class="tab active" data-tab="input">Gegevens invoeren</div>
+            <div class="tab" data-tab="results">Resultaten</div>
+        </div>
+        
+        <div class="calculator-section active" id="input-section">
+            <div class="progress-indicator">
+                <div class="progress-step active" data-step="1">1. Land & Woning</div>
+                <div class="progress-step" data-step="2">2. Financieel</div>
+                <div class="progress-step" data-step="3">3. Gebruik</div>
+                <div class="progress-step" data-step="4">4. Voorkeuren</div>
+            </div>
+            
+            <div class="input-form active" id="step-1">
+                <h3>Land en Woninggegevens</h3>
+                
+                <div class="form-group">
+                    <label for="country">Land</label>
+                    <select id="country" class="form-control">
+                        <option value="">Selecteer een land</option>
+                        <option value="Montenegro">Montenegro</option>
+                        <option value="Spanje">Spanje</option>
+                        <option value="Portugal">Portugal</option>
+                        <option value="Italië">Italië</option>
+                    </select>
+                </div>
+                
+                <div class="form-group region-group" style="display: none;">
+                    <label for="region">Regio</label>
+                    <select id="region" class="form-control">
+                        <option value="">Selecteer een regio</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="purchasePrice">Aankoopprijs (€)</label>
+                    <input type="number" id="purchasePrice" class="form-control" min="0" value="250000">
+                </div>
+                
+                <div class="form-group">
+                    <label for="propertySize">Woonoppervlakte (m²)</label>
+                    <input type="number" id="propertySize" class="form-control" min="0" value="85">
+                </div>
+                
+                <div class="form-group">
+                    <label for="condition">Staat van onderhoud</label>
+                    <select id="condition" class="form-control">
+                        <option value="Nieuwbouw">Nieuwbouw</option>
+                        <option value="Uitstekend">Uitstekend</option>
+                        <option value="Goed" selected>Goed</option>
+                        <option value="Redelijk">Redelijk</option>
+                        <option value="Renovatie nodig">Renovatie nodig</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="input-form" id="step-2">
+                <h3>Financiële gegevens</h3>
+                
+                <div class="form-group">
+                    <label for="ownCapital">Beschikbaar eigen vermogen (€)</label>
+                    <input type="number" id="ownCapital" class="form-control" min="0" value="300000">
+                </div>
+                
+                <div class="form-group">
+                    <label for="needFinancing">Heeft u financiering nodig?</label>
+                    <div class="toggle-container">
+                        <input type="checkbox" id="needFinancing" class="toggle-input">
+                        <label for="needFinancing" class="toggle-label"></label>
+                    </div>
+                </div>
+                
+                <div class="financing-details" style="display: none;">
+                    <div class="form-group">
+                        <label for="financingAmount">Gewenst financieringsbedrag (€)</label>
+                        <input type="number" id="financingAmount" class="form-control" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="financingType">Type financiering</label>
+                        <select id="financingType" class="form-control">
+                            <option value="Hypotheek in Nederland">Hypotheek in Nederland</option>
+                            <option value="Lokale hypotheek">Lokale hypotheek</option>
+                            <option value="Anders">Anders</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="investmentHorizon">Investeringshorizon (jaren)</label>
+                    <input type="range" id="investmentHorizon" class="form-range" min="1" max="30" value="10">
+                    <div class="range-value">
+                        <span>1 jaar</span>
+                        <span id="investmentHorizonValue">10</span>
+                        <span>30 jaar</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-form" id="step-3">
+                <h3>Gebruiksgegevens</h3>
+                
+                <div class="form-group">
+                    <label for="usageType">Primair gebruiksdoel</label>
+                    <select id="usageType" class="form-control">
+                        <option value="Vakantiewoning">Vakantiewoning</option>
+                        <option value="Verhuur" selected>Verhuur</option>
+                        <option value="Combinatie">Combinatie</option>
+                    </select>
+                </div>
+                
+                <div class="rental-details">
+                    <div class="form-group">
+                        <label for="rentalType">Type verhuur</label>
+                        <select id="rentalType" class="form-control">
+                            <option value="Lange termijn" selected>Lange termijn (vaste huurder)</option>
+                            <option value="Korte termijn">Korte termijn (vakantieverhuur)</option>
+                            <option value="Beide">Beide</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="personalUsageWeeks">Aantal weken per jaar voor eigen gebruik</label>
+                        <input type="range" id="personalUsageWeeks" class="form-range" min="0" max="52" value="4">
+                        <div class="range-value">
+                            <span>0 weken</span>
+                            <span id="personalUsageWeeksValue">4</span>
+                            <span>52 weken</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-form" id="step-4">
+                <h3>Persoonlijke voorkeuren</h3>
+                
+                <div class="form-group">
+                    <label for="investorType">Type investeerder</label>
+                    <select id="investorType" class="form-control">
+                        <option value="EU-resident" selected>EU/EER inwoner</option>
+                        <option value="Non-EU-resident">Niet-EU inwoner</option>
+                        <option value="Dutch-resident">Nederlandse inwoner</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="riskTolerance">Risicotolerantie</label>
+                    <input type="range" id="riskTolerance" class="form-range" min="1" max="10" value="6">
+                    <div class="range-value">
+                        <span>Conservatief</span>
+                        <span id="riskToleranceValue">6</span>
+                        <span>Agressief</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="managementPreference">Voorkeur voor beheer</label>
+                    <select id="managementPreference" class="form-control">
+                        <option value="Zelf beheren">Zelf beheren</option>
+                        <option value="Gedeeltelijk uitbesteden">Gedeeltelijk uitbesteden</option>
+                        <option value="Volledig uitbesteden" selected>Volledig uitbesteden</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-navigation">
+                <button class="btn btn-secondary btn-prev" disabled>Vorige</button>
+                <button class="btn btn-primary btn-next">Volgende</button>
+                <button class="btn btn-primary btn-calculate" style="display: none;">Bereken</button>
+            </div>
+        </div>
+        
+        <div class="calculator-section" id="results-section">
+            <div class="results-tabs">
+                <div class="result-tab active" data-result="summary">Samenvatting</div>
+                <div class="result-tab" data-result="financial">Financieel</div>
+                <div class="result-tab" data-result="comparison">Landenvergelijking</div>
+                <div class="result-tab" data-result="considerations">Aandachtspunten</div>
+            </div>
+            
+            <div class="result-panel active" id="summary-panel">
+                <div class="summary-header">
+                    <h3>Samenvatting Resultaten</h3>
+                    <div class="property-info">
+                        <span id="summary-property-details">Woning in <span id="summary-country">-</span></span>
+                    </div>
+                </div>
+                
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <h4>Totale Investering</h4>
+                        <div class="summary-value" id="summary-total-investment">€-</div>
+                        <small>Inclusief aankoopprijs en transactiekosten</small>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <h4>Jaarlijks Netto Rendement</h4>
+                        <div class="summary-value" id="summary-net-yield">-%</div>
+                        <small>Na alle kosten en belastingen</small>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <h4>Jaarlijks Netto Inkomen</h4>
+                        <div class="summary-value" id="summary-annual-income">€-</div>
+                        <small>Operationele cashflow per jaar</small>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <h4>Break-even Periode</h4>
+                        <div class="summary-value" id="summary-breakeven">- jaar</div>
+                        <small>Terugverdientijd investering</small>
+                    </div>
+                </div>
+                
+                <div class="country-comparison">
+                    <h4>Vergelijking met andere landen</h4>
+                    <p>Uw investering vergeleken met dezelfde investering in andere landen:</p>
+                    <table class="data-table" id="country-comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Land</th>
+                                <th>Transactiekosten</th>
+                                <th>Netto Rendement</th>
+                                <th>Jaarlijks Inkomen</th>
+                                <th>Break-even</th>
+                            </tr>
+                        </thead>
+                        <tbody id="country-comparison-tbody">
+                            <!-- Dynamisch gevuld -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="result-panel" id="financial-panel">
+                <h3>Financiële Details</h3>
+                
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <h4>Aankoopkosten</h4>
+                        <div id="purchase-costs-breakdown">
+                            <div>Aankoopprijs: <span id="purchase-price-display">€-</span></div>
+                            <div>Overdrachtsbelasting: <span id="transfer-tax-display">€-</span></div>
+                            <div>Notaris & Registratie: <span id="notary-costs-display">€-</span></div>
+                            <div>Juridische kosten: <span id="legal-costs-display">€-</span></div>
+                            <div><strong>Totaal: <span id="total-purchase-costs">€-</span></strong></div>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <h4>Jaarlijkse Inkomsten</h4>
+                        <div id="annual-income-breakdown">
+                            <div>Bruto huurinkomsten: <span id="gross-rental-income">€-</span></div>
+                            <div>Beheerkosten: <span id="management-costs-display">€-</span></div>
+                            <div>Operationele kosten: <span id="operational-costs-display">€-</span></div>
+                            <div>Belastingen: <span id="tax-costs-display">€-</span></div>
+                            <div><strong>Netto inkomen: <span id="net-annual-income">€-</span></strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-panel" id="comparison-panel">
+                <h3>Uitgebreide Landenvergelijking</h3>
+                
+                <div class="alert alert-info">
+                    <strong>Gebaseerd op actuele CBS-cijfers 2025:</strong> Deze vergelijking gebruikt de meest recente data uit het onderzoeksdocument voor een objectieve analyse.
+                </div>
+                
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Aspect</th>
+                            <th>Montenegro</th>
+                            <th>Spanje</th>
+                            <th>Portugal</th>
+                            <th>Italië</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Transactiekosten</strong></td>
+                            <td>~5,0%</td>
+                            <td>~11,6%</td>
+                            <td>~7,3%</td>
+                            <td>~10,6-14,2%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bruto Rendement</strong></td>
+                            <td>6,5%</td>
+                            <td>6,0%</td>
+                            <td>5,5%</td>
+                            <td>5,5%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Netto Rendement</strong></td>
+                            <td>3,15%</td>
+                            <td>2,44%</td>
+                            <td>2,24%</td>
+                            <td>2,19%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Belastingdruk</strong></td>
+                            <td>8,5-11,9%</td>
+                            <td>15-19%</td>
+                            <td>28%</td>
+                            <td>21-26%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Beheerkosten</strong></td>
+                            <td>10-15%</td>
+                            <td>10-12%</td>
+                            <td>8-10%</td>
+                            <td>10-12%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="result-panel" id="considerations-panel">
+                <h3>Belangrijke Aandachtspunten</h3>
+                
+                <div class="key-considerations">
+                    <h4>Landspecifieke Overwegingen</h4>
+                    <ul id="country-specific-considerations">
+                        <!-- Dynamisch gevuld per land -->
+                    </ul>
+                </div>
+                
+                <div class="key-considerations">
+                    <h4>Algemene Investeringsrisico's</h4>
+                    <ul>
+                        <li>Valutarisico bij investeren buiten de Eurozone</li>
+                        <li>Wijzigingen in lokale wet- en regelgeving</li>
+                        <li>Marktvolatiliteit en economische cycli</li>
+                        <li>Liquiditeitsrisico bij verkoop</li>
+                        <li>Operationele uitdagingen op afstand</li>
+                    </ul>
+                </div>
+                
+                <div class="key-considerations">
+                    <h4>Aanbevelingen op basis van uw profiel</h4>
+                    <ul id="personalized-recommendations">
+                        <!-- Dynamisch gevuld -->
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="form-navigation">
+                <button class="btn btn-secondary btn-save">Opslaan als PDF</button>
+                <button class="btn btn-secondary btn-share">Delen</button>
+                <button class="btn btn-primary btn-recalculate">Opnieuw berekenen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Landspecifieke data gebaseerd op CBS-onderzoek 2025
+            const countryData = {
+                'Montenegro': {
+                    regions: ['Kotor', 'Budva', 'Tivat', 'Podgorica', 'Bar', 'Herceg Novi'],
+                    transactionCostRate: 0.05,
+                    grossYield: 0.065,
+                    netYield: 0.0315,
+                    taxRate: 0.1187, // Effectieve belastingdruk op bruto huur
+                    managementCostRate: 0.10,
+                    operationalCostRate: 0.25,
+                    considerations: [
+                        'EU-kandidaatland met verwachte toetreding rond 2028',
+                        'Progressieve overdrachtsbelasting sinds 2024',
+                        'Relatief lage transactiekosten (5,0%)',
+                        'Hoogste netto rendement maar ook hoogste risico',
+                        'Seizoensgebonden toeristische markt',
+                        'Beperkte liquiditeit vergeleken met EU-markten'
+                    ]
+                },
+                'Spanje': {
+                    regions: ['Valencia', 'Madrid', 'Catalonië', 'Andalusië', 'Murcia', 'Balearen'],
+                    transactionCostRate: 0.116,
+                    grossYield: 0.060,
+                    netYield: 0.0244,
+                    taxRate: 0.15, // Voor EU-residenten na aftrekposten
+                    managementCostRate: 0.10,
+                    operationalCostRate: 0.25,
+                    considerations: [
+                        'Mature EU-markt met sterke infrastructuur',
+                        'Hoge transactiekosten (11,6% gemiddeld)',
+                        'Nieuwe huurwetgeving vanaf 2023 met beperkingen',
+                        'Regionale verschillen in belastingtarieven',
+                        'Gunstigere belasting voor EU/EER niet-residenten',
+                        'Sterke toeristische vraag en prijsstijgingen verwacht'
+                    ]
+                },
+                'Portugal': {
+                    regions: ['Lissabon', 'Porto', 'Algarve', 'Cascais', 'Sintra', 'Coimbra'],
+                    transactionCostRate: 0.073,
+                    grossYield: 0.055,
+                    netYield: 0.0224,
+                    taxRate: 0.28, // Voor niet-residenten op bruto huur
+                    managementCostRate: 0.08,
+                    operationalCostRate: 0.25,
+                    considerations: [
+                        'Einde NHR-programma, nieuw IFICI-regime selectief',
+                        'Gematigde transactiekosten (7,3%)',
+                        'Hoge belastingdruk voor niet-residenten (28%)',
+                        'Sterke prijsstijgingen in hotspots',
+                        'Golden Visa vastgoed component beëindigd',
+                        'Stabiele EU-markt met groeiende tech sector'
+                    ]
+                },
+                'Italië': {
+                    regions: ['Rome', 'Milaan', 'Florence', 'Napels', 'Puglia', 'Sicilië'],
+                    transactionCostRate: 0.106,
+                    grossYield: 0.055,
+                    netYield: 0.0219,
+                    taxRate: 0.21, // Cedolare Secca voor eerste woning
+                    managementCostRate: 0.10,
+                    operationalCostRate: 0.25,
+                    considerations: [
+                        'Transparant Cedolare Secca belastingsysteem',
+                        'Hoge transactiekosten (10,6-14,2%)',
+                        'Bureaucratische complexiteit',
+                        'Regionale economische verschillen',
+                        'Stabiele markt geschikt voor lange termijn',
+                        'Cultureel erfgoed en levensstijl voordelen'
+                    ]
+                }
+            };
+
+            // Variabelen
+            let currentStep = 1;
+            let currentTab = 'input';
+            let currentResultTab = 'summary';
+            let calculationResults = {};
+            
+            // Event listeners
+            setupEventListeners();
+            setupRangeSliders();
+            
+            function setupEventListeners() {
+                // Tab navigatie
+                document.querySelectorAll('.calculator-tabs .tab').forEach(tab => {
+                    tab.addEventListener('click', function() {
+                        switchTab(this.getAttribute('data-tab'));
+                    });
+                });
+                
+                // Stap navigatie
+                document.querySelector('.btn-next').addEventListener('click', nextStep);
+                document.querySelector('.btn-prev').addEventListener('click', prevStep);
+                document.querySelector('.btn-calculate').addEventListener('click', calculate);
+                
+                // Resultaat navigatie
+                document.querySelectorAll('.results-tabs .result-tab').forEach(tab => {
+                    tab.addEventListener('click', function() {
+                        switchResultTab(this.getAttribute('data-result'));
+                    });
+                });
+                
+                // Actieknoppen
+                document.querySelector('.btn-recalculate').addEventListener('click', () => switchTab('input'));
+                
+                // Formulier wijzigingen
+                document.getElementById('country').addEventListener('change', handleCountryChange);
+                document.getElementById('needFinancing').addEventListener('change', handleFinancingToggle);
+                document.getElementById('usageType').addEventListener('change', handleUsageTypeChange);
+            }
+            
+            function setupRangeSliders() {
+                document.querySelectorAll('.form-range').forEach(slider => {
+                    const valueDisplay = document.getElementById(`${slider.id}Value`);
+                    if (valueDisplay) {
+                        valueDisplay.textContent = slider.value;
+                        slider.addEventListener('input', () => {
+                            valueDisplay.textContent = slider.value;
+                        });
+                    }
+                });
+            }
+            
+            function handleCountryChange() {
+                const country = document.getElementById('country').value;
+                const regionSelect = document.getElementById('region');
+                
+                regionSelect.innerHTML = '<option value="">Selecteer een regio</option>';
+                
+                if (country && countryData[country]) {
+                    countryData[country].regions.forEach(region => {
+                        const option = document.createElement('option');
+                        option.value = region;
+                        option.textContent = region;
+                        regionSelect.appendChild(option);
+                    });
+                    
+                    document.querySelector('.region-group').style.display = 'block';
+                } else {
+                    document.querySelector('.region-group').style.display = 'none';
+                }
+            }
+            
+            function handleFinancingToggle() {
+                document.querySelector('.financing-details').style.display = 
+                    document.getElementById('needFinancing').checked ? 'block' : 'none';
+            }
+            
+            function handleUsageTypeChange() {
+                const usageType = document.getElementById('usageType').value;
+                document.querySelector('.rental-details').style.display = 
+                    ['Verhuur', 'Combinatie'].includes(usageType) ? 'block' : 'none';
+            }
+            
+            function switchTab(tabId) {
+                document.querySelectorAll('.calculator-tabs .tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelector(`.calculator-tabs .tab[data-tab="${tabId}"]`).classList.add('active');
+                
+                document.querySelectorAll('.calculator-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.getElementById(`${tabId}-section`).classList.add('active');
+                
+                currentTab = tabId;
+            }
+            
+            function switchResultTab(resultId) {
+                document.querySelectorAll('.results-tabs .result-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelector(`.results-tabs .result-tab[data-result="${resultId}"]`).classList.add('active');
+                
+                document.querySelectorAll('.result-panel').forEach(panel => {
+                    panel.classList.remove('active');
+                });
+                document.getElementById(`${resultId}-panel`).classList.add('active');
+                
+                currentResultTab = resultId;
+            }
+            
+            function nextStep() {
+                if (currentStep < 4) {
+                    document.getElementById(`step-${currentStep}`).classList.remove('active');
+                    document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('active');
+                    document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('completed');
+                    
+                    currentStep++;
+                    document.getElementById(`step-${currentStep}`).classList.add('active');
+                    document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('active');
+                    
+                    document.querySelector('.btn-prev').disabled = false;
+                    
+                    if (currentStep === 4) {
+                        document.querySelector('.btn-next').style.display = 'none';
+                        document.querySelector('.btn-calculate').style.display = 'inline-block';
+                    }
+                }
+            }
+            
+            function prevStep() {
+                if (currentStep > 1) {
+                    document.getElementById(`step-${currentStep}`).classList.remove('active');
+                    document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('active');
+                    
+                    currentStep--;
+                    document.getElementById(`step-${currentStep}`).classList.add('active');
+                    document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('active');
+                    document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('completed');
+                    
+                    document.querySelector('.btn-prev').disabled = currentStep === 1;
+                    
+                    if (currentStep < 4) {
+                        document.querySelector('.btn-next').style.display = 'inline-block';
+                        document.querySelector('.btn-calculate').style.display = 'none';
+                    }
+                }
+            }
+            
+            function calculate() {
+                const country = document.getElementById('country').value;
+                const region = document.getElementById('region').value;
+                const purchasePrice = parseFloat(document.getElementById('purchasePrice').value) || 250000;
+                const investmentHorizon = parseInt(document.getElementById('investmentHorizon').value) || 10;
+                const managementPreference = document.getElementById('managementPreference').value;
+                const investorType = document.getElementById('investorType').value;
+                const rentalType = document.getElementById('rentalType').value;
+                
+                if (!country || !countryData[country]) {
+                    alert('Selecteer eerst een land');
+                    return;
+                }
+                
+                // Bereken voor alle landen voor vergelijking
+                const allResults = {};
+                
+                Object.keys(countryData).forEach(countryName => {
+                    const data = countryData[countryName];
+                    
+                    // Transactiekosten
+                    const transactionCosts = purchasePrice * data.transactionCostRate;
+                    const totalInvestment = purchasePrice + transactionCosts;
+                    
+                    // Huurinkomsten
+                    const grossRentalIncome = purchasePrice * data.grossYield;
+                    
+                    // Kosten
+                    const managementCosts = grossRentalIncome * data.managementCostRate;
+                    const operationalCosts = grossRentalIncome * data.operationalCostRate;
+                    const taxCosts = grossRentalIncome * data.taxRate;
+                    
+                    // Netto inkomen
+                    const netAnnualIncome = grossRentalIncome - managementCosts - operationalCosts - taxCosts;
+                    
+                    // Rendement en break-even
+                    const netYield = (netAnnualIncome / totalInvestment) * 100;
+                    const breakEvenYears = totalInvestment / Math.max(netAnnualIncome, 1);
+                    
+                    allResults[countryName] = {
+                        purchasePrice,
+                        transactionCosts,
+                        totalInvestment,
+                        grossRentalIncome,
+                        managementCosts,
+                        operationalCosts,
+                        taxCosts,
+                        netAnnualIncome,
+                        netYield,
+                        breakEvenYears
+                    };
+                });
+                
+                calculationResults = allResults;
+                
+                // Update UI
+                updateSummaryPanel(country, allResults[country]);
+                updateFinancialPanel(allResults[country]);
+                updateComparisonPanel(allResults);
+                updateConsiderationsPanel(country);
+                
+                switchTab('results');
+            }
+            
+            function updateSummaryPanel(selectedCountry, results) {
+                document.getElementById('summary-country').textContent = selectedCountry;
+                document.getElementById('summary-total-investment').textContent = formatCurrency(results.totalInvestment);
+                document.getElementById('summary-net-yield').textContent = formatPercentage(results.netYield);
+                document.getElementById('summary-annual-income').textContent = formatCurrency(results.netAnnualIncome);
+                document.getElementById('summary-breakeven').textContent = formatYears(results.breakEvenYears);
+                
+                // Update vergelijkingstabel
+                const tbody = document.getElementById('country-comparison-tbody');
+                tbody.innerHTML = '';
+                
+                Object.keys(calculationResults).forEach(country => {
+                    const data = calculationResults[country];
+                    const row = tbody.insertRow();
+                    
+                    row.innerHTML = `
+                        <td><strong>${country}</strong></td>
+                        <td>${formatCurrency(data.transactionCosts)}</td>
+                        <td>${formatPercentage(data.netYield)}</td>
+                        <td>${formatCurrency(data.netAnnualIncome)}</td>
+                        <td>${formatYears(data.breakEvenYears)}</td>
+                    `;
+                    
+                    if (country === selectedCountry) {
+                        row.style.backgroundColor = 'var(--bg-highlight)';
+                        row.style.fontWeight = '600';
+                    }
+                });
+            }
+            
+            function updateFinancialPanel(results) {
+                document.getElementById('purchase-price-display').textContent = formatCurrency(results.purchasePrice);
+                document.getElementById('transfer-tax-display').textContent = formatCurrency(results.transactionCosts * 0.7);
+                document.getElementById('notary-costs-display').textContent = formatCurrency(results.transactionCosts * 0.2);
+                document.getElementById('legal-costs-display').textContent = formatCurrency(results.transactionCosts * 0.1);
+                document.getElementById('total-purchase-costs').textContent = formatCurrency(results.totalInvestment);
+                
+                document.getElementById('gross-rental-income').textContent = formatCurrency(results.grossRentalIncome);
+                document.getElementById('management-costs-display').textContent = formatCurrency(results.managementCosts);
+                document.getElementById('operational-costs-display').textContent = formatCurrency(results.operationalCosts);
+                document.getElementById('tax-costs-display').textContent = formatCurrency(results.taxCosts);
+                document.getElementById('net-annual-income').textContent = formatCurrency(results.netAnnualIncome);
+            }
+            
+            function updateComparisonPanel(allResults) {
+                // Vergelijking is al statisch in de HTML
+            }
+            
+            function updateConsiderationsPanel(selectedCountry) {
+                const considerations = countryData[selectedCountry].considerations;
+                const list = document.getElementById('country-specific-considerations');
+                list.innerHTML = '';
+                
+                considerations.forEach(consideration => {
+                    const li = document.createElement('li');
+                    li.textContent = consideration;
+                    list.appendChild(li);
+                });
+                
+                // Gepersonaliseerde aanbevelingen
+                const recommendations = document.getElementById('personalized-recommendations');
+                recommendations.innerHTML = '';
+                
+                const riskTolerance = parseInt(document.getElementById('riskTolerance').value);
+                const investorType = document.getElementById('investorType').value;
+                
+                let personalizedAdvice = [];
+                
+                if (selectedCountry === 'Montenegro' && riskTolerance < 6) {
+                    personalizedAdvice.push('Montenegro heeft hogere risico\'s - overweeg diversificatie met stabielere EU-markten');
+                }
+                
+                if (investorType === 'Non-EU-resident' && selectedCountry === 'Spanje') {
+                    personalizedAdvice.push('Als niet-EU inwoner betaalt u 24% belasting op bruto huur zonder aftrekposten in Spanje');
+                }
+                
+                if (selectedCountry === 'Portugal' && investorType !== 'Dutch-resident') {
+                    personalizedAdvice.push('Overweeg het IFICI-regime als u kwalificeert voor specifieke beroepen');
+                }
+                
+                if (personalizedAdvice.length === 0) {
+                    personalizedAdvice.push('Uw profiel past goed bij de geselecteerde markt');
+                    personalizedAdvice.push('Overweeg professioneel lokaal advies voor optimale uitvoering');
+                }
+                
+                personalizedAdvice.forEach(advice => {
+                    const li = document.createElement('li');
+                    li.textContent = advice;
+                    recommendations.appendChild(li);
+                });
+            }
+            
+            function formatCurrency(amount) {
+                return new Intl.NumberFormat('nl-NL', {
+                    style: 'currency',
+                    currency: 'EUR',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(amount);
+            }
+            
+            function formatPercentage(percentage) {
+                return new Intl.NumberFormat('nl-NL', {
+                    style: 'percent',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(percentage / 100);
+            }
+            
+            function formatYears(years) {
+                return `${Math.round(years * 10) / 10} jaar`;
+            }
+        });
+    </script>
+</body>
+</html>
