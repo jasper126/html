@@ -1683,8 +1683,6 @@ document.addEventListener('DOMContentLoaded', function () {
         costsTableBody += `<tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td class="numeric-cell">${formatCurrency(totalAnnualCosts)}</td></tr>`;
         
         document.getElementById('costs-table').innerHTML = `<tbody>${costsTableBody}</tbody>`;
-        
-        document.getElementById('italy-costs-explanation').style.display = 'none';
 
         const rentalSummarySection = document.getElementById('rental-summary-section');
         const rentalIncomeTableContainer = document.getElementById('rental-income-table').closest('.panel-section');
