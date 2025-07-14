@@ -56,7 +56,8 @@
             background-color: var(--bg-light);
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05);
-            /* overflow: hidden; is verwijderd om tooltips niet af te snijden */
+            position: relative;
+            overflow: hidden;
         }
 
         .calculator-header {
@@ -823,6 +824,37 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .loading-overlay.visible {
+            display: flex;
+        }
+        .loader {
+          border: 8px solid var(--secondary-light);
+          border-top: 8px solid var(--primary-orange);
+          border-radius: 50%;
+          width: 60px;
+          height: 60px;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
 
 
         @media (max-width: 768px) {
@@ -904,6 +936,11 @@
 </head>
 <body>
     <div class="baysight-calculator-container" id="main-container">
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loader"></div>
+            <p style="font-weight: 600; color: var(--primary-blue);">We brengen jouw woonwens in beeld…</p>
+        </div>
+
         <div class="calculator-header">
             <h2>Woning Calculator</h2>
         </div>
@@ -947,12 +984,12 @@
                 
                 <div class="form-group">
                     <label for="purchasePrice">Aankoopprijs (€)</label>
-                    <input type="number" id="purchasePrice" class="form-control" placeholder="bv. 250000" value="">
+                    <input type="text" id="purchasePrice" class="form-control currency-input" placeholder="bv. 250.000" value="">
                 </div>
 
                 <div class="form-group">
                     <label for="furnishingCosts">Inrichtingskosten (€) (Optioneel)</label>
-                    <input type="number" id="furnishingCosts" class="form-control" placeholder="bv. 20000" value="">
+                    <input type="text" id="furnishingCosts" class="form-control currency-input" placeholder="bv. 20.000" value="">
                 </div>
                 
                 <div class="form-group">
@@ -993,7 +1030,7 @@
                     </select>
                 </div>
             </div>
-
+            
             <div class="input-form" id="step-2">
                 <h3>Gebruiksgegevens</h3>
                 
@@ -1071,9 +1108,9 @@
                     </div>
                     
                     <div class="summary-card">
-                        <h4>Netto Huurrendement</h4>
-                        <div class="summary-value" id="summary-rental-yield">0%</div>
-                        <p>Direct rendement uit verhuur op jaarbasis.</p>
+                        <h4>Bruto Huurrendement</h4>
+                        <div class="summary-value" id="summary-gross-yield">0%</div>
+                        <p>Rendement vóór aftrek van jaarlijkse kosten.</p>
                     </div>
 
                     <div class="summary-card">
@@ -1132,7 +1169,7 @@
                 </div>
             </div>
             
-            <div class="result-panel" id="roi-panel">
+             <div class="result-panel" id="roi-panel">
                 <div class="panel-section">
                     <h4>Analyse van Rendement</h4>
                     <table class="data-table" id="roi-table"></table>
@@ -1191,6 +1228,7 @@
         </div>
     </div>
 
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // --- STATE VARIABLES ---
@@ -1219,6 +1257,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('custom-modal');
     const modalCloseBtn = document.getElementById('modal-close-btn');
     const modalMessage = document.getElementById('modal-message');
+    const loadingOverlay = document.getElementById('loading-overlay');
     
     // --- Event Listeners & Setup ---
     function setupListeners() {
@@ -1226,8 +1265,10 @@ document.addEventListener('DOMContentLoaded', function () {
         prevBtn.addEventListener('click', handlePrevClick);
         
         calculateBtn.addEventListener('click', runCalculation);
-        purchasePriceInput.addEventListener('input', () => {
-            if (currentStep === 1) updateFormState();
+        
+        document.querySelectorAll('.currency-input').forEach(input => {
+            input.addEventListener('blur', formatCurrencyInput);
+            input.addEventListener('focus', unformatCurrencyInput);
         });
 
         if (contactForm) {
@@ -1239,14 +1280,6 @@ document.addEventListener('DOMContentLoaded', function () {
         
         document.getElementById('back-to-input').addEventListener('click', () => {
             switchMainTab(document.querySelector('.tab[data-tab="input"]'));
-        });
-
-        needFinancingToggle.addEventListener('change', () => {
-            financingDetails.style.display = needFinancingToggle.checked ? 'block' : 'none';
-            document.getElementById('yes-financing-label').classList.toggle('active', needFinancingToggle.checked);
-            document.getElementById('yes-financing-label').classList.toggle('inactive', !needFinancingToggle.checked);
-            document.getElementById('no-financing-label').classList.toggle('active', !needFinancingToggle.checked);
-            document.getElementById('no-financing-label').classList.toggle('inactive', needFinancingToggle.checked);
         });
         
         usageTypeSelect.addEventListener('change', () => {
@@ -1262,6 +1295,30 @@ document.addEventListener('DOMContentLoaded', function () {
         modalOverlay.addEventListener('click', hideModal);
         
         setupRangeSlider('personalUsageWeeks', 'personalUsageWeeksValue');
+    }
+
+    // --- Currency Formatting ---
+    const formatCurrency = (value) => value || value === 0 ? new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(value) : '-';
+    const formatPercent = (value, digits = 1) => value || value === 0 ? new Intl.NumberFormat('nl-NL', { style: 'percent', minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value) : '-';
+
+    function formatCurrencyInput(event) {
+        const input = event.target;
+        const value = parseFloat(input.value.replace(/[^0-9,-]+/g,"").replace(",", "."));
+        if (!isNaN(value)) {
+            input.value = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(value);
+        } else {
+            input.value = '';
+        }
+    }
+    
+    function unformatCurrencyInput(event) {
+        const input = event.target;
+        const value = parseFloat(input.value.replace(/[^0-9,-]+/g,"").replace(",", "."));
+        if (!isNaN(value)) {
+            input.value = value;
+        } else {
+            input.value = '';
+        }
     }
 
     async function handleFormSubmit(event) {
@@ -1315,8 +1372,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function handleNextClick() {
-        const totalForms = document.querySelectorAll('.input-form:not([style*="display: none"])').length;
-        
+        const totalForms = 4;
         if (currentStep < totalForms) {
             currentStep++;
             updateFormState();
@@ -1329,15 +1385,15 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelector('.progress-indicator').style.display = isStartScreen ? 'none' : 'flex';
         
         progressSteps.forEach((step, index) => {
-            step.classList.toggle('active', index === currentStep -1);
-            step.classList.toggle('completed', index < currentStep -1);
+            step.classList.toggle('active', index + 1 === currentStep);
+            step.classList.toggle('completed', index + 1 < currentStep);
         });
 
         formSteps.forEach(form => form.classList.remove('active'));
         document.getElementById(`step-${currentStep}`).classList.add('active');
         prevBtn.disabled = isStartScreen;
         
-        const totalForms = 3;
+        const totalForms = 4;
         nextBtn.style.display = currentStep === totalForms ? 'none' : 'inline-block';
         calculateBtn.style.display = currentStep === totalForms ? 'inline-block' : 'none';
         
@@ -1389,32 +1445,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Core Calculation Logic ---
     function runCalculation() {
-        const inputs = gatherInputs();
-        
-        let baseAppreciation = 0.204;
-        let appreciationMultiplier = 1.0;
-        const coastalRegions = ['Kotor', 'Budva', 'Tivat', 'Bar'];
-        if (coastalRegions.includes(inputs.region)) {
-            appreciationMultiplier = 1.10;
-        } else if (inputs.region === 'Noord') {
-            appreciationMultiplier = 1 - 0.292;
-        }
-        const finalAppreciation = baseAppreciation * appreciationMultiplier;
+        loadingOverlay.classList.add('visible');
 
-        const results = calculateAll(inputs);
-        lastCalculation = { inputs, results, finalAppreciation }; 
-        
-        displayResults(inputs, results, finalAppreciation);
-        
-        const resultsTab = document.querySelector('.tab[data-tab="results"]');
-        resultsTab.classList.remove('disabled');
-        switchMainTab(resultsTab);
+        setTimeout(() => {
+            const inputs = gatherInputs();
+            
+            let baseAppreciation = 0.204;
+            let appreciationMultiplier = 1.0;
+            const coastalRegions = ['Kotor', 'Budva', 'Tivat', 'Bar'];
+            if (coastalRegions.includes(inputs.region)) {
+                appreciationMultiplier = 1.10;
+            } else if (inputs.region === 'Noord') {
+                appreciationMultiplier = 1 - 0.292;
+            }
+            const finalAppreciation = baseAppreciation * appreciationMultiplier;
+
+            const results = calculateAll(inputs);
+            lastCalculation = { inputs, results, finalAppreciation }; 
+            
+            displayResults(inputs, results, finalAppreciation);
+            
+            loadingOverlay.classList.remove('visible');
+            const resultsTab = document.querySelector('.tab[data-tab="results"]');
+            resultsTab.classList.remove('disabled');
+            switchMainTab(resultsTab);
+        }, 2500); // 2.5 second delay
     }
     
     function gatherInputs() {
         return {
-            purchasePrice: parseFloat(document.getElementById('purchasePrice').value) || 0,
-            furnishingCosts: parseFloat(document.getElementById('furnishingCosts').value) || 0,
+            purchasePrice: parseFloat(document.getElementById('purchasePrice').value.replace(/[^0-9,-]+/g,"").replace(",", ".")) || 0,
+            furnishingCosts: parseFloat(document.getElementById('furnishingCosts').value.replace(/[^0-9,-]+/g,"").replace(",", ".")) || 0,
             isNewBuild: document.getElementById('propertyCondition').value === 'new',
             propertyType: document.getElementById('propertyType').value,
             region: document.getElementById('region').value,
@@ -1438,7 +1499,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     function calculateCountry(inputs, country) {
-        const { purchasePrice, isNewBuild, region, furnishingCosts, managementPreference, usageType, personalUsageWeeks, needFinancing, financingInterestRate, financingTerm, ownCapital, propertySize } = inputs;
+        const { purchasePrice, isNewBuild, region, furnishingCosts, managementPreference, usageType, personalUsageWeeks, propertySize } = inputs;
         const results = { purchasePrice: purchasePrice || 0 };
         let params = {};
         let costBreakdown = {};
@@ -1575,9 +1636,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Result Display Functions ---
     function displayResults(inputs, allResults, finalAppreciation) {
         const { montenegro } = allResults;
-        const formatCurrency = (value) => value || value === 0 ? new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(value) : '-';
-        const formatPercent = (value, digits = 1) => value || value === 0 ? new Intl.NumberFormat('nl-NL', { style: 'percent', minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value) : '-';
-
+        
         document.getElementById('summary-property-type').textContent = inputs.propertyType;
         document.getElementById('summary-region').textContent = document.querySelector(`#region option[value="${inputs.region}"]`).textContent;
         document.getElementById('summary-total-investment').textContent = formatCurrency(montenegro.totalInvestment);
@@ -1721,6 +1780,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 <tr><td style="padding-left: 2rem;">- Belasting op Huurinkomsten</td><td class="numeric-cell">-${formatCurrency(montenegro.taxAmount)}</td></tr>
                 ${montenegro.annualFinancingCost > 0 ? `<tr><td style="padding-left: 2rem;">- Financieringskosten</td><td class="numeric-cell">-${formatCurrency(montenegro.annualFinancingCost)}</td></tr>` : ''}
                 <tr class="total-row"><td>Netto Cashflow (Eindresultaat)</td><td class="numeric-cell">${formatCurrency(montenegro.netAnnualCashflow)}</td></tr>
+            </tbody>`;
+            
+            const cashOnCashYield = inputs.ownCapital > 0 ? (montenegro.netAnnualCashflow / inputs.ownCapital) : 0;
+            document.getElementById('roi-table').innerHTML = `<tbody>
+                <tr><td>Bruto Rendement</td><td class="numeric-cell">${formatPercent(grossYield, 2)}</td></tr>
+                <tr><td>Netto Huurrendement</td><td class="numeric-cell">${formatPercent(netYield, 2)}</td></tr>
+                <tr><td>Cash-on-Cash Rendement</td><td class="numeric-cell">${formatPercent(cashOnCashYield, 2)}</td></tr>
             </tbody>`;
         }
     }
