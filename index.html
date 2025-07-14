@@ -1030,7 +1030,7 @@
                     </select>
                 </div>
             </div>
-            
+
             <div class="input-form" id="step-2">
                 <h3>Gebruiksgegevens</h3>
                 
@@ -1169,7 +1169,7 @@
                 </div>
             </div>
             
-             <div class="result-panel" id="roi-panel">
+            <div class="result-panel" id="roi-panel">
                 <div class="panel-section">
                     <h4>Analyse van Rendement</h4>
                     <table class="data-table" id="roi-table"></table>
@@ -1372,7 +1372,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function handleNextClick() {
-        const totalForms = 4;
+        const totalForms = 3;
         if (currentStep < totalForms) {
             currentStep++;
             updateFormState();
@@ -1393,11 +1393,11 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById(`step-${currentStep}`).classList.add('active');
         prevBtn.disabled = isStartScreen;
         
-        const totalForms = 4;
+        const totalForms = 3;
         nextBtn.style.display = currentStep === totalForms ? 'none' : 'inline-block';
         calculateBtn.style.display = currentStep === totalForms ? 'inline-block' : 'none';
         
-        nextBtn.disabled = (currentStep === 1 && (parseFloat(purchasePriceInput.value) || 0) <= 0);
+        nextBtn.disabled = (currentStep === 1 && (parseFloat(purchasePriceInput.value.replace(/[^0-9,-]+/g,"").replace(",", ".")) || 0) <= 0);
     }
     
     function showModal(message) {
@@ -1749,22 +1749,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <span class="info-value">${rentalWeeks}</span>
                         </div>
                     </div>
-                    <table class="data-table">
-                        <tbody>`;
-            
-            const grossYield = montenegro.totalInvestment > 0 ? (montenegro.grossAnnualRentalIncome / montenegro.totalInvestment) : 0;
-            const netYield = montenegro.netRentalYield;
-
-            summaryHTML += `
-                <tr>
-                    <td>Bruto Rendement <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">(Bruto Huurinkomsten / Totale Investering). Rendement vóór aftrek van alle jaarlijkse kosten.</span></span></td>
-                    <td class="numeric-cell">${formatPercent(grossYield, 2)}</td>
-                </tr>
-                <tr>
-                    <td>Netto Huurrendement <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">(Netto Resultaat / Totale Investering). Rendement na aftrek van alle kosten, inclusief belastingen en financiering.</span></span></td>
-                    <td class="numeric-cell">${formatPercent(netYield, 2)}</td>
-                </tr>
-            </tbody></table></div>`;
+                </div>`;
 
             rentalSummarySection.innerHTML = summaryHTML;
 
@@ -1784,8 +1769,7 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const cashOnCashYield = inputs.ownCapital > 0 ? (montenegro.netAnnualCashflow / inputs.ownCapital) : 0;
             document.getElementById('roi-table').innerHTML = `<tbody>
-                <tr><td>Bruto Rendement</td><td class="numeric-cell">${formatPercent(grossYield, 2)}</td></tr>
-                <tr><td>Netto Huurrendement</td><td class="numeric-cell">${formatPercent(netYield, 2)}</td></tr>
+                <tr><td>Netto Huurrendement</td><td class="numeric-cell">${formatPercent(montenegro.netRentalYield, 2)}</td></tr>
                 <tr><td>Cash-on-Cash Rendement</td><td class="numeric-cell">${formatPercent(cashOnCashYield, 2)}</td></tr>
             </tbody>`;
         }
