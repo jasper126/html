@@ -1103,9 +1103,6 @@
                 <div class="considerations-list" style="border-left-color: var(--primary-turquoise);">
                     <h4>Toelichting op de Kosten</h4>
                     <ul>
-                        <li>De berekeningen van de eenmalige aankoopkosten zijn gebaseerd op de door u aangeleverde onderzoeksdocumenten voor 2024.</li>
-                        <li>Voor kosten die in de documenten als een percentage-range werden opgegeven (bv. 6-10%), is voor de berekening een gemiddelde of representatief tarief gebruikt.</li>
-                        <li><b>Belangrijke Aanname (Italië):</b> De registratiebelasting en notariskosten in Italië zijn gebaseerd op de kadastrale waarde. Aangezien deze niet bekend is, is voor deze berekening een realistische schatting gebruikt waarbij de kadastrale waarde 60% van de marktwaarde (aankoopprijs) bedraagt.</li>
                         <li>Deze cijfers dienen als een nauwkeurige indicatie, maar kunnen in de praktijk afwijken. Raadpleeg altijd een lokale specialist voor een definitieve kostenopgave.</li>
                     </ul>
                 </div>
@@ -1315,9 +1312,9 @@ document.addEventListener('DOMContentLoaded', function () {
     function handleNextClick() {
         const totalForms = document.querySelectorAll('.input-form').length - 1;
 
-        if (currentStep === 2) { // Financial validation step
+        if (currentStep === 2) {
             if (!validateFinancials()) {
-                return; // Stop if validation fails
+                return; 
             }
         }
 
@@ -1329,13 +1326,11 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function validateFinancials() {
         const inputs = gatherInputs();
-        if (inputs.purchasePrice <= 0) return true; // Don't validate if there's no price
+        if (inputs.purchasePrice <= 0) return true;
 
-        // The validation now ONLY checks against the purchase price.
         if (inputs.ownCapital < inputs.purchasePrice && !inputs.needFinancing) {
             const pPriceStr = (inputs.purchasePrice || 0).toLocaleString('nl-NL');
             const ownCapStr = (inputs.ownCapital || 0).toLocaleString('nl-NL');
-
             const message = `Uw eigen vermogen (€ ${ownCapStr}) is niet toereikend om de aankoopprijs van de woning (€ ${pPriceStr}) te dekken.<br><br>Verhoog uw eigen vermogen of selecteer 'Ja' bij 'Heeft u financiering nodig?' om door te gaan.`;
             showModal(message);
             return false;
@@ -1452,7 +1447,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let params = {};
         let costBreakdown = {};
 
-        costBreakdown.baySightCosts = purchasePrice * 0.015;
+        costBreakdown.baySightCosts = Math.max(3000, purchasePrice * 0.015);
 
         switch(country) {
             case 'Montenegro':
@@ -1605,7 +1600,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const costKeys = [
             { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: 'Belasting op aankoop.' },
             { key: 'stampDuty', label: 'Zegelrecht', tooltip: 'Belasting op juridische documenten, van toepassing in Portugal (0.8%).' },
-            { key: 'baySightCosts', label: 'Bay Sight Kosten', tooltip: 'Servicekosten voor de begeleiding en aankoop door Bay Sight.' },
+            { key: 'baySightCosts', label: 'Bay Sight Kosten', tooltip: '1.5% van de aanschafprijs met een minimum van €3.000.' },
             { key: 'legalCosts', label: 'Advocaatkosten', tooltip: 'Kosten voor juridische controle.' },
             { key: 'notaryAndRegistrationCosts', label: 'Notaris- en Registratiekosten', tooltip: 'Kosten voor de notaris en eigendomsregistratie.' },
             { key: 'translatorCosts', label: 'Tolk (verplicht)', tooltip: 'Verplichte kosten voor een beëdigd vertaler bij de notaris in Montenegro.' },
