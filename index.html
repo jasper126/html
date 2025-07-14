@@ -916,9 +916,8 @@
         <div class="calculator-section active" id="input-section">
             <div class="progress-indicator">
                 <div class="progress-step active" data-step="1">1. Woning</div>
-                <div class="progress-step" data-step="2">2. Financieel</div>
-                <div class="progress-step" data-step="3">3. Gebruik</div>
-                <div class="progress-step" data-step="4">4. Voorkeuren</div>
+                <div class="progress-step" data-step="2">2. Gebruik</div>
+                <div class="progress-step" data-step="3">3. Voorkeuren</div>
             </div>
             
             <div class="input-form active" id="step-0">
@@ -996,40 +995,6 @@
             </div>
 
             <div class="input-form" id="step-2">
-                <h3>Financiële gegevens</h3>
-                
-                <div class="form-group">
-                    <label for="ownCapital">Beschikbaar eigen vermogen (€)</label>
-                    <input type="number" id="ownCapital" class="form-control" placeholder="bv. 150000" value="">
-                    <div id="capital-warning" style="color: var(--warning); font-size: 0.9rem; margin-top: 0.5rem; display: none;"></div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Heeft u financiering nodig? <small style="font-weight: 400; color: var(--text-secondary);">(bv. via opname overwaarde)</small></label>
-                    <div class="toggle-switch-container">
-                        <span class="toggle-label-text active" id="no-financing-label">Nee</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="needFinancing">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span class="toggle-label-text inactive" id="yes-financing-label">Ja</span>
-                    </div>
-                </div>
-                
-                <div class="financing-details" style="display: none;">
-                    <div class="form-group">
-                        <label for="financingInterestRate">Rentepercentage (%)</label>
-                        <input type="number" id="financingInterestRate" class="form-control" min="0" max="20" step="0.1" placeholder="bv. 5.5" value="">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="financingTerm">Looptijd financiering (jaren)</label>
-                        <input type="number" id="financingTerm" class="form-control" min="1" max="30" placeholder="bv. 20" value="">
-                    </div>
-                </div>
-            </div>
-
-            <div class="input-form" id="step-3">
                 <h3>Gebruiksgegevens</h3>
                 
                 <div class="form-group">
@@ -1042,7 +1007,7 @@
                     </select>
                 </div>
                 
-                <div class="rental-details">
+                <div class="rental-details" style="display:none;">
                         <div class="form-group">
                             <label for="personalUsageWeeks">Aantal weken per jaar voor eigen gebruik</label>
                             <input type="range" id="personalUsageWeeks" class="form-range" min="0" max="52" value="0">
@@ -1055,7 +1020,7 @@
                 </div>
             </div>
 
-            <div class="input-form" id="step-4">
+            <div class="input-form" id="step-3">
                 <h3>Voorkeuren</h3>
                 <div class="form-group">
                     <label for="managementPreference">Voorkeur voor beheer (indien verhuur)</label>
@@ -1335,50 +1300,29 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function handleNextClick() {
-        const totalForms = document.querySelectorAll('.input-form').length - 1;
-
-        if (currentStep === 2) {
-            if (!validateFinancials()) {
-                return; 
-            }
-        }
-
+        const totalForms = document.querySelectorAll('.input-form:not([style*="display: none"])').length;
+        
         if (currentStep < totalForms) {
             currentStep++;
             updateFormState();
         }
     }
     
-    function validateFinancials() {
-        const inputs = gatherInputs();
-        if (inputs.purchasePrice <= 0) return true;
-
-        if (inputs.ownCapital < inputs.purchasePrice && !inputs.needFinancing) {
-            const pPriceStr = (inputs.purchasePrice || 0).toLocaleString('nl-NL');
-            const ownCapStr = (inputs.ownCapital || 0).toLocaleString('nl-NL');
-            const message = `Uw eigen vermogen (€ ${ownCapStr}) is niet toereikend om de aankoopprijs van de woning (€ ${pPriceStr}) te dekken.<br><br>Verhoog uw eigen vermogen of selecteer 'Ja' bij 'Heeft u financiering nodig?' om door te gaan.`;
-            showModal(message);
-            return false;
-        }
-        return true;
-    }
-
     // --- UI State & Updates ---
     function updateFormState() {
         const isStartScreen = currentStep === 0;
         document.querySelector('.progress-indicator').style.display = isStartScreen ? 'none' : 'flex';
         
         progressSteps.forEach((step, index) => {
-            const stepNum = index + 1;
-            step.classList.toggle('active', stepNum === currentStep);
-            step.classList.toggle('completed', stepNum < currentStep);
+            step.classList.toggle('active', index === currentStep -1);
+            step.classList.toggle('completed', index < currentStep -1);
         });
 
         formSteps.forEach(form => form.classList.remove('active'));
         document.getElementById(`step-${currentStep}`).classList.add('active');
         prevBtn.disabled = isStartScreen;
         
-        const totalForms = document.querySelectorAll('.input-form').length - 1;
+        const totalForms = 3;
         nextBtn.style.display = currentStep === totalForms ? 'none' : 'inline-block';
         calculateBtn.style.display = currentStep === totalForms ? 'inline-block' : 'none';
         
@@ -1460,10 +1404,9 @@ document.addEventListener('DOMContentLoaded', function () {
             propertyType: document.getElementById('propertyType').value,
             region: document.getElementById('region').value,
             propertySize: parseFloat(document.getElementById('propertySize').value) || 0,
-            ownCapital: parseFloat(document.getElementById('ownCapital').value) || 0,
-            needFinancing: document.getElementById('needFinancing').checked,
-            financingInterestRate: parseFloat(document.getElementById('financingInterestRate').value) / 100 || 0,
-            financingTerm: parseInt(document.getElementById('financingTerm').value) || 0,
+            needFinancing: false,
+            financingInterestRate: 0,
+            financingTerm: 0,
             usageType: document.getElementById('usageType').value,
             personalUsageWeeks: parseInt(document.getElementById('personalUsageWeeks').value) || 0,
             managementPreference: document.getElementById('managementPreference').value,
@@ -1546,15 +1489,6 @@ document.addEventListener('DOMContentLoaded', function () {
         results.totalInvestment = purchasePrice + totalOneTimeCosts + furnishingCosts;
         
         results.annualFinancingCost = 0;
-        if(needFinancing) {
-            const financingAmount = Math.max(0, results.totalInvestment - ownCapital);
-            if (financingAmount > 0 && financingTerm > 0 && financingInterestRate > 0) {
-                const r = financingInterestRate / 12;
-                const n = financingTerm * 12;
-                const monthlyPayment = (financingAmount * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-                if (isFinite(monthlyPayment)) results.annualFinancingCost = monthlyPayment * 12;
-            }
-        }
         
         const regionYieldMultipliers = { 'Kotor': 1.05, 'Budva': 1.15, 'Tivat': 1.10, 'Bar': 0.95, 'Noord': 0.80 };
         const regionMultiplier = regionYieldMultipliers[region] || 1.0;
@@ -1712,7 +1646,7 @@ document.addEventListener('DOMContentLoaded', function () {
         costsTableBody += `<tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td class="numeric-cell">${formatCurrency(totalAnnualCosts)}</td></tr>`;
         
         document.getElementById('costs-table').innerHTML = `<tbody>${costsTableBody}</tbody>`;
-        
+
         const rentalSummarySection = document.getElementById('rental-summary-section');
         const rentalIncomeTableContainer = document.getElementById('rental-income-table').closest('.panel-section');
         const netRentalResultTableContainer = document.getElementById('net-rental-result-table').closest('.panel-section');
