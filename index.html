@@ -1009,10 +1009,10 @@
                 <div class="form-group">
                     <label for="usageType">Primair gebruiksdoel</label>
                     <select id="usageType" class="form-control">
+                        <option value="KorteTermijnVerhuur" selected>Volledige Korte Termijn Verhuur (Vakantie)</option>
+                        <option value="LangeTermijnVerhuur">Volledige Lange Termijn Verhuur</option>
                         <option value="Combinatie">Combinatie (Eigen gebruik & Verhuur)</option>
                         <option value="Vakantiewoning">Alleen eigen gebruik (Vakantiewoning)</option>
-                        <option value="LangeTermijnVerhuur">Volledige Lange Termijn Verhuur</option>
-                        <option value="KorteTermijnVerhuur" selected>Volledige Korte Termijn Verhuur (Vakantie)</option>
                     </select>
                 </div>
                 
@@ -1121,16 +1121,6 @@
                         <canvas id="annual-costs-chart"></canvas>
                     </div>
                     <table class="data-table" id="costs-table"></table>
-                </div>
-                <div class="panel-section">
-                    <h4>Waarom zijn de eenmalige kosten in Italië relatief hoog?</h4>
-                    <div class="considerations-list" style="border-left-color: var(--primary-orange);">
-                        <p>De eenmalige kosten in Italië kunnen hoger uitvallen dan in andere landen door een combinatie van factoren:</p>
-                        <ul>
-                            <li><strong>Notariskosten + BTW:</strong> De notariskosten zijn een percentage van de aankoopprijs, en hierover wordt 22% BTW (IVA) geheven.</li>
-                            <li><strong>Verplichte Tolk:</strong> Bij een niet-Italiaans sprekende koper is een beëdigd tolk wettelijk verplicht bij de overdracht. De kosten hiervoor zijn aanzienlijk (€ 1.500 - € 3.000).</li>
-                        </ul>
-                    </div>
                 </div>
             </div>
 
@@ -1253,7 +1243,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         usageTypeSelect.addEventListener('change', () => {
             const usage = usageTypeSelect.value;
-            rentalDetails.style.display = (usage === 'Combinatie' || usage === 'LangeTermijnVerhuur' || usage === 'KorteTermijnVerhuur') ? 'block' : 'none';
+            rentalDetails.style.display = (usage === 'Combinatie') ? 'block' : 'none';
             if (usage !== 'Combinatie') {
                 personalUsageWeeksSlider.value = 0;
                 personalUsageWeeksSlider.dispatchEvent(new Event('input'));
@@ -1519,7 +1509,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 else { costBreakdown.tax = estimatedCadastralValue * 0.09; }
                 const registrationFixedCosts = isNewBuild ? 400 : 100;
                 costBreakdown.notaryAndRegistrationCosts = ((purchasePrice * 0.015) * 1.22) + registrationFixedCosts;
-                costBreakdown.translatorCosts = 2250;
+                costBreakdown.translatorCosts = 250;
                 break;
         }
         results.costBreakdown = costBreakdown;
@@ -1629,7 +1619,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function displayOnetimeCostComparison(inputs, allResults, purchasePrice, formatCurrency, formatPercent) {
         const costKeys = [
-            { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: "Let op: de volgende gedetailleerde regels gelden specifiek voor <b>Montenegro</b>:<br><br>Voor <b>Bestaande Bouw</b> betaalt de koper een aparte, progressieve overdrachtsbelasting: 3% tot €150k; €4.500 + 5% tot €500k; €22.000 + 6% daarboven.<br><br>Voor <b>Nieuwbouw</b> (eerste verkoop) betaalt de koper géén overdrachtsbelasting. De prijs is inclusief 21% BTW." },
+            { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: "De regels voor <b>Montenegro</b> zijn als volgt:<br><br><b>Bestaande Bouw:</b> De koper betaalt een aparte, progressieve overdrachtsbelasting.<br><b>Nieuwbouw:</b> De koper betaalt géén overdrachtsbelasting. De prijs is inclusief 21% BTW." },
             { key: 'stampDuty', label: 'Zegelrecht', tooltip: 'Belasting op juridische documenten, van toepassing in Portugal (0.8%).' },
             { key: 'baySightCosts', label: 'Bay Sight Kosten', tooltip: '1.5% van de aanschafprijs met een minimum van €3.000.' },
             { key: 'legalCosts', label: 'Advocaatkosten', tooltip: 'Kosten voor juridische controle.' },
@@ -1694,6 +1684,8 @@ document.addEventListener('DOMContentLoaded', function () {
         
         document.getElementById('costs-table').innerHTML = `<tbody>${costsTableBody}</tbody>`;
         
+        document.getElementById('italy-costs-explanation').style.display = 'block';
+
         const rentalSummarySection = document.getElementById('rental-summary-section');
         const rentalIncomeTableContainer = document.getElementById('rental-income-table').closest('.panel-section');
         const netRentalResultTableContainer = document.getElementById('net-rental-result-table').closest('.panel-section');
