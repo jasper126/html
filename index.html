@@ -1044,6 +1044,7 @@
                 <div class="result-tab active" data-result="summary">Samenvatting</div>
                 <div class="result-tab" data-result="financial">Investering & Kosten</div>
                 <div class="result-tab" data-result="rental">Verhuurpotentieel</div>
+                <div class="result-tab" data-result="roi">Rendement Analyse</div>
             </div>
             
             <div class="result-panel active" id="summary-panel">
@@ -1070,9 +1071,9 @@
                     </div>
                     
                     <div class="summary-card">
-                        <h4>Bruto Huurrendement</h4>
-                        <div class="summary-value" id="summary-gross-yield">0%</div>
-                        <p>Rendement vóór aftrek van jaarlijkse kosten.</p>
+                        <h4>Netto Huurrendement</h4>
+                        <div class="summary-value" id="summary-rental-yield">0%</div>
+                        <p>Direct rendement uit verhuur op jaarbasis.</p>
                     </div>
 
                     <div class="summary-card">
@@ -1131,6 +1132,21 @@
                 </div>
             </div>
             
+            <div class="result-panel" id="roi-panel">
+                <div class="panel-section">
+                    <h4>Analyse van Rendement</h4>
+                    <table class="data-table" id="roi-table"></table>
+                </div>
+                <div class="considerations-list">
+                    <h4>Toelichting Rendement</h4>
+                    <ul>
+                        <li><b>Bruto Rendement:</b> (Bruto Jaarlijkse Huurinkomsten / Totale Investering) * 100%. Dit kengetal toont het rendement voordat jaarlijkse kosten zoals belastingen en verzekering in mindering zijn gebracht.</li>
+                        <li><b>Netto Huurrendement:</b> (Jaarlijks Netto Resultaat / Totale Investering) * 100%. Dit is het directe, jaarlijkse rendement uit verhuurinkomsten, afgezet tegen uw totale investering. Het toont de directe winstgevendheid van het pand na alle kosten.</li>
+                        <li><b>Cash-on-Cash Rendement:</b> Dit belangrijke kengetal meet hoeveel cash u jaarlijks overhoudt (na alle kosten, inclusief financiering) ten opzichte van het eigen geld dat u daadwerkelijk heeft ingelegd.</li>
+                    </ul>
+                </div>
+            </div>
+            
             <div class="panel-section cta-section" id="lead-form-panel">
                 <div class="cta-content">
                     <div class="cta-icon-container">
@@ -1174,7 +1190,6 @@
             <p id="modal-message"></p>
         </div>
     </div>
-
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
