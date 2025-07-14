@@ -1118,11 +1118,11 @@
                     <table class="data-table" id="net-rental-result-table"></table>
                 </div>
                 <div class="considerations-list">
-                    <h4>Aandachtspunten bij verhuur</h4>
+                    <h4>Marktanalyse & Overwegingen</h4>
                     <ul>
-                        <li>De bezettingsgraad is een realistische schatting en kan variëren op basis van marketing, seizoensinvloeden en de kwaliteit van de woning.</li>
-                        <li>Huurprijzen zijn marktconform en kunnen fluctueren. Regelmatige evaluatie is aanbevolen.</li>
-                        <li>Professioneel beheer via een partij als Bay Sight kan zorgen voor een hogere bezettingsgraad en minder zorgen.</li>
+                        <li><b>Regulering Korte Termijn Verhuur:</b> In Spanje, Italië en Portugal worden de regels voor korte termijn verhuur (KTV) steeds strenger.  Dit verhoogt de operationele complexiteit, maar kan voordelig zijn voor professionele partijen door verminderde concurrentie. [cite: 577]</li>
+                        <li><b>Rendementscompressie:</b> Vooral in Portugal en Spaanse hotspots stijgen de vastgoedprijzen sneller dan de huren.  Dit betekent dat het rendement meer afhankelijk wordt van toekomstige waardestijging, wat een hoger risico met zich meebrengt. [cite: 582]</li>
+                        <li><b>Montenegro's EU-Toetreding:</b> Het vooruitzicht op EU-lidmaatschap is een unieke drijfveer voor de Montenegrijnse markt, wat investeerders aantrekt die speculeren op een stijging van de vastgoedprijzen.  Dit maakt het een "high-risk, high-reward" propositie. [cite: 588]</li>
                     </ul>
                 </div>
             </div>
@@ -1514,13 +1514,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const regionYieldMultipliers = { 'Kotor': 1.05, 'Budva': 1.15, 'Tivat': 1.10, 'Bar': 0.95, 'Noord': 0.80 };
         const regionMultiplier = regionYieldMultipliers[region] || 1.0;
         
+        // Updated yield calculations based on the new research document (averages of ranges)
         let grossYieldRate = 0;
         if (usageType === 'LangeTermijnVerhuur') {
-            grossYieldRate = country === 'Montenegro' ? 0.045 * regionMultiplier : { 'Spanje': 0.04, 'Portugal': 0.035, 'Italië': 0.035 }[country];
+            const ltvYields = { 'Montenegro': 0.055, 'Spanje': 0.06, 'Portugal': 0.0525, 'Italië': 0.06 };
+            grossYieldRate = country === 'Montenegro' ? ltvYields[country] * regionMultiplier : ltvYields[country];
         } else if (usageType === 'KorteTermijnVerhuur') {
-            grossYieldRate = country === 'Montenegro' ? 0.08 * regionMultiplier : { 'Spanje': 0.075, 'Portugal': 0.07, 'Italië': 0.07 }[country];
+            const ktvYields = { 'Montenegro': 0.085, 'Spanje': 0.07, 'Portugal': 0.065, 'Italië': 0.07 };
+            grossYieldRate = country === 'Montenegro' ? ktvYields[country] * regionMultiplier : ktvYields[country];
         } else if (usageType === 'Combinatie') {
-            const baseAnnualYield = country === 'Montenegro' ? 0.065 * regionMultiplier : { 'Spanje': 0.06, 'Portugal': 0.055, 'Italië': 0.055 }[country];
+            const comboYields = { 'Montenegro': 0.07, 'Spanje': 0.065, 'Portugal': 0.0575, 'Italië': 0.065 };
+            const baseAnnualYield = country === 'Montenegro' ? comboYields[country] * regionMultiplier : comboYields[country];
             const rentalWeeks = 52 - personalUsageWeeks;
             results.grossAnnualRentalIncome = (purchasePrice * baseAnnualYield / 52) * rentalWeeks;
         }
@@ -1653,7 +1657,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (montenegro.annualFinancingCost > 0) {
-            costsTableBody += `<tr><td>Financieringskosten</td><td class="numeric-cell">${formatCurrency(montenegro.annualFinancingCost)}</td></tr>`;
+            const interestRateFormatted = (inputs.financingInterestRate * 100).toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            costsTableBody += `<tr><td>Financieringskosten (${interestRateFormatted}%)</td><td class="numeric-cell">${formatCurrency(montenegro.annualFinancingCost)}</td></tr>`;
         }
         if (montenegro.taxAmount > 0) {
             costsTableBody += `<tr><td>Belasting op Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.taxAmount)}</td></tr>`;
