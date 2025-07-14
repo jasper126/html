@@ -819,14 +819,41 @@
             margin: 0;
         }
 
+        .table-responsive-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
 
-        @media (max-width: 1159px) {
+
+        @media (max-width: 768px) {
             .summary-grid {
                 grid-template-columns: 1fr;
             }
-        }
-        
-        @media (max-width: 768px) {
+
+            .results-tabs {
+                padding: 0.5rem;
+                gap: 0.5rem;
+            }
+
+            .result-tab {
+                flex-grow: 1;
+                border: 1px solid var(--secondary-medium);
+                border-radius: 4px;
+                background-color: var(--bg-light);
+                border-bottom: 1px solid var(--secondary-medium);
+                margin-bottom: 0;
+            }
+            .result-tab.active {
+                background-color: var(--bg-highlight);
+                border-color: var(--primary-orange);
+                border-bottom-color: var(--primary-orange);
+            }
+            
+            #onetime-costs-comparison-table th, #onetime-costs-comparison-table td {
+                white-space: nowrap;
+                padding: 0.75rem;
+            }
+
             body { padding: 0; }
             .baysight-calculator-container { border-radius: 0; }
             .calculator-section { padding: 1.5rem; }
@@ -1113,7 +1140,9 @@
                 <div class="panel-section">
                     <h4>Vergelijking Eenmalige Aankoopkosten</h4>
                     <p>Een overzicht van de geschatte bijkomende kosten ('Kosten Koper') voor uw ingevoerde aankoopprijs, vergeleken per land. De waarden zijn gebaseerd op de door u verstrekte data voor buitenlandse kopers.</p>
-                    <table class="data-table" id="onetime-costs-comparison-table"></table>
+                    <div class="table-responsive-wrapper">
+                        <table class="data-table" id="onetime-costs-comparison-table"></table>
+                    </div>
                 </div>
                 <div class="panel-section">
                     <h4>Jaarlijkse Operationele Kosten (Montenegro)</h4>
@@ -1619,7 +1648,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function displayOnetimeCostComparison(inputs, allResults, purchasePrice, formatCurrency, formatPercent) {
         const costKeys = [
-            { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: "De regels voor <b>Montenegro</b> zijn als volgt:<br><br><b>Bestaande Bouw:</b> De koper betaalt een aparte, progressieve overdrachtsbelasting.<br><b>Nieuwbouw:</b> De koper betaalt géén overdrachtsbelasting. De prijs is inclusief 21% BTW." },
+            { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: "Let op: de volgende gedetailleerde regels gelden specifiek voor <b>Montenegro</b>:<br><br><b>Bestaande Bouw:</b> De koper betaalt een aparte, progressieve overdrachtsbelasting.<br><b>Nieuwbouw:</b> De koper betaalt géén overdrachtsbelasting. De prijs is inclusief 21% BTW." },
             { key: 'stampDuty', label: 'Zegelrecht', tooltip: 'Belasting op juridische documenten, van toepassing in Portugal (0.8%).' },
             { key: 'baySightCosts', label: 'Bay Sight Kosten', tooltip: '1.5% van de aanschafprijs met een minimum van €3.000.' },
             { key: 'legalCosts', label: 'Advocaatkosten', tooltip: 'Kosten voor juridische controle.' },
