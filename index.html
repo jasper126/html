@@ -1121,9 +1121,9 @@
                     <div class="considerations-list">
                         <h4>Marktanalyse & Overwegingen</h4>
                         <ul>
-                            <li><b>Regulering Korte Termijn Verhuur:</b> In Spanje, Italië en Portugal worden de regels voor korte termijn verhuur (KTV) steeds strenger. Dit verhoogt de operationele complexiteit, maar kan voordelig zijn voor professionele partijen door verminderde concurrentie. [cite: 572, 573, 574, 575, 576, 577, 578]</li>
-                            <li><b>Rendementscompressie:</b> Vooral in Portugal en Spaanse hotspots stijgen de vastgoedprijzen sneller dan de huren. Dit betekent dat het rendement meer afhankelijk wordt van toekomstige waardestijging, wat een hoger risico met zich meebrengt. [cite: 579, 580, 581, 582, 583]</li>
-                            <li><b>Montenegro's EU-Katalysator:</b> Het vooruitzicht op EU-lidmaatschap is een unieke drijfveer voor de Montenegrijnse markt, wat investeerders aantrekt die speculeren op een stijging van de vastgoedprijzen. Dit maakt het een "high-risk, high-reward" propositie. [cite: 584, 585, 586, 587, 588]</li>
+                            <li><b>Regulering Korte Termijn Verhuur:</b> In Spanje, Italië en Portugal worden de regels voor korte termijn verhuur (KTV) steeds strenger. Dit verhoogt de operationele complexiteit, maar kan voordelig zijn voor professionele partijen door verminderde concurrentie.</li>
+                            <li><b>Rendementscompressie:</b> Vooral in Portugal en Spaanse hotspots stijgen de vastgoedprijzen sneller dan de huren. Dit betekent dat het rendement meer afhankelijk wordt van toekomstige waardestijging, wat een hoger risico met zich meebrengt.</li>
+                            <li><b>Montenegro's EU-Katalysator:</b> Het vooruitzicht op EU-lidmaatschap is een unieke drijfveer voor de Montenegrijnse markt, wat investeerders aantrekt die speculeren op een stijging van de vastgoedprijzen. Dit maakt het een "high-risk, high-reward" propositie.</li>
                         </ul>
                     </div>
                 </div>
@@ -1137,21 +1137,18 @@
                 <div class="considerations-list">
                     <h4>Toelichting Rendement</h4>
                     <ul>
-                        <li><b>Netto Huurrendement:</b> Dit is het directe, jaarlijkse rendement uit verhuurinkomsten, afgezet tegen uw totale investering. Het toont de directe winstgevendheid van het pand.</li>
-                        <li><b>Cash-on-Cash Rendement:</b> Dit belangrijke kengetal meet hoeveel cash u jaarlijks overhoudt (na alle kosten, inclusief financiering) ten opzichte van het eigen geld dat u daadwerkelijk heeft ingelegd.</li>
+                        <li>
+                            <b>Bruto Rendement:</b> (Bruto Jaarlijkse Huurinkomsten / Totale Investering) * 100%.
+                            <br>Dit kengetal toont het rendement voordat jaarlijkse kosten zoals belastingen, verzekering en financiering in mindering zijn gebracht.
+                        </li>
+                        <li>
+                            <b>Netto Huurrendement:</b> (Jaarlijks Netto Resultaat / Totale Investering) * 100%.
+                            <br>Dit is het directe, jaarlijkse rendement uit verhuurinkomsten, afgezet tegen uw totale investering. Het toont de directe winstgevendheid van het pand.
+                        </li>
+                        <li>
+                            <b>Cash-on-Cash Rendement:</b> Dit belangrijke kengetal meet hoeveel cash u jaarlijks overhoudt (na alle kosten, inclusief financiering) ten opzichte van het eigen geld dat u daadwerkelijk heeft ingelegd.
+                        </li>
                     </ul>
-                </div>
-                <div class="panel-section">
-                    <h4>Strategische Aanbevelingen (per Investeerdersprofiel)</h4>
-                    <div class="considerations-list" style="border-left-color: var(--primary-orange);">
-                        <p>De beste investering hangt af van uw persoonlijke doelen. Hieronder vindt u vier investeerdersprofielen, gebaseerd op het onderzoeksrapport, om u te helpen uw resultaten te interpreteren. </p>
-                        <ul>
-                            <li><strong>De Cashflow-Maximalisator:</strong> Focust op het hoogst mogelijke netto huurrendement. Aanbevolen regio's zijn Zuid-Italië (Sicilië, Puglia) en opkomende Spaanse steden zoals Murcia en Valencia. [cite: 871, 872, 874]</li>
-                            <li><strong>De Vermogensgroei-Speculant:</strong> Focust op significante kapitaalgroei op de lange termijn. Aanbevolen markten zijn de kustregio's van Montenegro (vanwege het EU-toetredingsverhaal) en opkomende wijken in steden als Porto en Valencia. [cite: 880, 881, 883, 884]</li>
-                            <li><strong>De Gebalanceerde Investeerder:</strong> Zoekt een gezonde combinatie van stabiele cashflow en redelijke kapitaalgroei. Aanbevolen opties zijn Porto, de Zilverkust (Portugal), appartementen aan de Costa del Sol en de stad Rome. [cite: 890, 891, 892]</li>
-                            <li><strong>De Lifestyle-Investeerder:</strong> Zoekt primair een woning voor eigen gebruik, waarbij verhuur de kosten dekt. Prestige en kapitaalbehoud zijn hier belangrijker dan maximaal rendement. Aanbevolen regio's zijn Toscane, het Comomeer (Italië), de Balearen (Spanje) en de Algarve (Portugal). [cite: 900, 901, 902]</li>
-                        </ul>
-                    </div>
                 </div>
             </div>
             
@@ -1528,6 +1525,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const regionYieldMultipliers = { 'Kotor': 1.05, 'Budva': 1.15, 'Tivat': 1.10, 'Bar': 0.95, 'Noord': 0.80 };
         const regionMultiplier = regionYieldMultipliers[region] || 1.0;
         
+        // Updated yield calculations based on the new research document (averages of ranges)
         let grossYieldRate = 0;
         if (usageType === 'LangeTermijnVerhuur') {
             const ltvYields = { 'Montenegro': 0.055, 'Spanje': 0.06, 'Portugal': 0.0525, 'Italië': 0.06 };
@@ -1709,7 +1707,10 @@ document.addEventListener('DOMContentLoaded', function () {
             </tbody>`;
 
             const cashOnCashYield = inputs.ownCapital > 0 ? (montenegro.netAnnualCashflow / inputs.ownCapital) : 0;
+            const grossYield = montenegro.totalInvestment > 0 ? (montenegro.grossAnnualRentalIncome / montenegro.totalInvestment) : 0;
+            
             document.getElementById('roi-table').innerHTML = `<tbody>
+                <tr><td>Bruto Rendement</td><td class="numeric-cell">${formatPercent(grossYield, 2)}</td></tr>
                 <tr><td>Netto Huurrendement</td><td class="numeric-cell">${formatPercent(montenegro.netRentalYield, 2)}</td></tr>
                 <tr><td>Cash-on-Cash Rendement</td><td class="numeric-cell">${formatPercent(cashOnCashYield, 2)}</td></tr>
             </tbody>`;
