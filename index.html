@@ -1622,7 +1622,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function displayOnetimeCostComparison(inputs, allResults, purchasePrice, formatCurrency, formatPercent) {
         const costKeys = [
-            { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: 'Belasting op aankoop.' },
+            { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: "Voor <b>Bestaande Bouw</b> betaalt de koper een aparte, progressieve overdrachtsbelasting: 3% tot €150k; €4.500 + 5% tot €500k; €22.000 + 6% daarboven.<br><br>Voor <b>Nieuwbouw</b> (eerste verkoop) betaalt de koper géén overdrachtsbelasting. De prijs is inclusief 21% BTW." },
             { key: 'stampDuty', label: 'Zegelrecht', tooltip: 'Belasting op juridische documenten, van toepassing in Portugal (0.8%).' },
             { key: 'baySightCosts', label: 'Bay Sight Kosten', tooltip: '1.5% van de aanschafprijs met een minimum van €3.000.' },
             { key: 'legalCosts', label: 'Advocaatkosten', tooltip: 'Kosten voor juridische controle.' },
@@ -1702,7 +1702,6 @@ document.addEventListener('DOMContentLoaded', function () {
             netRentalResultTableContainer.style.display = 'block';
             rentalSummarySection.style.display = 'block';
             
-            // Populate rental summary
             const rentalWeeks = 52 - inputs.personalUsageWeeks;
             let summaryHTML = `
                 <div class="panel-section">
@@ -1724,11 +1723,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             summaryHTML += `
                 <tr>
-                    <td>Bruto Rendement <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">(Bruto Huurinkomsten / Totale Investering). Dit kengetal toont het rendement vóór aftrek van alle jaarlijkse kosten.</span></span></td>
+                    <td>Bruto Rendement <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">(Bruto Huurinkomsten / Totale Investering). Rendement vóór aftrek van alle jaarlijkse kosten.</span></span></td>
                     <td class="numeric-cell">${formatPercent(grossYield, 2)}</td>
                 </tr>
                 <tr>
-                    <td>Netto Huurrendement <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">(Netto Jaarlijks Resultaat / Totale Investering). Dit is het rendement na aftrek van alle kosten, inclusief belastingen en financiering.</span></span></td>
+                    <td>Netto Huurrendement <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">(Netto Resultaat / Totale Investering). Rendement na aftrek van alle kosten, inclusief belastingen en financiering.</span></span></td>
                     <td class="numeric-cell">${formatPercent(netYield, 2)}</td>
                 </tr>
             </tbody></table></div>`;
