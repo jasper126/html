@@ -1246,17 +1246,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const calculatorSections = document.querySelectorAll('.calculator-section');
     const resultTabs = document.querySelectorAll('.result-tab');
     const resultPanels = document.querySelectorAll('.result-panel');
-    const needFinancingToggle = document.getElementById('needFinancing');
-    const financingDetails = document.querySelector('.financing-details');
     const usageTypeSelect = document.getElementById('usageType');
     const rentalDetails = document.querySelector('.rental-details');
     const personalUsageWeeksSlider = document.getElementById('personalUsageWeeks');
     const contactForm = document.getElementById('contact-form');
     const purchasePriceInput = document.getElementById('purchasePrice');
-    const modalOverlay = document.getElementById('custom-modal-overlay');
-    const modal = document.getElementById('custom-modal');
-    const modalCloseBtn = document.getElementById('modal-close-btn');
-    const modalMessage = document.getElementById('modal-message');
     const loadingOverlay = document.getElementById('loading-overlay');
     
     // --- Event Listeners & Setup ---
@@ -1270,6 +1264,11 @@ document.addEventListener('DOMContentLoaded', function () {
             input.addEventListener('blur', formatCurrencyInput);
             input.addEventListener('focus', unformatCurrencyInput);
         });
+        
+        purchasePriceInput.addEventListener('input', () => {
+            if (currentStep === 1) updateFormState();
+        });
+
 
         if (contactForm) {
             contactForm.addEventListener('submit', handleFormSubmit);
@@ -1290,9 +1289,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 personalUsageWeeksSlider.dispatchEvent(new Event('input'));
             }
         });
-        
-        modalCloseBtn.addEventListener('click', hideModal);
-        modalOverlay.addEventListener('click', hideModal);
         
         setupRangeSlider('personalUsageWeeks', 'personalUsageWeeksValue');
     }
@@ -1397,7 +1393,8 @@ document.addEventListener('DOMContentLoaded', function () {
         nextBtn.style.display = currentStep === totalForms ? 'none' : 'inline-block';
         calculateBtn.style.display = currentStep === totalForms ? 'inline-block' : 'none';
         
-        nextBtn.disabled = (currentStep === 1 && (parseFloat(purchasePriceInput.value.replace(/[^0-9,-]+/g,"").replace(",", ".")) || 0) <= 0);
+        const priceValue = parseFloat(purchasePriceInput.value.replace(/[^0-9,-]+/g,"").replace(",", ".")) || 0;
+        nextBtn.disabled = (currentStep === 1 && priceValue <= 0);
     }
     
     function showModal(message) {
@@ -1480,7 +1477,7 @@ document.addEventListener('DOMContentLoaded', function () {
             propertyType: document.getElementById('propertyType').value,
             region: document.getElementById('region').value,
             propertySize: parseFloat(document.getElementById('propertySize').value) || 0,
-            needFinancing: false,
+            needFinancing: false, // Financing is hidden for now
             financingInterestRate: 0,
             financingTerm: 0,
             usageType: document.getElementById('usageType').value,
@@ -1763,13 +1760,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 <tr><td>Netto Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
                 <tr><td style="padding-left: 2rem;">- Jaarlijkse Operationele Kosten</td><td class="numeric-cell">-${formatCurrency(montenegro.totalAnnualCostsBeforeFinancing)}</td></tr>
                 <tr><td style="padding-left: 2rem;">- Belasting op Huurinkomsten</td><td class="numeric-cell">-${formatCurrency(montenegro.taxAmount)}</td></tr>
-                ${montenegro.annualFinancingCost > 0 ? `<tr><td style="padding-left: 2rem;">- Financieringskosten</td><td class="numeric-cell">-${formatCurrency(montenegro.annualFinancingCost)}</td></tr>` : ''}
                 <tr class="total-row"><td>Netto Cashflow (Eindresultaat)</td><td class="numeric-cell">${formatCurrency(montenegro.netAnnualCashflow)}</td></tr>
             </tbody>`;
             
             const cashOnCashYield = inputs.ownCapital > 0 ? (montenegro.netAnnualCashflow / inputs.ownCapital) : 0;
+            const grossYield = montenegro.totalInvestment > 0 ? (montenegro.grossAnnualRentalIncome / montenegro.totalInvestment) : 0;
+            const netYield = montenegro.netRentalYield;
+
             document.getElementById('roi-table').innerHTML = `<tbody>
-                <tr><td>Netto Huurrendement</td><td class="numeric-cell">${formatPercent(montenegro.netRentalYield, 2)}</td></tr>
+                <tr><td>Bruto Rendement</td><td class="numeric-cell">${formatPercent(grossYield, 2)}</td></tr>
+                <tr><td>Netto Huurrendement</td><td class="numeric-cell">${formatPercent(netYield, 2)}</td></tr>
                 <tr><td>Cash-on-Cash Rendement</td><td class="numeric-cell">${formatPercent(cashOnCashYield, 2)}</td></tr>
             </tbody>`;
         }
