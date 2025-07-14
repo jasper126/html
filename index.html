@@ -56,7 +56,7 @@
             background-color: var(--bg-light);
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
+            /* overflow: hidden; is verwijderd om tooltips niet af te snijden */
         }
 
         .calculator-header {
@@ -991,7 +991,6 @@
                     <select id="propertyType" class="form-control">
                         <option value="Appartement">Appartement</option>
                         <option value="Villa">Villa</option>
-                        <option value="Landhuis">Landhuis</option>
                     </select>
                 </div>
             </div>
@@ -1648,7 +1647,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function displayOnetimeCostComparison(inputs, allResults, purchasePrice, formatCurrency, formatPercent) {
         const costKeys = [
-            { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: "Let op: de volgende gedetailleerde regels gelden specifiek voor <b>Montenegro</b>:<br><br><b>Bestaande Bouw:</b> De koper betaalt een aparte, progressieve overdrachtsbelasting.<br><b>Nieuwbouw:</b> De koper betaalt géén overdrachtsbelasting. De prijs is inclusief 21% BTW." },
+            { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: "De regels voor <b>Montenegro</b> zijn als volgt:<br><br><b>Bestaande Bouw:</b> De koper betaalt een aparte, progressieve overdrachtsbelasting.<br><b>Nieuwbouw:</b> De koper betaalt géén overdrachtsbelasting. De prijs is inclusief 21% BTW." },
             { key: 'stampDuty', label: 'Zegelrecht', tooltip: 'Belasting op juridische documenten, van toepassing in Portugal (0.8%).' },
             { key: 'baySightCosts', label: 'Bay Sight Kosten', tooltip: '1.5% van de aanschafprijs met een minimum van €3.000.' },
             { key: 'legalCosts', label: 'Advocaatkosten', tooltip: 'Kosten voor juridische controle.' },
