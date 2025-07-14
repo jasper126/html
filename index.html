@@ -1105,9 +1105,9 @@
                     </div>
                     
                     <div class="summary-card">
-                        <h4>Netto Huurrendement</h4>
-                        <div class="summary-value" id="summary-rental-yield">0%</div>
-                        <p>Direct rendement uit verhuur op jaarbasis.</p>
+                        <h4>Bruto Huurrendement</h4>
+                        <div class="summary-value" id="summary-gross-yield">0%</div>
+                        <p>Rendement vóór aftrek van jaarlijkse kosten.</p>
                     </div>
 
                     <div class="summary-card">
@@ -1633,7 +1633,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('summary-region').textContent = document.querySelector(`#region option[value="${inputs.region}"]`).textContent;
         document.getElementById('summary-total-investment').textContent = formatCurrency(montenegro.totalInvestment);
         document.getElementById('summary-annual-result').textContent = formatCurrency(montenegro.netAnnualCashflow);
-        document.getElementById('summary-rental-yield').textContent = formatPercent(montenegro.netRentalYield, 2);
+        const grossYield = montenegro.totalInvestment > 0 ? (montenegro.grossAnnualRentalIncome / montenegro.totalInvestment) : 0;
+        document.getElementById('summary-gross-yield').textContent = formatPercent(grossYield, 2);
         document.getElementById('summary-appreciation').textContent = formatPercent(finalAppreciation, 1);
 
         displayOnetimeCostComparison(inputs, allResults, inputs.purchasePrice, formatCurrency, formatPercent);
@@ -1711,7 +1712,7 @@ document.addEventListener('DOMContentLoaded', function () {
         costsTableBody += `<tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td class="numeric-cell">${formatCurrency(totalAnnualCosts)}</td></tr>`;
         
         document.getElementById('costs-table').innerHTML = `<tbody>${costsTableBody}</tbody>`;
-
+        
         const rentalSummarySection = document.getElementById('rental-summary-section');
         const rentalIncomeTableContainer = document.getElementById('rental-income-table').closest('.panel-section');
         const netRentalResultTableContainer = document.getElementById('net-rental-result-table').closest('.panel-section');
