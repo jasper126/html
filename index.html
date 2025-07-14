@@ -1334,7 +1334,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     managementFeeRate: { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0.05 }[managementPreference],
                     effectiveTaxRate: 0.15
                 };
-                
                 if (isNewBuild) {
                     costBreakdown.tax = 0; 
                 } else {
@@ -1346,8 +1345,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         costBreakdown.tax = 22000 + (purchasePrice - 500000) * 0.06;
                     }
                 }
-                
-                costBreakdown.notaryAndRegistrationCosts = 750;
+                costBreakdown.notaryAndRegistrationCosts = Math.max(500, purchasePrice * 0.0025);
                 costBreakdown.legalCosts = Math.max(1200, purchasePrice * 0.0075);
                 costBreakdown.translatorCosts = 200;
                 break;
@@ -1392,7 +1390,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     costBreakdown.tax = estimatedCadastralValue * 0.09;
                 }
-                
                 const registrationFixedCosts = isNewBuild ? 400 : 100;
                 costBreakdown.notaryAndRegistrationCosts = (purchasePrice * 0.015) + registrationFixedCosts;
                 costBreakdown.brokerageCosts = purchasePrice * 0.025;
@@ -1444,17 +1441,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
             case 'Spanje':
                 results.annualPropertyTax = (purchasePrice * 0.5) * 0.007; 
-                results.annualInsurance = purchasePrice * 0.002;
+                results.annualInsurance = 225; // Fixed average based on audit
                 results.annualMaintenance = purchasePrice * 0.01;
                 break;
             case 'Portugal':
                 results.annualPropertyTax = (purchasePrice * 0.6) * 0.00375;
-                results.annualInsurance = purchasePrice * 0.002;
+                results.annualInsurance = 300; // Fixed average based on audit
                 results.annualMaintenance = purchasePrice * 0.01;
                 break;
             case 'Italië':
                 results.annualPropertyTax = (purchasePrice * 0.5) * 0.0096;
-                results.annualInsurance = purchasePrice * 0.002;
+                results.annualInsurance = 350; // Fixed average based on audit
                 results.annualMaintenance = purchasePrice * 0.01;
                 break;
         }
@@ -1521,7 +1518,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 tableHTML += `<tr><td>${item.label}<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">${item.tooltip}</span></span></td>`;
                 values.forEach((val, i) => {
                     let cellHTML = '';
-                    // Special case for Montenegro New Build VAT
                     if (item.key === 'tax' && countryKeys[i] === 'montenegro' && inputs.isNewBuild) {
                         const vatAmount = purchasePrice * 0.21;
                         cellHTML = `21% (${formatCurrency(vatAmount)})<br><small><i>(inbegrepen in koopsom)</i></small>`;
@@ -1552,7 +1548,6 @@ document.addEventListener('DOMContentLoaded', function () {
     function displayAnnualAndRoi(inputs, allResults, formatCurrency, formatPercent) {
         const { montenegro } = allResults;
         const totalAnnualCosts = montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost + montenegro.taxAmount;
-        // Corrected the display of tax on rental income to be consistent (removed the minus sign)
         document.getElementById('costs-table').innerHTML = `<tbody>
             <tr><td>Onroerendgoedbelasting<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse belasting op onroerend goed. De berekening is gebaseerd op een realistisch, gemiddeld tarief (ca. 0.6% in Montenegro) op de marktwaarde.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualPropertyTax)}</td></tr>
             <tr><td>Verzekering<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Geschatte jaarlijkse premie voor een opstalverzekering.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualInsurance)}</td></tr>
