@@ -1129,22 +1129,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const contactForm = document.getElementById('contact-form');
     const purchasePriceInput = document.getElementById('purchasePrice');
     
-    // --- Event Listeners ---
+    // --- Event Listeners & Setup ---
     function setupListeners() {
-        nextBtn.addEventListener('click', () => {
-            const totalForms = document.querySelectorAll('.input-form').length - 1;
-            if (currentStep < totalForms) {
-                currentStep++;
-                updateFormState();
-            }
-        });
-
-        prevBtn.addEventListener('click', () => {
-            if (currentStep > 0) {
-                currentStep--;
-                updateFormState();
-            }
-        });
+        nextBtn.addEventListener('click', handleNextClick);
+        prevBtn.addEventListener('click', handlePrevClick);
         
         calculateBtn.addEventListener('click', runCalculation);
         purchasePriceInput.addEventListener('input', () => {
@@ -1152,53 +1140,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         if (contactForm) {
-            contactForm.addEventListener('submit', async function(event) {
-                event.preventDefault(); 
-                const statusDiv = document.getElementById('form-status');
-                const submitBtn = document.getElementById('submit-form-btn');
-                const userName = document.getElementById('userName').value;
-                const userEmail = document.getElementById('userEmail').value;
-
-                if (!userName || !userEmail) {
-                    statusDiv.textContent = 'Vul alstublieft uw naam en e-mailadres in.';
-                    statusDiv.style.color = 'var(--error)';
-                    return;
-                }
-
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Bezig met versturen...';
-                statusDiv.textContent = '';
-
-                try {
-                    const response = await fetch(contactForm.action, {
-                        method: contactForm.method,
-                        body: new FormData(contactForm),
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-
-                    if (response.ok) {
-                        statusDiv.textContent = 'Bedankt voor uw aanvraag! Wij nemen spoedig contact met u op.';
-                        statusDiv.style.color = 'var(--success)';
-                        contactForm.reset();
-                    } else {
-                        const data = await response.json();
-                        if (Object.hasOwnProperty.call(data, 'errors')) {
-                            statusDiv.textContent = data["errors"].map(error => error["message"]).join(", ");
-                        } else {
-                            statusDiv.textContent = 'Er is een fout opgetreden bij het verzenden. Probeer opnieuw.';
-                        }
-                        statusDiv.style.color = 'var(--error)';
-                    }
-                } catch (error) {
-                    statusDiv.textContent = 'Netwerkfout. Controleer uw verbinding en probeer opnieuw.';
-                    statusDiv.style.color = 'var(--error)';
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Ja, neem contact met mij op';
-                }
-            });
+            contactForm.addEventListener('submit', handleFormSubmit);
         }
 
         mainTabs.forEach(tab => tab.addEventListener('click', () => switchMainTab(tab)));
@@ -1228,7 +1170,103 @@ document.addEventListener('DOMContentLoaded', function () {
         setupRangeSlider('personalUsageWeeks', 'personalUsageWeeksValue');
     }
 
-    // --- Navigatie & UI Functies ---
+    async function handleFormSubmit(event) {
+        event.preventDefault(); 
+        const statusDiv = document.getElementById('form-status');
+        const submitBtn = document.getElementById('submit-form-btn');
+        const userName = document.getElementById('userName').value;
+        const userEmail = document.getElementById('userEmail').value;
+
+        if (!userName || !userEmail) {
+            statusDiv.textContent = 'Vul alstublieft uw naam en e-mailadres in.';
+            statusDiv.style.color = 'var(--error)';
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Bezig met versturen...';
+        statusDiv.textContent = '';
+
+        try {
+            const response = await fetch(contactForm.action, {
+                method: contactForm.method,
+                body: new FormData(contactForm),
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (response.ok) {
+                statusDiv.textContent = 'Bedankt voor uw aanvraag! Wij nemen spoedig contact met u op.';
+                statusDiv.style.color = 'var(--success)';
+                contactForm.reset();
+            } else {
+                const data = await response.json();
+                statusDiv.textContent = data.errors ? data.errors.map(e => e.message).join(", ") : 'Er is een fout opgetreden.';
+                statusDiv.style.color = 'var(--error)';
+            }
+        } catch (error) {
+            statusDiv.textContent = 'Netwerkfout. Controleer uw verbinding en probeer opnieuw.';
+            statusDiv.style.color = 'var(--error)';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Ja, neem contact met mij op';
+        }
+    }
+
+    // --- Navigatie & Validatie ---
+    function handlePrevClick() {
+        if (currentStep > 0) {
+            currentStep--;
+            updateFormState();
+        }
+    }
+
+    function handleNextClick() {
+        const totalForms = document.querySelectorAll('.input-form').length - 1;
+
+        if (currentStep === 2) { // Financial validation step
+            if (!validateFinancials()) {
+                return; // Stop if validation fails
+            }
+        }
+
+        if (currentStep < totalForms) {
+            currentStep++;
+            updateFormState();
+        }
+    }
+    
+    function validateFinancials() {
+        const inputs = gatherInputs();
+        if (inputs.purchasePrice <= 0) return true; // Don't validate if there's no price
+
+        const preliminaryInvestment = calculatePreliminaryInvestment(inputs);
+
+        if (inputs.ownCapital < preliminaryInvestment && !inputs.needFinancing) {
+            alert('Uw eigen vermogen is niet toereikend voor de geschatte totale investering (ca. €' + Math.round(preliminaryInvestment).toLocaleString('nl-NL') + '). Selecteer \'Ja\' bij \'Heeft u financiering nodig?\' om door te gaan, of verhoog uw eigen vermogen.');
+            return false;
+        }
+        return true;
+    }
+
+    function calculatePreliminaryInvestment(inputs) {
+        const { purchasePrice, isNewBuild, furnishingCosts } = inputs;
+        let oneTimeCosts = 0;
+        
+        // Simplified cost calculation for Montenegro for validation purposes
+        if (!isNewBuild) {
+            if (purchasePrice <= 150000) { oneTimeCosts += purchasePrice * 0.03; } 
+            else if (purchasePrice <= 500000) { oneTimeCosts += 4500 + (purchasePrice - 150000) * 0.05; } 
+            else { oneTimeCosts += 22000 + (purchasePrice - 500000) * 0.06; }
+        }
+        oneTimeCosts += 500; // Advocaatkosten
+        oneTimeCosts += Math.max(500, purchasePrice * 0.0025); // Notaris
+        oneTimeCosts += 200; // Tolk
+        oneTimeCosts += purchasePrice * 0.015; // Bay Sight Kosten
+
+        return purchasePrice + oneTimeCosts + furnishingCosts;
+    }
+
+    // --- UI State & Updates ---
     function updateFormState() {
         const isStartScreen = currentStep === 0;
         document.querySelector('.progress-indicator').style.display = isStartScreen ? 'none' : 'flex';
@@ -1282,7 +1320,7 @@ document.addEventListener('DOMContentLoaded', function () {
         update();
     }
 
-    // --- Kernberekeningen ---
+    // --- Core Calculation Logic ---
     function runCalculation() {
         const inputs = gatherInputs();
         const results = calculateAll(inputs);
@@ -1321,12 +1359,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     function calculateCountry(inputs, country) {
-        const results = {};
         const { purchasePrice, isNewBuild, region, furnishingCosts, managementPreference, usageType, personalUsageWeeks, needFinancing, financingInterestRate, financingTerm, ownCapital, propertySize } = inputs;
-        
-        results.purchasePrice = purchasePrice || 0;
+        const results = { purchasePrice: purchasePrice || 0 };
         let params = {};
         let costBreakdown = {};
+
+        // Bay Sight Kosten are now universal
+        costBreakdown.baySightCosts = purchasePrice * 0.015;
 
         switch(country) {
             case 'Montenegro':
@@ -1337,16 +1376,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (isNewBuild) {
                     costBreakdown.tax = 0; 
                 } else {
-                    if (purchasePrice <= 150000) {
-                        costBreakdown.tax = purchasePrice * 0.03;
-                    } else if (purchasePrice <= 500000) {
-                        costBreakdown.tax = 4500 + (purchasePrice - 150000) * 0.05;
-                    } else {
-                        costBreakdown.tax = 22000 + (purchasePrice - 500000) * 0.06;
-                    }
+                    if (purchasePrice <= 150000) { costBreakdown.tax = purchasePrice * 0.03; } 
+                    else if (purchasePrice <= 500000) { costBreakdown.tax = 4500 + (purchasePrice - 150000) * 0.05; } 
+                    else { costBreakdown.tax = 22000 + (purchasePrice - 500000) * 0.06; }
                 }
                 costBreakdown.notaryAndRegistrationCosts = Math.max(500, purchasePrice * 0.0025);
-                costBreakdown.legalCosts = Math.max(1200, purchasePrice * 0.0075);
+                costBreakdown.legalCosts = 500; // Fixed amount as per new request
                 costBreakdown.translatorCosts = 200;
                 break;
 
@@ -1361,21 +1396,13 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'Portugal':
                 params = { managementFeeRate: 0.08, effectiveTaxRate: 0.28 };
                 let imt = 0;
-                if (purchasePrice <= 104261) {
-                    imt = purchasePrice * 0.01;
-                } else if (purchasePrice <= 142618) {
-                    imt = (purchasePrice * 0.02) - 1042.61;
-                } else if (purchasePrice <= 194458) {
-                    imt = (purchasePrice * 0.05) - 5321.15;
-                } else if (purchasePrice <= 324058) {
-                    imt = (purchasePrice * 0.07) - 9210.31;
-                } else if (purchasePrice <= 621501) {
-                    imt = (purchasePrice * 0.08) - 12450.89;
-                } else if (purchasePrice <= 1128287) {
-                    imt = purchasePrice * 0.06;
-                } else {
-                    imt = purchasePrice * 0.075;
-                }
+                if (purchasePrice <= 104261) { imt = purchasePrice * 0.01; } 
+                else if (purchasePrice <= 142618) { imt = (purchasePrice * 0.02) - 1042.61; } 
+                else if (purchasePrice <= 194458) { imt = (purchasePrice * 0.05) - 5321.15; } 
+                else if (purchasePrice <= 324058) { imt = (purchasePrice * 0.07) - 9210.31; } 
+                else if (purchasePrice <= 621501) { imt = (purchasePrice * 0.08) - 12450.89; } 
+                else if (purchasePrice <= 1128287) { imt = purchasePrice * 0.06; } 
+                else { imt = purchasePrice * 0.075; }
                 costBreakdown.tax = imt;
                 costBreakdown.stampDuty = purchasePrice * 0.008;
                 costBreakdown.notaryAndRegistrationCosts = 1500;
@@ -1385,15 +1412,10 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'Italië':
                 params = { managementFeeRate: 0.10, taxOnGross: true, effectiveTaxRate: 0.21 }; 
                 const estimatedCadastralValue = purchasePrice * 0.50;
-                if (isNewBuild) {
-                    costBreakdown.tax = purchasePrice * 0.10;
-                } else {
-                    costBreakdown.tax = estimatedCadastralValue * 0.09;
-                }
+                if (isNewBuild) { costBreakdown.tax = purchasePrice * 0.10; } 
+                else { costBreakdown.tax = estimatedCadastralValue * 0.09; }
                 const registrationFixedCosts = isNewBuild ? 400 : 100;
                 costBreakdown.notaryAndRegistrationCosts = (purchasePrice * 0.015) + registrationFixedCosts;
-                costBreakdown.brokerageCosts = purchasePrice * 0.025;
-                costBreakdown.otherCosts = 0;
                 break;
         }
         results.costBreakdown = costBreakdown;
@@ -1441,17 +1463,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
             case 'Spanje':
                 results.annualPropertyTax = (purchasePrice * 0.5) * 0.007; 
-                results.annualInsurance = 225; // Fixed average based on audit
+                results.annualInsurance = 225;
                 results.annualMaintenance = purchasePrice * 0.01;
                 break;
             case 'Portugal':
                 results.annualPropertyTax = (purchasePrice * 0.6) * 0.00375;
-                results.annualInsurance = 300; // Fixed average based on audit
+                results.annualInsurance = 300;
                 results.annualMaintenance = purchasePrice * 0.01;
                 break;
             case 'Italië':
                 results.annualPropertyTax = (purchasePrice * 0.5) * 0.0096;
-                results.annualInsurance = 350; // Fixed average based on audit
+                results.annualInsurance = 350;
                 results.annualMaintenance = purchasePrice * 0.01;
                 break;
         }
@@ -1475,7 +1497,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return results;
     }
 
-    // --- Weergave Functies ---
+    // --- Result Display Functions ---
     function displayResults(inputs, allResults) {
         const { montenegro } = allResults;
         const formatCurrency = (value) => value || value === 0 ? new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(value) : '-';
@@ -1499,10 +1521,11 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function displayOnetimeCostComparison(inputs, allResults, purchasePrice, formatCurrency, formatPercent) {
         const costKeys = [
-            { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: 'Belasting op aankoop. De calculator gebruikt de officiële progressieve schalen voor Montenegro en Portugal, en representatieve tarieven voor Spanje (7% ITP) en Italië (9% op geschatte kadastrale waarde).' },
+            // Row for tax is now conditional
+            { key: 'tax', label: 'Overdrachtsbelasting / BTW', tooltip: 'Belasting op aankoop.' },
             { key: 'stampDuty', label: 'Zegelrecht', tooltip: 'Belasting op juridische documenten, van toepassing in Portugal (0.8%).' },
-            { key: 'brokerageCosts', label: 'Makelaarskosten', tooltip: 'Commissie voor de makelaar. Alleen voor koper in Italië (ca. 2.5%).' },
-            { key: 'legalCosts', label: 'Advocaatkosten', tooltip: 'Kosten voor juridische controle. Berekend als een percentage van de aankoopprijs (met een minimum in Montenegro), conform de laatste marktinformatie.' },
+            { key: 'baySightCosts', label: 'Bay Sight Kosten', tooltip: 'Servicekosten voor de begeleiding en aankoop door Bay Sight.' },
+            { key: 'legalCosts', label: 'Advocaatkosten', tooltip: 'Kosten voor juridische controle.' },
             { key: 'notaryAndRegistrationCosts', label: 'Notaris- en Registratiekosten', tooltip: 'Kosten voor de notaris en eigendomsregistratie.' },
             { key: 'translatorCosts', label: 'Tolk (verplicht)', tooltip: 'Verplichte kosten voor een beëdigd vertaler bij de notaris in Montenegro.' },
             { key: 'otherCosts', label: 'Overige kosten', tooltip: 'Extra kosten zoals een verplicht NIE-nummer in Spanje.' }
@@ -1513,18 +1536,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const countryKeys = ['montenegro', 'spanje', 'portugal', 'italië'];
         
         costKeys.forEach(item => {
+            // Hide tax row if new build is selected
+            if (item.key === 'tax' && inputs.isNewBuild) {
+                return; // Skip this iteration
+            }
+
             const values = countryKeys.map(ck => allResults[ck].costBreakdown[item.key] || 0);
-            if (values.some(v => v > 0) || (item.key === 'tax' && inputs.isNewBuild)) {
+            if (values.some(v => v > 0)) {
                 tableHTML += `<tr><td>${item.label}<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">${item.tooltip}</span></span></td>`;
                 values.forEach((val, i) => {
-                    let cellHTML = '';
-                    if (item.key === 'tax' && countryKeys[i] === 'montenegro' && inputs.isNewBuild) {
-                        const vatAmount = purchasePrice * 0.21;
-                        cellHTML = `21% (${formatCurrency(vatAmount)})<br><small><i>(inbegrepen in koopsom)</i></small>`;
-                    } else {
-                        cellHTML = formatCurrency(val);
-                    }
-                    tableHTML += `<td class="numeric-cell">${cellHTML}</td>`;
+                    tableHTML += `<td class="numeric-cell">${formatCurrency(val)}</td>`;
                     totals[countryKeys[i]] += val;
                 });
                 tableHTML += `</tr>`;
@@ -1549,7 +1570,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const { montenegro } = allResults;
         const totalAnnualCosts = montenegro.totalAnnualCostsBeforeFinancing + montenegro.annualFinancingCost + montenegro.taxAmount;
         document.getElementById('costs-table').innerHTML = `<tbody>
-            <tr><td>Onroerendgoedbelasting<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse belasting op onroerend goed. De berekening is gebaseerd op een realistisch, gemiddeld tarief (ca. 0.6% in Montenegro) op de marktwaarde.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualPropertyTax)}</td></tr>
+            <tr><td>Onroerendgoedbelasting<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse belasting op onroerend goed.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualPropertyTax)}</td></tr>
             <tr><td>Verzekering<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Geschatte jaarlijkse premie voor een opstalverzekering.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualInsurance)}</td></tr>
             <tr><td>Onderhoud<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse reservering voor onderhoudskosten.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualMaintenance)}</td></tr>
             ${montenegro.annualFinancingCost > 0 ? `<tr><td>Financieringskosten</td><td class="numeric-cell">${formatCurrency(montenegro.annualFinancingCost)}</td></tr>` : ''}
@@ -1573,7 +1594,7 @@ document.addEventListener('DOMContentLoaded', function () {
             
             document.getElementById('rental-income-table').innerHTML = `<tbody>
                 <tr><td>Bruto Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.grossAnnualRentalIncome)}</td></tr>
-                <tr><td>Beheerkosten (${formatPercent(allResults.montenegro.managementFeeRate || 0, 0)})</td><td class="numeric-cell">-${formatCurrency(montenegro.rentalManagementFee)}</td></tr>
+                <tr><td>Beheerkosten (${formatPercent(montenegro.managementFeeRate || 0, 0)})</td><td class="numeric-cell">-${formatCurrency(montenegro.rentalManagementFee)}</td></tr>
                 <tr class="total-row"><td>Netto Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.netAnnualRentalIncome)}</td></tr>
             </tbody>`;
             
@@ -1593,6 +1614,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
+    // --- Charting Functions ---
     function destroyChart(chartId) {
         if (charts[chartId]) charts[chartId].destroy();
     }
@@ -1638,18 +1660,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 const chartDataPoints = {
                     'Aankoopprijs': results.montenegro.purchasePrice,
                     'Belasting': breakdown.tax,
+                    'Bay Sight Kosten': breakdown.baySightCosts,
                     'Advocaat': breakdown.legalCosts,
-                    'Notaris- en Registratiekosten': breakdown.notaryAndRegistrationCosts,
+                    'Notaris- & Registratie': breakdown.notaryAndRegistrationCosts,
                     'Tolk': breakdown.translatorCosts,
                     'Inrichting': inputs.furnishingCosts,
                     'Zegelrecht': breakdown.stampDuty,
-                    'Makelaarskosten': breakdown.brokerageCosts,
                     'Overige kosten': breakdown.otherCosts
                 };
                 const chartLabels = Object.keys(chartDataPoints).filter(key => chartDataPoints[key] > 0);
                 const chartData = Object.values(chartDataPoints).filter(value => value > 0);
                 charts['investment-breakdown-chart'] = new Chart(investmentCtx, { type: 'doughnut',
-                    data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: ['#042943', '#d4915f', '#00A5CF', '#627D98', '#E12D39', '#F0B429', '#31C48D', '#9BB0C1', '#C6D8E5'], borderWidth: 0 }] },
+                    data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: ['#042943', '#d4915f', '#627D98', '#00A5CF', '#E12D39', '#F0B429', '#31C48D', '#9BB0C1', '#C6D8E5'], borderWidth: 0 }] },
                     options: { ...sharedOptions, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
                 });
             }
@@ -1672,7 +1694,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
-    // Start de applicatie
+    // --- Initializer ---
     setupListeners();
     updateFormState();
 });
