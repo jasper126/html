@@ -1331,36 +1331,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const inputs = gatherInputs();
         if (inputs.purchasePrice <= 0) return true; // Don't validate if there's no price
 
-        const preliminaryInvestment = calculatePreliminaryInvestment(inputs);
-
-        if (inputs.ownCapital < preliminaryInvestment && !inputs.needFinancing) {
+        // The validation now ONLY checks against the purchase price.
+        if (inputs.ownCapital < inputs.purchasePrice && !inputs.needFinancing) {
             const pPriceStr = (inputs.purchasePrice || 0).toLocaleString('nl-NL');
             const ownCapStr = (inputs.ownCapital || 0).toLocaleString('nl-NL');
-            const totalInvStr = Math.round(preliminaryInvestment).toLocaleString('nl-NL');
 
-            const message = `Uw eigen vermogen (€ ${ownCapStr}) is niet toereikend. Voor een woning met een aankoopprijs van € ${pPriceStr} is de geschatte totale investering circa € ${totalInvStr}.<br><br>Verhoog uw eigen vermogen of selecteer 'Ja' bij 'Heeft u financiering nodig?' om door te gaan.`;
+            const message = `Uw eigen vermogen (€ ${ownCapStr}) is niet toereikend om de aankoopprijs van de woning (€ ${pPriceStr}) te dekken.<br><br>Verhoog uw eigen vermogen of selecteer 'Ja' bij 'Heeft u financiering nodig?' om door te gaan.`;
             showModal(message);
             return false;
         }
         return true;
-    }
-
-    function calculatePreliminaryInvestment(inputs) {
-        const { purchasePrice, isNewBuild, furnishingCosts } = inputs;
-        let oneTimeCosts = 0;
-        
-        // Simplified cost calculation for Montenegro for validation purposes
-        if (!isNewBuild) {
-            if (purchasePrice <= 150000) { oneTimeCosts += purchasePrice * 0.03; } 
-            else if (purchasePrice <= 500000) { oneTimeCosts += 4500 + (purchasePrice - 150000) * 0.05; } 
-            else { oneTimeCosts += 22000 + (purchasePrice - 500000) * 0.06; }
-        }
-        oneTimeCosts += 500; // Advocaatkosten
-        oneTimeCosts += Math.max(500, purchasePrice * 0.0025); // Notaris
-        oneTimeCosts += 200; // Tolk
-        oneTimeCosts += purchasePrice * 0.015; // Bay Sight Kosten
-
-        return purchasePrice + oneTimeCosts + furnishingCosts;
     }
 
     // --- UI State & Updates ---
@@ -1561,22 +1541,22 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'Montenegro':
                 results.annualPropertyTax = purchasePrice * (0.6/100);
                 results.annualInsurance = (propertySize || 0) * 1.35;
-                results.annualMaintenance = 0; // Removed as per request
+                results.annualMaintenance = 0;
                 break;
             case 'Spanje':
                 results.annualPropertyTax = (purchasePrice * 0.5) * 0.007; 
                 results.annualInsurance = 225;
-                results.annualMaintenance = 0; // Removed as per request
+                results.annualMaintenance = 0;
                 break;
             case 'Portugal':
                 results.annualPropertyTax = (purchasePrice * 0.6) * 0.00375;
                 results.annualInsurance = 300;
-                results.annualMaintenance = 0; // Removed as per request
+                results.annualMaintenance = 0;
                 break;
             case 'Italië':
                 results.annualPropertyTax = (purchasePrice * 0.5) * 0.0096;
                 results.annualInsurance = 350;
-                results.annualMaintenance = 0; // Removed as per request
+                results.annualMaintenance = 0;
                 break;
         }
 
