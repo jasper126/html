@@ -1087,21 +1087,13 @@
                     <div class="summary-card">
                         <h4>Verwachte Waardestijging</h4>
                         <div class="summary-value" id="summary-appreciation">0%</div>
-                        <p>Gemiddelde prognose per jaar (historisch).</p>
-                    </div>
-                </div>
-
-                <div class="panel-section">
-                    <h4>Landenvergelijking (Netto Huurrendement)</h4>
-                    <p>Uw geschatte resultaten in Montenegro vergeleken met vergelijkbare investeringen in andere populaire landen, gebaseerd op de ingevoerde aankoopprijs en financiële gegevens.</p>
-                    <div class="chart-container" style="height: 300px;">
-                        <canvas id="country-comparison-chart"></canvas>
+                        <p>Prognose o.b.v. historisch en regionaal model (bron: MONSTAT).</p>
                     </div>
                 </div>
                 
                 <div class="panel-section">
-                    <h4>Historische Prijsontwikkeling (2019-2024)</h4>
-                    <p>Gebaseerd op officieel onderzoek toont deze grafiek de vastgoedwaardestijging, vergeleken met andere populaire Zuid-Europese landen.</p>
+                    <h4>Prijsontwikkeling Nieuwbouw Montenegro (€/m²)</h4>
+                    <p>Gebaseerd op officieel onderzoek van MONSTAT (2019-2024) toont deze grafiek de gemiddelde prijsontwikkeling per vierkante meter voor nieuwbouwwoningen.</p>
                     <div class="chart-container">
                         <canvas id="cumulative-appreciation-chart"></canvas>
                     </div>
@@ -1417,9 +1409,23 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Core Calculation Logic ---
     function runCalculation() {
         const inputs = gatherInputs();
+        
+        // Calculate regional appreciation
+        let baseAppreciation = 0.204; // YoY 2023-2024 from MONSTAT
+        let appreciationMultiplier = 1.0;
+        const coastalRegions = ['Kotor', 'Budva', 'Tivat', 'Bar'];
+        if (coastalRegions.includes(inputs.region)) {
+            appreciationMultiplier = 1.10; // +10% premium for coastal
+        } else if (inputs.region === 'Noord') {
+            appreciationMultiplier = 1 - 0.292; // -29.2% for northern
+        }
+        const finalAppreciation = baseAppreciation * appreciationMultiplier;
+
         const results = calculateAll(inputs);
-        lastCalculation = { inputs, results }; 
-        displayResults(inputs, results);
+        lastCalculation = { inputs, results, finalAppreciation }; 
+        
+        displayResults(inputs, results, finalAppreciation);
+        
         const resultsTab = document.querySelector('.tab[data-tab="results"]');
         resultsTab.classList.remove('disabled');
         switchMainTab(resultsTab);
@@ -1589,7 +1595,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // --- Result Display Functions ---
-    function displayResults(inputs, allResults) {
+    function displayResults(inputs, allResults, finalAppreciation) {
         const { montenegro } = allResults;
         const formatCurrency = (value) => value || value === 0 ? new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(value) : '-';
         const formatPercent = (value, digits = 1) => value || value === 0 ? new Intl.NumberFormat('nl-NL', { style: 'percent', minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value) : '-';
@@ -1599,7 +1605,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('summary-total-investment').textContent = formatCurrency(montenegro.totalInvestment);
         document.getElementById('summary-annual-result').textContent = formatCurrency(montenegro.netAnnualCashflow);
         document.getElementById('summary-rental-yield').textContent = formatPercent(montenegro.netRentalYield, 2);
-        document.getElementById('summary-appreciation').textContent = formatPercent(0.04, 1);
+        document.getElementById('summary-appreciation').textContent = formatPercent(finalAppreciation, 1);
 
         displayOnetimeCostComparison(inputs, allResults, inputs.purchasePrice, formatCurrency, formatPercent);
         displayAnnualAndRoi(inputs, allResults, formatCurrency, formatPercent);
@@ -1769,12 +1775,23 @@ document.addEventListener('DOMContentLoaded', function () {
             const appreciationCtx = document.getElementById('cumulative-appreciation-chart');
             if (appreciationCtx) {
                 charts['cumulative-appreciation-chart'] = new Chart(appreciationCtx, { type: 'line',
-                    data: { labels: ['2019', '2020', '2021', '2022', '2023', '2024'], datasets: [
-                        { label: 'Montenegro', data: [100, 92.9, 116.7, 134.4, 160.6, 180.1], borderColor: '#d4915f', tension: 0.1, pointBackgroundColor: '#d4915f' },
-                        { label: 'Spanje', data: [100, 102.1, 105.9, 113.7, 118.3, 128.1], borderColor: '#F0B429', tension: 0.1, pointBackgroundColor: '#F0B429' },
-                        { label: 'Portugal', data: [100, 106.0, 117.8, 128.0, 139.1, 150.8], borderColor: '#00A5CF', tension: 0.1, pointBackgroundColor: '#00A5CF' },
-                        { label: 'Italië', data: [100, 101.5, 103.5, 105.7, 107.9, 115.1], borderColor: '#31C48D', tension: 0.1, pointBackgroundColor: '#31C48D' }
-                    ]}, options: { ...sharedOptions, scales: { y: { title: { display: true, text: 'Prijsindex (2019 = 100)' } } } }
+                    data: { 
+                        labels: ['2019', '2020', '2021', '2022', '2023', '2024'], 
+                        datasets: [
+                            { 
+                                label: 'Gemiddelde Prijs (€/m²)', 
+                                data: [1113, 951, 1194, 1339, 1532, 1844], 
+                                borderColor: '#d4915f', 
+                                tension: 0.1, 
+                                pointBackgroundColor: '#d4915f' 
+                            }
+                        ]
+                    }, 
+                    options: { 
+                        ...sharedOptions, 
+                        plugins: { legend: { display: false } },
+                        scales: { y: { title: { display: true, text: 'Prijs per m² (€)' } } } 
+                    }
                 });
             }
         }
