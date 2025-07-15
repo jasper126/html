@@ -1044,7 +1044,7 @@
                     </select>
                 </div>
                 
-                <div class="rental-details">
+                <div class="rental-details" style="display:none;">
                         <div class="form-group">
                             <label for="personalUsageWeeks">Aantal weken per jaar voor eigen gebruik</label>
                             <input type="range" id="personalUsageWeeks" class="form-range" min="0" max="52" value="0">
@@ -1081,7 +1081,6 @@
                 <div class="result-tab active" data-result="summary">Samenvatting</div>
                 <div class="result-tab" data-result="financial">Investering & Kosten</div>
                 <div class="result-tab" data-result="rental">Verhuurpotentieel</div>
-                <div class="result-tab" data-result="roi">Rendement Analyse</div>
             </div>
             
             <div class="result-panel active" id="summary-panel">
@@ -1169,21 +1168,6 @@
                 </div>
             </div>
             
-            <div class="result-panel" id="roi-panel">
-                <div class="panel-section">
-                    <h4>Analyse van Rendement</h4>
-                    <table class="data-table" id="roi-table"></table>
-                </div>
-                <div class="considerations-list">
-                    <h4>Toelichting Rendement</h4>
-                    <ul>
-                        <li><b>Bruto Rendement:</b> (Bruto Jaarlijkse Huurinkomsten / Totale Investering) * 100%. Dit kengetal toont het rendement voordat jaarlijkse kosten zoals belastingen en verzekering in mindering zijn gebracht.</li>
-                        <li><b>Netto Huurrendement:</b> (Jaarlijks Netto Resultaat / Totale Investering) * 100%. Dit is het directe, jaarlijkse rendement uit verhuurinkomsten, afgezet tegen uw totale investering. Het toont de directe winstgevendheid van het pand na alle kosten.</li>
-                        <li><b>Cash-on-Cash Rendement:</b> Dit belangrijke kengetal meet hoeveel cash u jaarlijks overhoudt (na alle kosten, inclusief financiering) ten opzichte van het eigen geld dat u daadwerkelijk heeft ingelegd.</li>
-                    </ul>
-                </div>
-            </div>
-            
             <div class="panel-section cta-section" id="lead-form-panel">
                 <div class="cta-content">
                     <div class="cta-icon-container">
@@ -1217,18 +1201,6 @@
         </div>
     </div>
 
-    <div id="custom-modal-overlay" class="modal-overlay"></div>
-    <div id="custom-modal" class="modal">
-        <div class="modal-header">
-            <h3>Financiële Waarschuwing</h3>
-            <button id="modal-close-btn" class="modal-close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p id="modal-message"></p>
-        </div>
-    </div>
-
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // --- STATE VARIABLES ---
@@ -1251,10 +1223,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const personalUsageWeeksSlider = document.getElementById('personalUsageWeeks');
     const contactForm = document.getElementById('contact-form');
     const purchasePriceInput = document.getElementById('purchasePrice');
-    const modalOverlay = document.getElementById('custom-modal-overlay');
-    const modal = document.getElementById('custom-modal');
-    const modalCloseBtn = document.getElementById('modal-close-btn');
-    const modalMessage = document.getElementById('modal-message');
     const loadingOverlay = document.getElementById('loading-overlay');
     
     // --- Event Listeners & Setup ---
@@ -1289,9 +1257,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const usage = usageTypeSelect.value;
             rentalDetails.style.display = (usage !== 'Vakantiewoning') ? 'block' : 'none';
         });
-        
-        modalCloseBtn.addEventListener('click', hideModal);
-        modalOverlay.addEventListener('click', hideModal);
         
         setupRangeSlider('personalUsageWeeks', 'personalUsageWeeksValue');
     }
@@ -1400,17 +1365,6 @@ document.addEventListener('DOMContentLoaded', function () {
         nextBtn.disabled = (currentStep === 1 && priceValue <= 0);
     }
     
-    function showModal(message) {
-        modalMessage.innerHTML = message;
-        modalOverlay.classList.add('visible');
-        modal.classList.add('visible');
-    }
-
-    function hideModal() {
-        modalOverlay.classList.remove('visible');
-        modal.classList.remove('visible');
-    }
-
     function switchMainTab(tab) {
         if (tab.classList.contains('disabled')) return;
         mainTabs.forEach(t => t.classList.remove('active'));
@@ -1474,12 +1428,13 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function gatherInputs() {
         return {
-            purchasePrice: parseFloat(document.getElementById('purchasePrice').value.replace(/[^0-9,-]+/g,"").replace(",", ".")) || 0,
-            furnishingCosts: parseFloat(document.getElementById('furnishingCosts').value.replace(/[^0-9,-]+/g,"").replace(",", ".")) || 0,
+            purchasePrice: parseFloat(document.getElementById('purchasePrice').value.replace(/[^0-9,]+/g, '')) || 0,
+            furnishingCosts: parseFloat(document.getElementById('furnishingCosts').value.replace(/[^0-9,]+/g, '')) || 0,
             isNewBuild: document.getElementById('propertyCondition').value === 'new',
             propertyType: document.getElementById('propertyType').value,
             region: document.getElementById('region').value,
             propertySize: parseFloat(document.getElementById('propertySize').value) || 0,
+            ownCapital: parseFloat(document.getElementById('purchasePrice').value.replace(/[^0-9,]+/g, '')) || 0,
             needFinancing: false,
             financingInterestRate: 0,
             financingTerm: 0,
@@ -1582,7 +1537,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const rentalWeeks = 52 - personalUsageWeeks;
-        results.grossAnnualRentalIncome = (purchasePrice * grossYieldRate / 52) * rentalWeeks;
+        if (usageType !== 'Vakantiewoning') {
+            results.grossAnnualRentalIncome = (purchasePrice * grossYieldRate / 52) * rentalWeeks;
+        } else {
+            results.grossAnnualRentalIncome = 0;
+        }
+
 
         results.rentalManagementFee = results.grossAnnualRentalIncome * (params.managementFeeRate || 0);
         results.netAnnualRentalIncome = results.grossAnnualRentalIncome - results.rentalManagementFee;
@@ -1742,7 +1702,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <span class="info-value">${inputs.personalUsageWeeks}</span>
                         </div>
                         <div>
-                            <span class="info-label">Weken Beschikbaar voor Verhuur</span>
+                            <span class="info-label">Weken Beschikbaar voor Verhuur <span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Het jaarlijkse huurinkomen wordt berekend over het aantal weken dat de woning beschikbaar is voor verhuur.</span></span></span>
                             <span class="info-value">${rentalWeeks}</span>
                         </div>
                     </div>
@@ -1763,7 +1723,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 <tr class="total-row"><td>Netto Cashflow (Eindresultaat)</td><td class="numeric-cell">${formatCurrency(montenegro.netAnnualCashflow)}</td></tr>
             </tbody>`;
             
-            const cashOnCashYield = inputs.ownCapital > 0 ? (montenegro.netAnnualCashflow / inputs.ownCapital) : 0;
+            // Assume ownCapital equals totalInvestment if financing section is hidden
+            const ownCapitalForRoi = inputs.ownCapital > 0 ? inputs.ownCapital : montenegro.totalInvestment;
+            const cashOnCashYield = ownCapitalForRoi > 0 ? (montenegro.netAnnualCashflow / ownCapitalForRoi) : 0;
             const grossYield = montenegro.totalInvestment > 0 ? (montenegro.grossAnnualRentalIncome / montenegro.totalInvestment) : 0;
             const netYield = montenegro.netRentalYield;
 
