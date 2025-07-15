@@ -1218,22 +1218,10 @@
         </div>
     </div>
 
-    <div id="custom-modal-overlay" class="modal-overlay"></div>
-    <div id="custom-modal" class="modal">
-        <div class="modal-header">
-            <h3>Financiële Waarschuwing</h3>
-            <button id="modal-close-btn" class="modal-close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p id="modal-message"></p>
-        </div>
-    </div>
-
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // --- STATE VARIABLES ---
-    let currentStep = 0;
+    let currentStep = 1; // Start at step 1 now
     let charts = {};
     let lastCalculation = {};
 
@@ -1287,12 +1275,31 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         
         setupRangeSlider('personalUsageWeeks', 'personalUsageWeeksValue');
+        
+        document.body.addEventListener('click', function(e) {
+            const isTooltipIcon = e.target.classList.contains('tooltip-icon');
+            
+            document.querySelectorAll('.tooltip .tooltip-text').forEach(tooltipText => {
+                if (!isTooltipIcon || tooltipText.parentElement !== e.target.parentElement) {
+                    tooltipText.classList.remove('visible');
+                }
+            });
+
+            if (isTooltipIcon) {
+                const tooltipText = e.target.nextElementSibling;
+                tooltipText.classList.toggle('visible');
+            }
+        });
     }
 
     // --- Currency Formatting ---
     const formatCurrency = (value) => value || value === 0 ? new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(value) : '-';
     const formatPercent = (value, digits = 1) => value || value === 0 ? new Intl.NumberFormat('nl-NL', { style: 'percent', minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value) : '-';
-
+    const getNumericValue = (elementId) => {
+        const input = document.getElementById(elementId);
+        return parseFloat(input.value.replace(/[^0-9,]+/g, '')) || 0;
+    };
+    
     function formatCurrencyInput(event) {
         const input = event.target;
         const value = parseFloat(input.value.replace(/[^0-9,-]+/g,"").replace(",", "."));
@@ -1305,8 +1312,8 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function unformatCurrencyInput(event) {
         const input = event.target;
-        const value = parseFloat(input.value.replace(/[^0-9,-]+/g,"").replace(",", "."));
-        if (!isNaN(value)) {
+        const value = parseFloat(input.value.replace(/[^0-9,.-]+/g, '')) || 0;
+        if (value > 0) {
             input.value = value;
         } else {
             input.value = '';
@@ -1357,7 +1364,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Navigatie & Validatie ---
     function handlePrevClick() {
-        if (currentStep > 0) {
+        if (currentStep > 1) {
             currentStep--;
             updateFormState();
         }
@@ -1374,7 +1381,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- UI State & Updates ---
     function updateFormState() {
         const isStartScreen = currentStep === 0;
-        document.querySelector('.progress-indicator').style.display = isStartScreen ? 'none' : 'flex';
+        document.querySelector('.progress-indicator').style.display = 'flex';
         
         progressSteps.forEach((step, index) => {
             step.classList.toggle('active', index + 1 === currentStep);
@@ -1383,13 +1390,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         formSteps.forEach(form => form.classList.remove('active'));
         document.getElementById(`step-${currentStep}`).classList.add('active');
-        prevBtn.disabled = isStartScreen;
+        prevBtn.disabled = currentStep === 1;
         
         const totalForms = 3;
         nextBtn.style.display = currentStep === totalForms ? 'none' : 'inline-block';
         calculateBtn.style.display = currentStep === totalForms ? 'inline-block' : 'none';
         
-        const priceValue = parseFloat(purchasePriceInput.value.replace(/[^0-9,.-]+/g, '')) || 0;
+        const priceValue = getNumericValue('purchasePrice');
         nextBtn.disabled = (currentStep === 1 && priceValue <= 0);
     }
     
@@ -1400,7 +1407,7 @@ document.addEventListener('DOMContentLoaded', function () {
         calculatorSections.forEach(s => s.classList.remove('active'));
         document.getElementById(`${tab.dataset.tab}-section`).classList.add('active');
         if (tab.dataset.tab === 'input') {
-            currentStep = 0;
+            currentStep = 1;
             updateFormState();
         }
     }
@@ -1456,13 +1463,13 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function gatherInputs() {
         return {
-            purchasePrice: parseFloat(document.getElementById('purchasePrice').value.replace(/[^0-9,]+/g, '')) || 0,
-            furnishingCosts: parseFloat(document.getElementById('furnishingCosts').value.replace(/[^0-9,]+/g, '')) || 0,
+            purchasePrice: getNumericValue('purchasePrice'),
+            furnishingCosts: getNumericValue('furnishingCosts'),
             isNewBuild: document.getElementById('propertyCondition').value === 'new',
             propertyType: document.getElementById('propertyType').value,
             region: document.getElementById('region').value,
             propertySize: parseFloat(document.getElementById('propertySize').value) || 0,
-            ownCapital: parseFloat(document.getElementById('purchasePrice').value.replace(/[^0-9,]+/g, '')) || 0, // Assume full own capital
+            ownCapital: getNumericValue('purchasePrice'),
             needFinancing: false,
             financingInterestRate: 0,
             financingTerm: 0,
@@ -1695,12 +1702,8 @@ document.addEventListener('DOMContentLoaded', function () {
             costsTableBody += `<tr><td>Onderhoud<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse reservering voor onderhoudskosten.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualMaintenance)}</td></tr>`;
         }
 
-        if (montenegro.annualFinancingCost > 0) {
-            const interestRateFormatted = (inputs.financingInterestRate * 100).toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-            costsTableBody += `<tr><td>Financieringskosten (${interestRateFormatted}%)</td><td class="numeric-cell">${formatCurrency(montenegro.annualFinancingCost)}</td></tr>`;
-        }
         if (montenegro.taxAmount > 0) {
-            costsTableBody += `<tr><td>Belasting op Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.taxAmount)}</td></tr>`;
+            costsTableBody += `<tr><td>Belasting op Huurinkomsten<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">In Montenegro wordt 15% belasting geheven over de netto huurinkomsten (na aftrek van kosten).</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.taxAmount)}</td></tr>`;
         }
         costsTableBody += `<tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td class="numeric-cell">${formatCurrency(totalAnnualCosts)}</td></tr>`;
         
