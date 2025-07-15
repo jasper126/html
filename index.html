@@ -1044,7 +1044,7 @@
                     </select>
                 </div>
                 
-                <div class="rental-details" style="display:none;">
+                <div class="rental-details">
                         <div class="form-group">
                             <label for="personalUsageWeeks">Aantal weken per jaar voor eigen gebruik</label>
                             <input type="range" id="personalUsageWeeks" class="form-range" min="0" max="52" value="0">
@@ -1251,6 +1251,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const personalUsageWeeksSlider = document.getElementById('personalUsageWeeks');
     const contactForm = document.getElementById('contact-form');
     const purchasePriceInput = document.getElementById('purchasePrice');
+    const modalOverlay = document.getElementById('custom-modal-overlay');
+    const modal = document.getElementById('custom-modal');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const modalMessage = document.getElementById('modal-message');
     const loadingOverlay = document.getElementById('loading-overlay');
     
     // --- Event Listeners & Setup ---
@@ -1283,12 +1287,11 @@ document.addEventListener('DOMContentLoaded', function () {
         
         usageTypeSelect.addEventListener('change', () => {
             const usage = usageTypeSelect.value;
-            rentalDetails.style.display = (usage === 'Combinatie') ? 'block' : 'none';
-            if (usage !== 'Combinatie') {
-                personalUsageWeeksSlider.value = 0;
-                personalUsageWeeksSlider.dispatchEvent(new Event('input'));
-            }
+            rentalDetails.style.display = (usage !== 'Vakantiewoning') ? 'block' : 'none';
         });
+        
+        modalCloseBtn.addEventListener('click', hideModal);
+        modalOverlay.addEventListener('click', hideModal);
         
         setupRangeSlider('personalUsageWeeks', 'personalUsageWeeksValue');
     }
@@ -1477,7 +1480,7 @@ document.addEventListener('DOMContentLoaded', function () {
             propertyType: document.getElementById('propertyType').value,
             region: document.getElementById('region').value,
             propertySize: parseFloat(document.getElementById('propertySize').value) || 0,
-            needFinancing: false, // Financing is hidden for now
+            needFinancing: false,
             financingInterestRate: 0,
             financingTerm: 0,
             usageType: document.getElementById('usageType').value,
@@ -1575,14 +1578,11 @@ document.addEventListener('DOMContentLoaded', function () {
             grossYieldRate = country === 'Montenegro' ? ktvYields[country] * regionMultiplier : ktvYields[country];
         } else if (usageType === 'Combinatie') {
             const comboYields = { 'Montenegro': 0.07, 'Spanje': 0.065, 'Portugal': 0.0575, 'Italië': 0.065 };
-            const baseAnnualYield = country === 'Montenegro' ? comboYields[country] * regionMultiplier : comboYields[country];
-            const rentalWeeks = 52 - personalUsageWeeks;
-            results.grossAnnualRentalIncome = (purchasePrice * baseAnnualYield / 52) * rentalWeeks;
+            grossYieldRate = country === 'Montenegro' ? comboYields[country] * regionMultiplier : comboYields[country];
         }
 
-        if (usageType !== 'Combinatie') {
-            results.grossAnnualRentalIncome = (usageType !== 'Vakantiewoning' && purchasePrice > 0) ? purchasePrice * grossYieldRate : 0;
-        }
+        const rentalWeeks = 52 - personalUsageWeeks;
+        results.grossAnnualRentalIncome = (purchasePrice * grossYieldRate / 52) * rentalWeeks;
 
         results.rentalManagementFee = results.grossAnnualRentalIncome * (params.managementFeeRate || 0);
         results.netAnnualRentalIncome = results.grossAnnualRentalIncome - results.rentalManagementFee;
