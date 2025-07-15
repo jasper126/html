@@ -57,7 +57,7 @@
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05);
             position: relative;
-            /* overflow: hidden; is verwijderd om tooltips niet af te snijden */
+            overflow: hidden;
         }
 
         .calculator-header {
@@ -1031,7 +1031,7 @@
                     </select>
                 </div>
             </div>
-            
+
             <div class="input-form" id="step-2">
                 <h3>Gebruiksgegevens</h3>
                 
@@ -1218,18 +1218,6 @@
         </div>
     </div>
 
-    <div id="custom-modal-overlay" class="modal-overlay"></div>
-    <div id="custom-modal" class="modal">
-        <div class="modal-header">
-            <h3>Financiële Waarschuwing</h3>
-            <button id="modal-close-btn" class="modal-close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p id="modal-message"></p>
-        </div>
-    </div>
-
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // --- STATE VARIABLES ---
@@ -1287,6 +1275,22 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         
         setupRangeSlider('personalUsageWeeks', 'personalUsageWeeksValue');
+        
+        // Tooltip listeners for touch devices
+        document.body.addEventListener('click', function(e) {
+            const isTooltipIcon = e.target.classList.contains('tooltip-icon');
+            
+            document.querySelectorAll('.tooltip .tooltip-text').forEach(tooltipText => {
+                if (!isTooltipIcon || tooltipText.parentElement !== e.target.parentElement) {
+                    tooltipText.classList.remove('visible');
+                }
+            });
+
+            if (isTooltipIcon) {
+                const tooltipText = e.target.nextElementSibling;
+                tooltipText.classList.toggle('visible');
+            }
+        });
     }
 
     // --- Currency Formatting ---
@@ -1305,8 +1309,8 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function unformatCurrencyInput(event) {
         const input = event.target;
-        const value = parseFloat(input.value.replace(/[^0-9,-]+/g,"").replace(",", "."));
-        if (!isNaN(value)) {
+        const value = parseFloat(input.value.replace(/[^0-9,.-]+/g, '')) || 0;
+        if (value > 0) {
             input.value = value;
         } else {
             input.value = '';
@@ -1389,7 +1393,7 @@ document.addEventListener('DOMContentLoaded', function () {
         nextBtn.style.display = currentStep === totalForms ? 'none' : 'inline-block';
         calculateBtn.style.display = currentStep === totalForms ? 'inline-block' : 'none';
         
-        const priceValue = parseFloat(purchasePriceInput.value.replace(/[^0-9,.-]+/g, '')) || 0;
+        const priceValue = parseFloat(purchasePriceInput.value.replace(/[^0-9,-]+/g,"").replace(",", ".")) || 0;
         nextBtn.disabled = (currentStep === 1 && priceValue <= 0);
     }
     
@@ -1456,13 +1460,13 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function gatherInputs() {
         return {
-            purchasePrice: parseFloat(document.getElementById('purchasePrice').value.replace(/[^0-9,]+/g, '')) || 0,
-            furnishingCosts: parseFloat(document.getElementById('furnishingCosts').value.replace(/[^0-9,]+/g, '')) || 0,
+            purchasePrice: parseFloat(document.getElementById('purchasePrice').value.replace(/[^0-9,.-]+/g, '')) || 0,
+            furnishingCosts: parseFloat(document.getElementById('furnishingCosts').value.replace(/[^0-9,.-]+/g, '')) || 0,
             isNewBuild: document.getElementById('propertyCondition').value === 'new',
             propertyType: document.getElementById('propertyType').value,
             region: document.getElementById('region').value,
             propertySize: parseFloat(document.getElementById('propertySize').value) || 0,
-            ownCapital: parseFloat(document.getElementById('purchasePrice').value.replace(/[^0-9,]+/g, '')) || 0, // Assume full own capital
+            ownCapital: 0,
             needFinancing: false,
             financingInterestRate: 0,
             financingTerm: 0,
@@ -1695,12 +1699,8 @@ document.addEventListener('DOMContentLoaded', function () {
             costsTableBody += `<tr><td>Onderhoud<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">Jaarlijkse reservering voor onderhoudskosten.</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.annualMaintenance)}</td></tr>`;
         }
 
-        if (montenegro.annualFinancingCost > 0) {
-            const interestRateFormatted = (inputs.financingInterestRate * 100).toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-            costsTableBody += `<tr><td>Financieringskosten (${interestRateFormatted}%)</td><td class="numeric-cell">${formatCurrency(montenegro.annualFinancingCost)}</td></tr>`;
-        }
         if (montenegro.taxAmount > 0) {
-            costsTableBody += `<tr><td>Belasting op Huurinkomsten</td><td class="numeric-cell">${formatCurrency(montenegro.taxAmount)}</td></tr>`;
+            costsTableBody += `<tr><td>Belasting op Huurinkomsten<span class="tooltip"><i class="tooltip-icon">i</i><span class="tooltip-text">In Montenegro wordt 15% belasting geheven over de netto huurinkomsten (na aftrek van kosten).</span></span></td><td class="numeric-cell">${formatCurrency(montenegro.taxAmount)}</td></tr>`;
         }
         costsTableBody += `<tr class="total-row"><td>Totale Jaarlijkse Kosten</td><td class="numeric-cell">${formatCurrency(totalAnnualCosts)}</td></tr>`;
         
