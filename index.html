@@ -57,7 +57,7 @@
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05);
             position: relative;
-            /* overflow: hidden; is verwijderd om tooltips niet af te snijden */
+            overflow: hidden;
         }
 
         .calculator-header {
@@ -958,29 +958,7 @@
                 <div class="progress-step" data-step="3">3. Voorkeuren</div>
             </div>
             
-            <div class="input-form active" id="step-0">
-                <div class="panel-section">
-                    <h4>Uitleg van de Calculator</h4>
-                    <p>Deze calculator is ontworpen om u een gedetailleerd en realistisch inzicht te geven in het potentiële rendement van een vastgoedinvestering. Onze berekeningen zijn niet zomaar schattingen; ze zijn gebaseerd op een diepgaande analyse van de meest recente, openbare data.</p>
-                    
-                    <h5>Onze Databronnen</h5>
-                    <ul>
-                        <li><strong>Nationale Statistische Bureaus:</strong> Gegevens over vastgoedprijzen, transactievolumes en economische indicatoren zijn afkomstig van de officiële CBS-equivalenten van elk land, zoals MONSTAT (Montenegro), INE (Spanje), INE Portugal, en ISTAT (Italië).</li>
-                        <li><strong>Belastingautoriteiten:</strong> Alle berekeningen van overdrachtsbelasting, jaarlijkse eigendomsbelasting en belasting op huurinkomsten zijn gebaseerd op de officiële, meest recente tarieven en wetgeving van de respectievelijke belastingdiensten.</li>
-                        <li><strong>Onafhankelijke Marktanalyse:</strong> Voor parameters zoals gemiddelde huurrendementen en beheerkosten maken we gebruik van data van gerenommeerde, onafhankelijke vastgoedanalisten zoals de Global Property Guide, en analyses van financiële instellingen zoals PwC en BBVA Research.</li>
-                    </ul>
-
-                    <h5>Transparante Berekeningen</h5>
-                    <p>De tool berekent dynamisch de kosten en opbrengsten voor uw specifieke situatie. Wanneer u een aankoopprijs invoert, wordt voor elk land een parallelle berekening gemaakt van de transactiekosten en het te verwachten netto huurrendement. Dit stelt u in staat om een eerlijke, data-gedreven vergelijking te maken.</p>
-                    
-                    <div class="considerations-list" style="border-left-color: var(--warning);">
-                            <h4>Disclaimer</h4>
-                            <p>Hoewel we streven naar maximale nauwkeurigheid, dient deze calculator als een indicatief hulpmiddel. De vastgoedmarkt is dynamisch en werkelijke resultaten kunnen afwijken. Deze berekening vormt geen financieel advies. Wij raden u ten zeerste aan om contact op te nemen voor een persoonlijk adviesgesprek om uw specifieke situatie te bespreken.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="input-form" id="step-1">
+            <div class="input-form active" id="step-1">
                 <h3>Woninggegevens in Montenegro</h3>
                 
                 <div class="form-group">
@@ -1031,7 +1009,7 @@
                     </select>
                 </div>
             </div>
-            
+
             <div class="input-form" id="step-2">
                 <h3>Gebruiksgegevens</h3>
                 
@@ -1082,7 +1060,6 @@
                 <div class="result-tab active" data-result="summary">Samenvatting</div>
                 <div class="result-tab" data-result="financial">Investering & Kosten</div>
                 <div class="result-tab" data-result="rental">Verhuurpotentieel</div>
-                <div class="result-tab" data-result="roi">Rendement Analyse</div>
             </div>
             
             <div class="result-panel active" id="summary-panel">
@@ -1167,21 +1144,6 @@
                 <div class="panel-section">
                     <h4>Netto Verhuurresultaat</h4>
                     <table class="data-table" id="net-rental-result-table"></table>
-                </div>
-            </div>
-            
-            <div class="result-panel" id="roi-panel">
-                <div class="panel-section">
-                    <h4>Analyse van Rendement</h4>
-                    <table class="data-table" id="roi-table"></table>
-                </div>
-                <div class="considerations-list">
-                    <h4>Toelichting Rendement</h4>
-                    <ul>
-                        <li><b>Bruto Rendement:</b> (Bruto Jaarlijkse Huurinkomsten / Totale Investering) * 100%. Dit kengetal toont het rendement voordat jaarlijkse kosten zoals belastingen en verzekering in mindering zijn gebracht.</li>
-                        <li><b>Netto Huurrendement:</b> (Jaarlijks Netto Resultaat / Totale Investering) * 100%. Dit is het directe, jaarlijkse rendement uit verhuurinkomsten, afgezet tegen uw totale investering. Het toont de directe winstgevendheid van het pand na alle kosten.</li>
-                        <li><b>Cash-on-Cash Rendement:</b> Dit belangrijke kengetal meet hoeveel cash u jaarlijks overhoudt (na alle kosten, inclusief financiering) ten opzichte van het eigen geld dat u daadwerkelijk heeft ingelegd.</li>
-                    </ul>
                 </div>
             </div>
             
@@ -1276,6 +1238,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         setupRangeSlider('personalUsageWeeks', 'personalUsageWeeksValue');
         
+        // Tooltip listeners for touch devices
         document.body.addEventListener('click', function(e) {
             const isTooltipIcon = e.target.classList.contains('tooltip-icon');
             
@@ -1295,11 +1258,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Currency Formatting ---
     const formatCurrency = (value) => value || value === 0 ? new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(value) : '-';
     const formatPercent = (value, digits = 1) => value || value === 0 ? new Intl.NumberFormat('nl-NL', { style: 'percent', minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value) : '-';
-    const getNumericValue = (elementId) => {
-        const input = document.getElementById(elementId);
-        return parseFloat(input.value.replace(/[^0-9,]+/g, '')) || 0;
-    };
-    
+
     function formatCurrencyInput(event) {
         const input = event.target;
         const value = parseFloat(input.value.replace(/[^0-9,-]+/g,"").replace(",", "."));
@@ -1396,7 +1355,7 @@ document.addEventListener('DOMContentLoaded', function () {
         nextBtn.style.display = currentStep === totalForms ? 'none' : 'inline-block';
         calculateBtn.style.display = currentStep === totalForms ? 'inline-block' : 'none';
         
-        const priceValue = getNumericValue('purchasePrice');
+        const priceValue = parseFloat(purchasePriceInput.value.replace(/[^0-9,.-]+/g, '')) || 0;
         nextBtn.disabled = (currentStep === 1 && priceValue <= 0);
     }
     
@@ -1462,15 +1421,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     function gatherInputs() {
+        const ownCapitalValue = parseFloat(document.getElementById('purchasePrice').value.replace(/[^0-9,.-]+/g, '')) || 0;
         return {
-            purchasePrice: getNumericValue('purchasePrice'),
-            furnishingCosts: getNumericValue('furnishingCosts'),
+            purchasePrice: parseFloat(document.getElementById('purchasePrice').value.replace(/[^0-9,.-]+/g, '')) || 0,
+            furnishingCosts: parseFloat(document.getElementById('furnishingCosts').value.replace(/[^0-9,.-]+/g, '')) || 0,
             isNewBuild: document.getElementById('propertyCondition').value === 'new',
             propertyType: document.getElementById('propertyType').value,
             region: document.getElementById('region').value,
             propertySize: parseFloat(document.getElementById('propertySize').value) || 0,
-            ownCapital: getNumericValue('purchasePrice'),
-            needFinancing: false,
+            ownCapital: ownCapitalValue, // Own capital is purchase price
+            needFinancing: false, // Financing is hidden
             financingInterestRate: 0,
             financingTerm: 0,
             usageType: document.getElementById('usageType').value,
