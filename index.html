@@ -1119,7 +1119,7 @@
                 </div>
                 
                 <div class="panel-section">
-                    <h4>Historische Prijsontwikkeling (2019-2024)</h4>
+                    <h4>Historische Prijsontwikkeling (2020-2024)</h4>
                     <p>Gebaseerd op officieel onderzoek toont deze grafiek de vastgoedwaardestijging, vergeleken met andere populaire Zuid-Europese landen. De data voor Montenegro is gebaseerd op de nieuwbouwprijzen van MONSTAT.</p>
                     <div class="chart-container">
                         <canvas id="cumulative-appreciation-chart"></canvas>
@@ -1796,7 +1796,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 charts['cumulative-appreciation-chart'] = new Chart(appreciationCtx, { type: 'line',
                     data: { 
-                        labels: ['2019', '2020', '2021', '2022', '2023', '2024'], 
+                        labels: ['2020', '2021', '2022', '2023', '2024'], 
                         datasets: [
                             { 
                                 label: 'Montenegro', 
@@ -1830,7 +1830,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }, 
                     options: { 
                         ...sharedOptions, 
-                        scales: { y: { title: { display: true, text: 'Prijsindex (2019 = 100)' } } } 
+                        scales: { y: { title: { display: true, text: 'Prijsindex (2020 = 100)' } } } 
                     }
                 });
             }
