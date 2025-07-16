@@ -1790,8 +1790,8 @@ document.addEventListener('DOMContentLoaded', function () {
             destroyChart('cumulative-appreciation-chart');
             const appreciationCtx = document.getElementById('cumulative-appreciation-chart');
             if (appreciationCtx) {
-                const me_base = 1113;
-                const me_prices = [1113, 951, 1194, 1339, 1532, 1844];
+                const me_base = 951;
+                const me_prices = [951, 1194, 1339, 1532, 1844];
                 const me_index = me_prices.map(p => (p / me_base) * 100);
 
                 charts['cumulative-appreciation-chart'] = new Chart(appreciationCtx, { type: 'line',
@@ -1807,21 +1807,21 @@ document.addEventListener('DOMContentLoaded', function () {
                             },
                             { 
                                 label: 'Spanje', 
-                                data: [100, 102.1, 105.9, 113.7, 118.3, 128.1], 
+                                data: [102.1, 105.9, 113.7, 118.3, 128.1], 
                                 borderColor: '#F0B429', 
                                 tension: 0.1, 
                                 pointBackgroundColor: '#F0B429' 
                             },
                             { 
                                 label: 'Portugal', 
-                                data: [100, 106.0, 117.8, 128.0, 139.1, 150.8], 
+                                data: [106.0, 117.8, 128.0, 139.1, 150.8], 
                                 borderColor: '#00A5CF', 
                                 tension: 0.1, 
                                 pointBackgroundColor: '#00A5CF' 
                             },
                             { 
                                 label: 'Italië', 
-                                data: [100, 101.5, 103.5, 105.7, 107.9, 115.1], 
+                                data: [101.5, 103.5, 105.7, 107.9, 115.1], 
                                 borderColor: '#31C48D', 
                                 tension: 0.1, 
                                 pointBackgroundColor: '#31C48D' 
