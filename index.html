@@ -1218,7 +1218,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // --- STATE VARIABLES ---
-    let currentStep = 1; // Start at step 1 now
+    let currentStep = 0; // AANGEPAST: Start bij stap 0 (uitleg)
     let charts = {};
     let lastCalculation = {};
 
@@ -1361,7 +1361,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Navigatie & Validatie ---
     function handlePrevClick() {
-        if (currentStep > 1) {
+        if (currentStep > 0) { // AANGEPAST: Zorg dat je niet onder 0 kan
             currentStep--;
             updateFormState();
         }
@@ -1378,7 +1378,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- UI State & Updates ---
     function updateFormState() {
         const isStartScreen = currentStep === 0;
-        document.querySelector('.progress-indicator').style.display = 'flex';
+        document.querySelector('.progress-indicator').style.display = isStartScreen ? 'none' : 'flex'; // AANGEPAST: Verberg progress bar op startscherm
         
         progressSteps.forEach((step, index) => {
             step.classList.toggle('active', index + 1 === currentStep);
@@ -1387,7 +1387,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         formSteps.forEach(form => form.classList.remove('active'));
         document.getElementById(`step-${currentStep}`).classList.add('active');
-        prevBtn.disabled = currentStep === 1;
+        prevBtn.disabled = currentStep === 0; // AANGEPAST: Vorige knop is uit op stap 0
         
         const totalForms = 3;
         nextBtn.style.display = currentStep === totalForms ? 'none' : 'inline-block';
@@ -1404,7 +1404,7 @@ document.addEventListener('DOMContentLoaded', function () {
         calculatorSections.forEach(s => s.classList.remove('active'));
         document.getElementById(`${tab.dataset.tab}-section`).classList.add('active');
         if (tab.dataset.tab === 'input') {
-            currentStep = 1;
+            currentStep = 0; // AANGEPAST: Terug naar invoer is terug naar de uitleg
             updateFormState();
         }
     }
