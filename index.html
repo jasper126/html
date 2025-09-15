@@ -708,6 +708,30 @@ function renderCharts(){
 
 /* Auto initial calculation & show results quickly */
 calculate();
+// Mooie, consistente Chart.js defaults (optisch; geen logica)
+Chart.defaults.font.family = "Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+Chart.defaults.color = "#65748b";
+Chart.defaults.plugins.legend.position = "bottom";
+Chart.defaults.plugins.tooltip.backgroundColor = "rgba(4,41,67,.9)";
+Chart.defaults.plugins.tooltip.cornerRadius = 10;
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.elements.line.tension = 0.25;
+Chart.defaults.elements.point.radius = 0;
+
+// Een subtiele grid
+function softenScales(cfg){
+  if(cfg?.options?.scales){
+    ['x','y'].forEach(ax=>{
+      if(cfg.options.scales[ax]){
+        cfg.options.scales[ax].grid = { color:"rgba(16,42,67,.06)" };
+        cfg.options.scales[ax].ticks = { color:"#65748b" };
+      }
+    });
+  }
+  return cfg;
+}
+// gebruik: telkens wanneer je een chart maakt, roep je softenScales(config) aan
+
 </script>
 </body>
 </html>
