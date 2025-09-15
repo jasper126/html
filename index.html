@@ -1,849 +1,608 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  LineChart,
-  Line,
-  Area,
-  AreaChart
-} from "recharts";
-import { cn } from "@/lib/utils";
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bay Sight – Woning Calculator Montenegro (2025 UI)</title>
 
-// Color palette (Bay Sight)
-const COLORS = {
-  primaryBlue: "#042943",
-  primaryOrange: "#d4915f",
-  primaryTurquoise: "#00A5CF",
-  secondaryLight: "#F0F4F8",
-  secondaryMedium: "#D9E2EC",
-  secondaryDark: "#627D98",
-  success: "#31C48D",
-  warning: "#F0B429",
-  error: "#E12D39",
-  textPrimary: "#102A43",
-  textSecondary: "#486581",
-  bg: "#FFFFFF",
-  bgAlt: "#F8FAFC",
-};
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 
-// ====== CONSTANTS (preserve original calculations) ======
-const TRANSFER_TAX_RATE = 0.03; // 3%
-const NOTARY_RATE = 0.005; // 0.5%
-const REGISTRATION_RATE = 0.003; // 0.3%
-const AGENT_RATE = 0.03; // 3%
-const LAWYER_FEE = 1500; // €1.500
+<style>
+:root{
+  --primary-blue:#042943;
+  --primary-orange:#d4915f;
+  --primary-turquoise:#00A5CF;
 
-const PROPERTY_TAX_RATE = 0.001; // 0.1%
-const RENTAL_TAX_RATE = 0.09; // 9%
+  --bg:#ffffff;
+  --bg-alt:#f6f8fb;
+  --border:#e6edf3;
+
+  --text:#102a43;
+  --muted:#65748b;
+
+  --success:#31C48D;
+  --error:#E12D39;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg-alt);color:var(--text);font:16px/1.5 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.container{max-width:1100px;margin:32px auto;padding:0 16px}
+.header{background:var(--primary-blue);color:#fff;border-radius:16px;padding:20px 24px;box-shadow:0 10px 30px rgba(4,41,67,.2)}
+.header h1{margin:0;font-size:24px}
+.header h1 span{color:var(--primary-orange)}
+
+.tabs{display:flex;gap:8px;margin:16px 0}
+.tab-btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer;font-weight:600}
+.tab-btn.active{border-color:var(--primary-orange);box-shadow:0 0 0 2px rgba(212,145,95,.15)}
+.section{display:none}
+.section.active{display:block}
+
+.grid{display:grid;gap:16px}
+@media(min-width:860px){ .grid.cols-2{grid-template-columns:1fr 1fr} .grid.cols-3{grid-template-columns:repeat(3,1fr)} }
+
+.card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 6px 20px rgba(16,42,67,.05)}
+.card .card-body{padding:16px}
+
+.label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.input, select, .range{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;outline:none}
+.input:focus, select:focus{border-color:var(--primary-turquoise);box-shadow:0 0 0 3px rgba(0,165,207,.15)}
+.row{display:grid;gap:12px}
+@media(min-width:640px){ .row.cols-2{grid-template-columns:1fr 1fr} .row.cols-3{grid-template-columns:repeat(3,1fr)} }
+
+.kpis{display:grid;gap:16px}
+@media(min-width:860px){ .kpis{grid-template-columns:repeat(3,1fr)} }
+.kpi{padding:16px;border:1px solid var(--border);border-radius:16px;background:#fff}
+.kpi .title{font-size:13px;color:var(--muted)}
+.kpi .value{font-size:22px;font-weight:700;margin-top:6px}
+
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer;font-weight:600}
+.btn.primary{background:var(--primary-orange);border-color:var(--primary-orange);color:#fff}
+.btn.secondary{background:#fff}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+
+.table{width:100%;border-collapse:collapse;font-size:14px}
+.table th,.table td{padding:10px;border-bottom:1px solid var(--border);text-align:left}
+.table th{background:#fafcff;font-weight:700}
+
+.note{font-size:12px;color:var(--muted)}
+.hr{height:1px;background:var(--border);margin:12px 0}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;background:var(--bg-alt);border:1px solid var(--border);font-size:12px}
+.badge.mne{background:var(--primary-orange);border-color:var(--primary-orange);color:#fff}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1><span>BAY SIGHT</span> – Woning Calculator Montenegro</h1>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="input">Gegevens invoeren</button>
+    <button class="tab-btn" data-tab="results">Resultaten</button>
+  </div>
+
+  <!-- INPUT -->
+  <section id="input" class="section active">
+    <div class="grid cols-2">
+      <div class="card"><div class="card-body">
+        <h3>1. Woning</h3>
+        <div class="row cols-2">
+          <div>
+            <label class="label" for="region">Regio</label>
+            <select id="region">
+              <option value="Kotor">Kotor</option><option value="Budva">Budva</option>
+              <option value="Tivat">Tivat</option><option value="Bar">Bar</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="propertyType">Type woning</label>
+            <select id="propertyType">
+              <option>Appartement</option><option>Villa</option>
+              <option>Townhouse</option><option>Landhuis</option>
+            </select>
+          </div>
+        </div>
+        <div class="row cols-2" style="margin-top:12px">
+          <div>
+            <label class="label" for="propertySize">Woonoppervlakte (m²)</label>
+            <input id="propertySize" type="number" class="input" placeholder="m²">
+          </div>
+          <div>
+            <label class="label" for="landSize">Perceel (m²)</label>
+            <input id="landSize" type="number" class="input" placeholder="m²">
+          </div>
+        </div>
+        <div class="row cols-2" style="margin-top:12px">
+          <div>
+            <label class="label" for="purchasePrice">Aankoopprijs (€)</label>
+            <input id="purchasePrice" type="number" class="input" value="150000" min="0">
+          </div>
+          <div>
+            <label class="label" for="condition">Staat van onderhoud</label>
+            <select id="condition">
+              <option>Nieuwbouw</option><option>Uitstekend</option>
+              <option selected>Goed</option><option>Redelijk</option><option>Renovatie nodig</option>
+            </select>
+          </div>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="card-body">
+        <h3>2. Financieel</h3>
+        <div class="row cols-3">
+          <div>
+            <label class="label" for="ownCapital">Eigen vermogen (€)</label>
+            <input id="ownCapital" type="number" class="input" value="150000" min="0">
+          </div>
+          <div>
+            <label class="label">Financiering nodig?</label>
+            <select id="needFinancing">
+              <option value="no" selected>Nee</option>
+              <option value="yes">Ja</option>
+            </select>
+          </div>
+          <div></div>
+        </div>
+        <div id="financingBox" style="display:none;margin-top:12px" class="row cols-3">
+          <div>
+            <label class="label" for="finAmount">Bedrag (€)</label>
+            <input id="finAmount" type="number" class="input" value="0">
+          </div>
+          <div>
+            <label class="label" for="finTerm">Looptijd (jaren)</label>
+            <input id="finTerm" type="number" class="input" value="15" min="1" max="30">
+          </div>
+          <div>
+            <label class="label" for="finType">Type</label>
+            <select id="finType">
+              <option>Hypotheek in Nederland</option><option>Lokale hypotheek</option><option>Anders</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <label class="label" for="investmentHorizon">Investeringshorizon (jaren)</label>
+          <input type="range" id="investmentHorizon" class="range" min="1" max="30" value="15">
+          <div class="note" style="text-align:right"> <span id="investmentHorizonValue">15</span> jaar</div>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="card-body">
+        <h3>3. Gebruik</h3>
+        <div class="row cols-2">
+          <div>
+            <label class="label" for="usageType">Primair gebruik</label>
+            <select id="usageType">
+              <option>Vakantiewoning</option><option>Permanente bewoning</option>
+              <option>Verhuur</option><option>Combinatie</option>
+            </select>
+          </div>
+          <div id="rentalTypeBox" style="display:none">
+            <label class="label" for="rentalPeriod">Type verhuur</label>
+            <select id="rentalPeriod">
+              <option>Korte termijn (vakantieverhuur)</option>
+              <option>Lange termijn (vaste huurder)</option>
+              <option>Beide</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="personalUseBox" style="display:none;margin-top:12px">
+          <label class="label" for="personalUsageWeeks">Eigen gebruik (weken/jaar)</label>
+          <input type="range" id="personalUsageWeeks" class="range" min="0" max="52" value="6">
+          <div class="note" style="text-align:right"><span id="personalUsageWeeksValue">6</span> weken</div>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="card-body">
+        <h3>4. Voorkeuren</h3>
+        <div>
+          <label class="label" for="returnImportance">Belang van rendement</label>
+          <input type="range" id="returnImportance" class="range" min="1" max="10" value="7">
+          <div class="note" style="text-align:right"><span id="returnImportanceValue">7</span>/10</div>
+        </div>
+        <div style="margin-top:12px">
+          <label class="label" for="enjoymentImportance">Belang van gebruiksgenot</label>
+          <input type="range" id="enjoymentImportance" class="range" min="1" max="10" value="8">
+          <div class="note" style="text-align:right"><span id="enjoymentImportanceValue">8</span>/10</div>
+        </div>
+        <div style="margin-top:12px">
+          <label class="label" for="managementPreference">Beheer voorkeur</label>
+          <select id="managementPreference">
+            <option>Zelf actief beheren</option><option selected>Gedeeltelijk uitbesteden</option><option>Volledig uitbesteden</option>
+          </select>
+        </div>
+        <div class="hr"></div>
+        <div class="actions">
+          <button class="btn secondary" id="btnToResults">Naar resultaten</button>
+          <button class="btn primary" id="btnCalculate">Bereken</button>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" class="section">
+    <div class="kpis">
+      <div class="kpi"><div class="title">Totale investering</div><div id="kpiInvestment" class="value">—</div></div>
+      <div class="kpi"><div class="title">Jaarlijks resultaat</div><div id="kpiAnnual" class="value">—</div></div>
+      <div class="kpi"><div class="title">Totaal rendement</div><div id="kpiROI" class="value">—</div></div>
+    </div>
+
+    <div class="grid cols-3" style="margin-top:16px">
+      <div class="card"><div class="card-body">
+        <div class="title">Investering breakdown</div>
+        <canvas id="chartInvest" height="190"></canvas>
+      </div></div>
+
+      <div class="card"><div class="card-body">
+        <div class="title">Jaarlijks resultaat</div>
+        <canvas id="chartAnnual" height="190"></canvas>
+      </div></div>
+
+      <div class="card"><div class="card-body">
+        <div class="title">Waardeontwikkeling & Break-even</div>
+        <canvas id="chartValue" height="190"></canvas>
+        <div class="note" style="margin-top:8px">
+          Break-even cashflow: <span id="breakevenCash">—</span> · Inclusief waardestijging: <span id="breakevenTotal">—</span>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="grid cols-2" style="margin-top:16px">
+      <div class="card"><div class="card-body">
+        <h3>Initiële investering</h3>
+        <table class="table">
+          <thead><tr><th>Kostenpost</th><th>Bedrag</th><th>%</th></tr></thead>
+          <tbody id="tblInit"></tbody>
+          <tfoot><tr><th>Totaal</th><th id="tblInitTotal">—</th><th>100%</th></tr></tfoot>
+        </table>
+      </div></div>
+
+      <div class="card"><div class="card-body">
+        <h3>Jaarlijkse kosten</h3>
+        <table class="table">
+          <thead><tr><th>Kostenpost</th><th>Bedrag</th><th>%</th></tr></thead>
+          <tbody id="tblAnnual"></tbody>
+          <tfoot><tr><th>Totaal</th><th id="tblAnnualTotal">—</th><th>100%</th></tr></tfoot>
+        </table>
+      </div></div>
+    </div>
+
+    <div class="grid cols-2" style="margin-top:16px">
+      <div class="card"><div class="card-body">
+        <h3>Bruto verhuurinkomsten</h3>
+        <canvas id="chartRental" height="190"></canvas>
+        <div class="hr"></div>
+        <table class="table">
+          <thead><tr><th>Periode</th><th>Weekprijs</th><th>Bezetting</th><th>Inkomsten</th></tr></thead>
+          <tbody id="tblRental"></tbody>
+          <tfoot><tr><th>Totaal</th><th>-</th><th>-</th><th id="rentalTotal">—</th></tr></tfoot>
+        </table>
+      </div></div>
+
+      <div class="card"><div class="card-body">
+        <h3>Netto verhuurresultaat</h3>
+        <canvas id="chartNet" height="190"></canvas>
+        <div class="hr"></div>
+        <table class="table">
+          <tbody id="tblNet"></tbody>
+        </table>
+      </div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px"><div class="card-body">
+      <h3>Belangrijkste aandachtspunten</h3>
+      <ul>
+        <li>Buitenlanders kunnen vrijelijk onroerend goed kopen in Montenegro</li>
+        <li>Notaris is verplicht bij overdracht</li>
+        <li>Lage belastingtarieven vergeleken met West-Europa</li>
+        <li>Geen vermogensbelasting</li>
+        <li>Belastingverdrag met Nederland aanwezig; belasting wordt betaald in Montenegro</li>
+      </ul>
+      <div class="actions" style="margin-top:12px">
+        <button class="btn secondary" onclick="window.print()">Opslaan als PDF</button>
+        <button class="btn" id="btnBack">Opnieuw berekenen</button>
+      </div>
+    </div></div>
+
+  </section>
+</div>
+
+<script>
+/* ==== CONSTANTEN (exact zoals jouw berekeningen) ==== */
+const TRANSFER_TAX_RATE = 0.03;
+const NOTARY_RATE = 0.005;
+const REGISTRATION_RATE = 0.003;
+const AGENT_RATE = 0.03;
+const LAWYER_FEE = 1500;
+
+const PROPERTY_TAX_RATE = 0.001;
+const RENTAL_TAX_RATE = 0.09;
 
 const HIGH_SEASON_WEEKS = 12;
-const LOW_SEASON_WEEKS = 34;
+const LOW_SEASON_WEEKS  = 34;
 const HIGH_SEASON_OCCUPANCY = 0.85;
-const LOW_SEASON_OCCUPANCY = 0.25;
+const LOW_SEASON_OCCUPANCY  = 0.25;
 
-const MANAGEMENT_RATE = 0.2; // 20%
+const MANAGEMENT_RATE = 0.20;
 const CLEANING_COST_PER_WEEK = 85;
 const MARKETING_COST = 500;
 
-const MONTENEGRO_APPRECIATION = 0.06; // 6%
+const MONTENEGRO_APPRECIATION = 0.06;
 
-// ====== Helpers ======
-const fmtCurr = (v: number) =>
-  "€" + (isFinite(v) ? Math.round(v).toLocaleString("nl-NL") : "-");
-const fmtPct = (v: number) =>
-  (isFinite(v) ? v.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "-") + "%";
+/* ==== STATE ==== */
+let region = 'Kotor';
+let propertyType = 'Appartement';
+let purchasePrice = 150000;
+let investmentHorizon = 15;
 
-// Types
-type Inputs = {
-  region: string;
-  propertyType: string;
-  propertySize: number | undefined;
-  landSize: number | undefined;
-  purchasePrice: number;
-  condition: string;
-  ownCapital: number;
-  needFinancing: boolean;
-  financingAmount?: number | undefined;
-  financingType?: string;
-  financingTerm?: number;
-  investmentHorizon: number;
-  usageType: string;
-  rentalPeriod?: string;
-  personalUsageWeeks: number;
-  returnImportance: number;
-  enjoymentImportance: number;
-  managementPreference: string;
-};
+let personalUseWeeks = 6; // (wordt alleen getoond; berekeningen blijven gelijk aan jouw versie)
+let totals = {};          // voor charts/tables
 
-function useCalculations(i: Inputs) {
-  return useMemo(() => {
-    const purchasePrice = i.purchasePrice;
+/* ==== HELPERS ==== */
+const € = v => '€' + (isFinite(v) ? Math.round(v).toLocaleString('nl-NL') : '—');
+const pct = v => (isFinite(v) ? v.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—') + '%';
 
-    // Initial costs
-    const transferTax = purchasePrice * TRANSFER_TAX_RATE;
-    const notaryCosts = purchasePrice * NOTARY_RATE;
-    const registrationCosts = purchasePrice * REGISTRATION_RATE;
-    const agentCosts = purchasePrice * AGENT_RATE;
-    const lawyerCosts = LAWYER_FEE;
-    const totalInvestment =
-      purchasePrice + transferTax + notaryCosts + registrationCosts + agentCosts + lawyerCosts;
+/* ==== UI HOOKS ==== */
+const qs = s => document.querySelector(s);
+const qsa = s => Array.from(document.querySelectorAll(s));
 
-    // Annual costs
-    const propertyTax = purchasePrice * PROPERTY_TAX_RATE;
-    const insurance = purchasePrice * 0.004; // 0.4%
-    const utilities = 750;
-    const maintenance = purchasePrice * 0.0075; // 0.75%
-    const totalAnnualCosts = propertyTax + insurance + utilities + maintenance;
+/* Tabs */
+qsa('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    qsa('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    qsa('.section').forEach(sec=>sec.classList.remove('active'));
+    qs('#'+btn.dataset.tab).classList.add('active');
+  });
+});
 
-    // Rental income (depends on price)
-    const highSeasonWeeklyRate = (purchasePrice / 1000) * 5.33; // €5.33 per €1000 per week
-    const lowSeasonWeeklyRate = highSeasonWeeklyRate * 0.44;
+/* Inputs */
+qs('#region').addEventListener('change', e => region = e.target.value);
+qs('#propertyType').addEventListener('change', e => propertyType = e.target.value);
+qs('#purchasePrice').addEventListener('input', e => purchasePrice = parseInt(e.target.value||'0',10));
+qs('#investmentHorizon').addEventListener('input', e => {
+  investmentHorizon = parseInt(e.target.value,10);
+  qs('#investmentHorizonValue').textContent = investmentHorizon;
+});
+qs('#usageType').addEventListener('change', e => {
+  const v = e.target.value;
+  const show = v === 'Verhuur' || v === 'Combinatie';
+  qs('#rentalTypeBox').style.display = show ? 'block' : 'none';
+  qs('#personalUseBox').style.display = show ? 'block' : 'none';
+});
+qs('#personalUsageWeeks').addEventListener('input', e=>{
+  personalUseWeeks = parseInt(e.target.value,10);
+  qs('#personalUsageWeeksValue').textContent = personalUseWeeks;
+});
+qs('#needFinancing').addEventListener('change', e=>{
+  qs('#financingBox').style.display = e.target.value === 'yes' ? 'grid' : 'none';
+});
 
-    // Adjust personal use: subtract personal weeks proportionally from seasons
-    const totalWeeks = 52;
-    const ownUse = Math.min(Math.max(i.personalUsageWeeks, 0), 52);
-    const reduceFactor = (totalWeeks - ownUse) / totalWeeks; // scale occupancy weeks down
+/* Buttons */
+qs('#btnCalculate').addEventListener('click', ()=>{ calculate(); goResults(); });
+qs('#btnToResults').addEventListener('click', ()=>{ calculate(); goResults(); });
+qs('#btnBack').addEventListener('click', ()=>{ goInput(); });
 
-    const availableHighSeasonWeeks = HIGH_SEASON_WEEKS * reduceFactor;
-    const availableLowSeasonWeeks = LOW_SEASON_WEEKS * reduceFactor;
-
-    const highSeasonIncome = availableHighSeasonWeeks * highSeasonWeeklyRate * HIGH_SEASON_OCCUPANCY;
-    const lowSeasonIncome = availableLowSeasonWeeks * lowSeasonWeeklyRate * LOW_SEASON_OCCUPANCY;
-    const totalRentalIncome = highSeasonIncome + lowSeasonIncome;
-
-    // Rental costs
-    const managementCosts = totalRentalIncome * MANAGEMENT_RATE;
-    const occupiedWeeks =
-      availableHighSeasonWeeks * HIGH_SEASON_OCCUPANCY + availableLowSeasonWeeks * LOW_SEASON_OCCUPANCY;
-    const cleaningCosts = occupiedWeeks * CLEANING_COST_PER_WEEK;
-    const marketingCosts = MARKETING_COST;
-
-    const netRentalIncome = totalRentalIncome - managementCosts - cleaningCosts - marketingCosts;
-    const rentalTax = netRentalIncome * RENTAL_TAX_RATE;
-    const netAfterTax = netRentalIncome - rentalTax;
-
-    // Annual result
-    const annualResult = netAfterTax - totalAnnualCosts;
-
-    // Yields
-    const cashYield = (annualResult / totalInvestment) * 100;
-    const appreciationYield = MONTENEGRO_APPRECIATION * 100;
-    const totalYield = cashYield + appreciationYield;
-
-    // Value projection
-    const horizon = Math.max(i.investmentHorizon, 1);
-    const futureValue = purchasePrice * Math.pow(1 + MONTENEGRO_APPRECIATION, horizon);
-    const totalAppreciation = futureValue - purchasePrice;
-
-    // Break-even
-    const cashBreakEven = annualResult > 0 ? totalInvestment / annualResult : Infinity;
-    const totalBreakEven = Math.log(totalInvestment / purchasePrice + 1) / Math.log(1 + MONTENEGRO_APPRECIATION);
-
-    return {
-      // inputs mirrored
-      region: i.region,
-      propertyType: i.propertyType,
-      personalUseWeeks: i.personalUsageWeeks,
-      investmentHorizon: horizon,
-
-      // costs & income
-      purchasePrice,
-      transferTax,
-      notaryCosts,
-      registrationCosts,
-      agentCosts,
-      lawyerCosts,
-      totalInvestment,
-      propertyTax,
-      insurance,
-      utilities,
-      maintenance,
-      totalAnnualCosts,
-      highSeasonWeeklyRate,
-      lowSeasonWeeklyRate,
-      highSeasonIncome,
-      lowSeasonIncome,
-      totalRentalIncome,
-      managementCosts,
-      cleaningCosts,
-      marketingCosts,
-      netRentalIncome,
-      rentalTax,
-      netAfterTax,
-      annualResult,
-      cashYield,
-      appreciationYield,
-      totalYield,
-      futureValue,
-      totalAppreciation,
-      cashBreakEven,
-      totalBreakEven,
-    };
-  }, [i]);
+function goResults(){
+  qsa('.tab-btn').forEach(b=>b.classList.remove('active'));
+  qsa('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelector('.tab-btn[data-tab="results"]').classList.add('active');
+  qs('#results').classList.add('active');
+}
+function goInput(){
+  qsa('.tab-btn').forEach(b=>b.classList.remove('active'));
+  qsa('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelector('.tab-btn[data-tab="input"]').classList.add('active');
+  qs('#input').classList.add('active');
 }
 
-const SectionTitle = ({ title, subtitle }: { title: string; subtitle?: string }) => (
-  <div className="mb-4">
-    <h3 className="text-xl font-semibold text-[--tw-text-primary]">{title}</h3>
-    {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
-  </div>
-);
+/* ==== CORE CALC (zoals jouw script) ==== */
+function calculate(){
+  // Initiële kosten
+  const transferTax = purchasePrice * TRANSFER_TAX_RATE;
+  const notaryCosts = purchasePrice * NOTARY_RATE;
+  const registrationCosts = purchasePrice * REGISTRATION_RATE;
+  const agentCosts = purchasePrice * AGENT_RATE;
+  const lawyerCosts = LAWYER_FEE;
 
-const StatCard = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
-  <Card className="rounded-2xl shadow-sm border-neutral-200">
-    <CardContent className="p-5">
-      <p className="text-sm text-muted-foreground mb-1">{label}</p>
-      <p className="text-2xl font-semibold">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground mt-2">{sub}</p>}
-    </CardContent>
-  </Card>
-);
+  const totalInvestment = purchasePrice + transferTax + notaryCosts + registrationCosts + agentCosts + lawyerCosts;
 
-function Header() {
-  return (
-    <div className="bg-[" + COLORS.primaryBlue + "] text-white rounded-2xl p-6 shadow-sm">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h2 className="text-2xl font-bold tracking-tight">
-          <span className="text-[" + COLORS.primaryOrange + "]">BAY SIGHT</span> Woning Calculator Montenegro
-        </h2>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" className="rounded-xl" onClick={() => window.print()}>Opslaan als PDF</Button>
-          <Button className="bg-[" + COLORS.primaryOrange + "] hover:opacity-90 rounded-xl" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-            Opnieuw
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+  // Jaarlijkse kosten
+  const propertyTax = purchasePrice * PROPERTY_TAX_RATE;
+  const insurance = purchasePrice * 0.004;
+  const utilities = 750;
+  const maintenance = purchasePrice * 0.0075;
+  const totalAnnualCosts = propertyTax + insurance + utilities + maintenance;
+
+  // Verhuurinkomsten (zoals bij jou; personalUseWeeks niet verrekend)
+  const highSeasonWeeklyRate = purchasePrice / 1000 * 5.33;
+  const lowSeasonWeeklyRate  = highSeasonWeeklyRate * 0.44;
+
+  const highSeasonIncome = HIGH_SEASON_WEEKS * highSeasonWeeklyRate * HIGH_SEASON_OCCUPANCY;
+  const lowSeasonIncome  = LOW_SEASON_WEEKS  * lowSeasonWeeklyRate  * LOW_SEASON_OCCUPANCY;
+  const totalRentalIncome = highSeasonIncome + lowSeasonIncome;
+
+  // Netto verhuurresultaat
+  const managementCosts = totalRentalIncome * MANAGEMENT_RATE;
+  const occupiedWeeks = (HIGH_SEASON_WEEKS * HIGH_SEASON_OCCUPANCY) + (LOW_SEASON_WEEKS * LOW_SEASON_OCCUPANCY);
+  const cleaningCosts = occupiedWeeks * CLEANING_COST_PER_WEEK;
+  const marketingCosts = MARKETING_COST;
+
+  const netRentalIncome = totalRentalIncome - managementCosts - cleaningCosts - marketingCosts;
+  const rentalTax = netRentalIncome * RENTAL_TAX_RATE;
+  const netAfterTax = netRentalIncome - rentalTax;
+
+  // Jaarlijks resultaat
+  const annualResult = netAfterTax - totalAnnualCosts;
+
+  // Rendement
+  const cashYield = (annualResult / totalInvestment) * 100;
+  const appreciationYield = MONTENEGRO_APPRECIATION * 100;
+  const totalYield = cashYield + appreciationYield;
+
+  // Waardeontwikkeling
+  const futureValue = purchasePrice * Math.pow(1 + MONTENEGRO_APPRECIATION, investmentHorizon);
+  const totalAppreciation = futureValue - purchasePrice;
+
+  // Break-even (zelfde formule als jouw script)
+  const cashBreakEven = annualResult !== 0 ? (totalInvestment / annualResult) : Infinity;
+  const totalBreakEven = Math.log(totalInvestment / purchasePrice + 1) / Math.log(1 + MONTENEGRO_APPRECIATION);
+
+  totals = {
+    transferTax, notaryCosts, registrationCosts, agentCosts, lawyerCosts, totalInvestment,
+    propertyTax, insurance, utilities, maintenance, totalAnnualCosts,
+    highSeasonWeeklyRate, lowSeasonWeeklyRate, highSeasonIncome, lowSeasonIncome, totalRentalIncome,
+    managementCosts, cleaningCosts, marketingCosts, netRentalIncome, rentalTax, netAfterTax,
+    annualResult, cashYield, appreciationYield, totalYield, futureValue, totalAppreciation,
+    cashBreakEven, totalBreakEven
+  };
+
+  renderUI();
+  renderCharts();
 }
 
-function InputGrid({ inputs, setInputs }: { inputs: Inputs; setInputs: (i: Inputs) => void }) {
-  const set = (patch: Partial<Inputs>) => setInputs({ ...inputs, ...patch });
+/* ==== RENDER ==== */
+function renderUI(){
+  // KPIs
+  qs('#kpiInvestment').textContent = €(totals.totalInvestment);
+  qs('#kpiAnnual').textContent     = €(totals.annualResult);
+  qs('#kpiROI').textContent        = pct(totals.totalYield);
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Card className="rounded-2xl">
-        <CardContent className="p-5 space-y-3">
-          <SectionTitle title="1. Woning" />
-          <div className="space-y-2">
-            <Label>Regio</Label>
-            <Select value={inputs.region} onValueChange={(v) => set({ region: v })}>
-              <SelectTrigger className="rounded-xl"><SelectValue placeholder="Selecteer een regio" /></SelectTrigger>
-              <SelectContent>
-                {['Kotor','Budva','Tivat','Bar'].map(r => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Type woning</Label>
-            <Select value={inputs.propertyType} onValueChange={(v) => set({ propertyType: v })}>
-              <SelectTrigger className="rounded-xl"><SelectValue placeholder="Selecteer een type" /></SelectTrigger>
-              <SelectContent>
-                {['Appartement','Villa','Townhouse','Landhuis'].map(t => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Woonoppervlakte (m²)</Label>
-              <Input type="number" className="rounded-xl" value={inputs.propertySize ?? ''} onChange={(e) => set({ propertySize: Number(e.target.value) })} />
-            </div>
-            <div>
-              <Label>Perceel (m²)</Label>
-              <Input type="number" className="rounded-xl" value={inputs.landSize ?? ''} onChange={(e) => set({ landSize: Number(e.target.value) })} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Aankoopprijs (€)</Label>
-              <Input type="number" className="rounded-xl" value={inputs.purchasePrice} onChange={(e) => set({ purchasePrice: Number(e.target.value) })} />
-            </div>
-            <div>
-              <Label>Staat van onderhoud</Label>
-              <Select value={inputs.condition} onValueChange={(v) => set({ condition: v })}>
-                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {['Nieuwbouw','Uitstekend','Goed','Redelijk','Renovatie nodig'].map(c => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-2xl">
-        <CardContent className="p-5 space-y-3">
-          <SectionTitle title="2. Financieel" />
-          <div>
-            <Label>Eigen vermogen (€)</Label>
-            <Input type="number" className="rounded-xl" value={inputs.ownCapital} onChange={(e) => set({ ownCapital: Number(e.target.value) })} />
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <Label className="mr-2">Financiering nodig?</Label>
-            <Switch checked={inputs.needFinancing} onCheckedChange={(v) => set({ needFinancing: v })} />
-          </div>
-          {inputs.needFinancing && (
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label>Bedrag (€)</Label>
-                <Input type="number" className="rounded-xl" value={inputs.financingAmount ?? 0} onChange={(e) => set({ financingAmount: Number(e.target.value) })} />
-              </div>
-              <div>
-                <Label>Looptijd (jaren)</Label>
-                <Input type="number" className="rounded-xl" value={inputs.financingTerm ?? 15} onChange={(e) => set({ financingTerm: Number(e.target.value) })} />
-              </div>
-              <div>
-                <Label>Type</Label>
-                <Select value={inputs.financingType ?? "Hypotheek in Nederland"} onValueChange={(v) => set({ financingType: v })}>
-                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {['Hypotheek in Nederland','Lokale hypotheek','Anders'].map(f => (
-                      <SelectItem key={f} value={f}>{f}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-          <div>
-            <Label>Investeringshorizon (jaren)</Label>
-            <input type="range" min={1} max={30} value={inputs.investmentHorizon}
-              onChange={(e) => set({ investmentHorizon: Number(e.target.value) })} className="w-full" />
-            <div className="text-right text-sm text-muted-foreground">{inputs.investmentHorizon} jaar</div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-2xl">
-        <CardContent className="p-5 space-y-3">
-          <SectionTitle title="3. Gebruik" />
-          <div>
-            <Label>Primair gebruik</Label>
-            <Select value={inputs.usageType} onValueChange={(v) => set({ usageType: v })}>
-              <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {['Vakantiewoning','Permanente bewoning','Verhuur','Combinatie'].map(u => (
-                  <SelectItem key={u} value={u}>{u}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {(inputs.usageType === 'Verhuur' || inputs.usageType === 'Combinatie') && (
-            <>
-              <div>
-                <Label>Type verhuur</Label>
-                <Select value={inputs.rentalPeriod ?? 'Korte termijn (vakantieverhuur)'} onValueChange={(v) => set({ rentalPeriod: v })}>
-                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {['Korte termijn (vakantieverhuur)','Lange termijn (vaste huurder)','Beide'].map(r => (
-                      <SelectItem key={r} value={r}>{r}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Eigen gebruik (weken/jaar)</Label>
-                <input type="range" min={0} max={52} value={inputs.personalUsageWeeks}
-                  onChange={(e) => set({ personalUsageWeeks: Number(e.target.value) })} className="w-full" />
-                <div className="text-right text-sm text-muted-foreground">{inputs.personalUsageWeeks} weken</div>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-2xl">
-        <CardContent className="p-5 space-y-3">
-          <SectionTitle title="4. Voorkeuren" />
-          <div>
-            <Label>Belang van rendement</Label>
-            <input type="range" min={1} max={10} value={inputs.returnImportance}
-              onChange={(e) => set({ returnImportance: Number(e.target.value) })} className="w-full" />
-            <div className="text-right text-sm text-muted-foreground">{inputs.returnImportance}/10</div>
-          </div>
-          <div>
-            <Label>Belang van gebruiksgenot</Label>
-            <input type="range" min={1} max={10} value={inputs.enjoymentImportance}
-              onChange={(e) => set({ enjoymentImportance: Number(e.target.value) })} className="w-full" />
-            <div className="text-right text-sm text-muted-foreground">{inputs.enjoymentImportance}/10</div>
-          </div>
-          <div>
-            <Label>Beheer voorkeur</Label>
-            <Select value={inputs.managementPreference} onValueChange={(v) => set({ managementPreference: v })}>
-              <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {['Zelf actief beheren','Gedeeltelijk uitbesteden','Volledig uitbesteden'].map(m => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function Summary({ calc }: { calc: ReturnType<typeof useCalculations> }) {
-  const investData = [
-    { name: "Aankoopprijs", value: calc.purchasePrice, color: COLORS.primaryBlue },
-    { name: "Aankoopkosten", value: calc.totalInvestment - calc.purchasePrice, color: COLORS.primaryOrange },
-  ];
-
-  const annualBars = [
-    { name: "Inkomsten", waarde: Math.max(calc.totalRentalIncome, 0) },
-    { name: "Kosten", waarde: Math.max(calc.totalAnnualCosts + calc.managementCosts + calc.cleaningCosts + calc.marketingCosts + calc.rentalTax, 0) },
-    { name: "Resultaat", waarde: calc.annualResult },
-  ];
-
-  const valueSeries = Array.from({ length: calc.investmentHorizon + 1 }, (_, t) => ({
-    jaar: t,
-    waarde: calc.purchasePrice * Math.pow(1 + MONTENEGRO_APPRECIATION, t),
-    cashflowCum: -calc.totalInvestment + calc.annualResult * t,
-    totalCum: -calc.totalInvestment + calc.annualResult * t + (calc.purchasePrice * Math.pow(1 + MONTENEGRO_APPRECIATION, t) - calc.purchasePrice),
-  }));
-
-  return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard label="Totale investering" value={fmtCurr(calc.totalInvestment)} />
-        <StatCard label="Jaarlijks resultaat" value={fmtCurr(calc.annualResult)} />
-        <StatCard label="Totaal rendement" value={fmtPct(calc.totalYield)} />
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <Card className="rounded-2xl">
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground mb-2">Investering breakdown</p>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={investData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={90}>
-                    {investData.map((d, idx) => (
-                      <Cell key={idx} fill={d.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v:number) => fmtCurr(v)} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl">
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground mb-2">Jaarlijks resultaat</p>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={annualBars}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(v:number) => fmtCurr(v)} />
-                  <Bar dataKey="waarde" fill={COLORS.primaryOrange} radius={[8,8,0,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl">
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground mb-2">Waardeontwikkeling & Break-even</p>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={valueSeries}>
-                  <XAxis dataKey="jaar" />
-                  <YAxis />
-                  <Tooltip formatter={(v:number) => fmtCurr(v)} />
-                  <Legend />
-                  <Line type="monotone" dataKey="waarde" name="Waarde" stroke={COLORS.primaryOrange} strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="cashflowCum" name="Cumulatieve cashflow" stroke={COLORS.error} strokeWidth={1.5} dot={false} />
-                  <Line type="monotone" dataKey="totalCum" name="Cashflow + waardestijging" stroke={COLORS.success} strokeWidth={1.5} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Break-even cashflow: {isFinite(calc.cashBreakEven) ? calc.cashBreakEven.toFixed(1) + ' jaar' : 'n.v.t.'} ·
-              Inclusief waardestijging: {calc.totalBreakEven.toFixed(1)} jaar
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function Financials({ calc }: { calc: ReturnType<typeof useCalculations> }) {
+  // Init table
   const initRows = [
-    ["Aankoopprijs", fmtCurr(calc.purchasePrice), (calc.purchasePrice / calc.totalInvestment) * 100],
-    ["Overdrachtsbelasting", fmtCurr(calc.transferTax), (calc.transferTax / calc.totalInvestment) * 100],
-    ["Notariskosten", fmtCurr(calc.notaryCosts), (calc.notaryCosts / calc.totalInvestment) * 100],
-    ["Registratiekosten", fmtCurr(calc.registrationCosts), (calc.registrationCosts / calc.totalInvestment) * 100],
-    ["Makelaarskosten", fmtCurr(calc.agentCosts), (calc.agentCosts / calc.totalInvestment) * 100],
-    ["Advocaatkosten", fmtCurr(calc.lawyerCosts), (calc.lawyerCosts / calc.totalInvestment) * 100],
+    ['Aankoopprijs', totals.purchasePrice = purchasePrice, purchasePrice / totals.totalInvestment * 100],
+    ['Overdrachtsbelasting', totals.transferTax, totals.transferTax / totals.totalInvestment * 100],
+    ['Notariskosten', totals.notaryCosts, totals.notaryCosts / totals.totalInvestment * 100],
+    ['Registratiekosten', totals.registrationCosts, totals.registrationCosts / totals.totalInvestment * 100],
+    ['Makelaarskosten', totals.agentCosts, totals.agentCosts / totals.totalInvestment * 100],
+    ['Advocaatkosten', totals.lawyerCosts, totals.lawyerCosts / totals.totalInvestment * 100],
   ];
+  qs('#tblInit').innerHTML = initRows.map(r=>(
+    `<tr><td>${r[0]}</td><td>${€(r[1])}</td><td>${pct(r[2])}</td></tr>`
+  )).join('');
+  qs('#tblInitTotal').textContent = €(totals.totalInvestment);
 
-  const annualRows = [
-    ["Onroerendgoedbelasting", fmtCurr(calc.propertyTax), (calc.propertyTax / calc.totalAnnualCosts) * 100],
-    ["Verzekeringen", fmtCurr(calc.insurance), (calc.insurance / calc.totalAnnualCosts) * 100],
-    ["Nutsvoorzieningen", fmtCurr(calc.utilities), (calc.utilities / calc.totalAnnualCosts) * 100],
-    ["Onderhoud", fmtCurr(calc.maintenance), (calc.maintenance / calc.totalAnnualCosts) * 100],
+  // Annual table
+  const annRows = [
+    ['Onroerendgoedbelasting', totals.propertyTax, totals.propertyTax / totals.totalAnnualCosts * 100],
+    ['Verzekeringen', totals.insurance, totals.insurance / totals.totalAnnualCosts * 100],
+    ['Nutsvoorzieningen', totals.utilities, totals.utilities / totals.totalAnnualCosts * 100],
+    ['Onderhoud', totals.maintenance, totals.maintenance / totals.totalAnnualCosts * 100],
   ];
+  qs('#tblAnnual').innerHTML = annRows.map(r=>(
+    `<tr><td>${r[0]}</td><td>${€(r[1])}</td><td>${pct(r[2])}</td></tr>`
+  )).join('');
+  qs('#tblAnnualTotal').textContent = €(totals.totalAnnualCosts);
 
-  const initPie = [
-    { name: "Aankoopprijs", value: calc.purchasePrice, color: COLORS.primaryBlue },
-    { name: "Overdrachtsbelasting", value: calc.transferTax, color: "#bb764f" },
-    { name: "Notariskosten", value: calc.notaryCosts, color: "#c99273" },
-    { name: "Registratiekosten", value: calc.registrationCosts, color: "#dcb399" },
-    { name: "Makelaarskosten", value: calc.agentCosts, color: "#6a879d" },
-    { name: "Advocaatkosten", value: calc.lawyerCosts, color: "#9fb0be" },
-  ];
+  // Rental table
+  qs('#tblRental').innerHTML = `
+    <tr><td>Hoogseizoen</td><td>${€(totals.highSeasonWeeklyRate)}</td><td>85%</td><td>${€(totals.highSeasonIncome)}</td></tr>
+    <tr><td>Laagseizoen</td><td>${€(totals.lowSeasonWeeklyRate)}</td><td>25%</td><td>${€(totals.lowSeasonIncome)}</td></tr>`;
+  qs('#rentalTotal').textContent = €(totals.totalRentalIncome);
 
-  const annualPie = [
-    { name: "OG-belasting", value: calc.propertyTax, color: COLORS.primaryBlue },
-    { name: "Verzekeringen", value: calc.insurance, color: "#6a879d" },
-    { name: "Nuts", value: calc.utilities, color: COLORS.primaryOrange },
-    { name: "Onderhoud", value: calc.maintenance, color: "#e3b695" },
-  ];
+  // Net rental table
+  qs('#tblNet').innerHTML = `
+    <tr><td>Bruto verhuurinkomsten</td><td>${€(totals.totalRentalIncome)}</td></tr>
+    <tr><td>Beheerkosten (20%)</td><td>-${€(totals.managementCosts)}</td></tr>
+    <tr><td>Schoonmaakkosten</td><td>-${€(totals.cleaningCosts)}</td></tr>
+    <tr><td>Marketingkosten</td><td>-${€(totals.marketingCosts)}</td></tr>
+    <tr><td>Netto verhuurinkomsten</td><td>${€(totals.netRentalIncome)}</td></tr>
+    <tr><td>Lokale belasting (9%)</td><td>-${€(totals.rentalTax)}</td></tr>
+    <tr><th>Netto na belasting</th><th>${€(totals.netAfterTax)}</th></tr>
+  `;
 
-  return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-      <Card className="rounded-2xl">
-        <CardContent className="p-5 space-y-4">
-          <SectionTitle title="Initiële investering" />
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={initPie} dataKey="value" nameKey="name" outerRadius={95}>
-                  {initPie.map((d, i) => (
-                    <Cell key={i} fill={d.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v:number) => fmtCurr(v)} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b">
-                  <th className="py-2">Kostenpost</th>
-                  <th>Bedrag</th>
-                  <th>%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {initRows.map((r, idx) => (
-                  <tr key={idx} className="border-b last:border-0">
-                    <td className="py-2">{r[0]}</td>
-                    <td>{r[1]}</td>
-                    <td>{fmtPct(Number(r[2]))}</td>
-                  </tr>
-                ))}
-                <tr>
-                  <td className="py-2 font-semibold">Totaal</td>
-                  <td className="font-semibold">{fmtCurr(calc.totalInvestment)}</td>
-                  <td className="font-semibold">100,00%</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-2xl">
-        <CardContent className="p-5 space-y-4">
-          <SectionTitle title="Jaarlijkse kosten" />
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={annualPie} dataKey="value" nameKey="name" outerRadius={95}>
-                  {annualPie.map((d, i) => (
-                    <Cell key={i} fill={d.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v:number) => fmtCurr(v)} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b">
-                  <th className="py-2">Kostenpost</th>
-                  <th>Bedrag</th>
-                  <th>%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {annualRows.map((r, idx) => (
-                  <tr key={idx} className="border-b last:border-0">
-                    <td className="py-2">{r[0]}</td>
-                    <td>{r[1]}</td>
-                    <td>{fmtPct(Number(r[2]))}</td>
-                  </tr>
-                ))}
-                <tr>
-                  <td className="py-2 font-semibold">Totaal</td>
-                  <td className="font-semibold">{fmtCurr(calc.totalAnnualCosts)}</td>
-                  <td className="font-semibold">100,00%</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  // Break-even text
+  qs('#breakevenCash').textContent  = isFinite(totals.cashBreakEven) ? totals.cashBreakEven.toFixed(1) + ' jaar' : 'n.v.t.';
+  qs('#breakevenTotal').textContent = totals.totalBreakEven.toFixed(1) + ' jaar';
 }
 
-function Rental({ calc }: { calc: ReturnType<typeof useCalculations> }) {
-  const incomeBars = [
-    { name: "Hoogseizoen", waarde: calc.highSeasonIncome },
-    { name: "Laagseizoen", waarde: calc.lowSeasonIncome },
-  ];
+/* ==== CHARTS ==== */
+let chartInvest, chartAnnual, chartValue, chartRental, chartNet;
 
-  const resultBars = [
-    { name: "Bruto inkomsten", waarde: calc.totalRentalIncome },
-    { name: "Kosten", waarde: -(calc.managementCosts + calc.cleaningCosts + calc.marketingCosts) },
-    { name: "Belasting", waarde: -calc.rentalTax },
-    { name: "Netto resultaat", waarde: calc.netAfterTax },
-  ];
+function make(ctx, cfg){ if(ctx && ctx._chart) { ctx._chart.destroy(); } const c = new Chart(ctx, cfg); ctx._chart = c; return c; }
 
-  return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-      <Card className="rounded-2xl">
-        <CardContent className="p-5 space-y-4">
-          <SectionTitle title="Bruto verhuurinkomsten" />
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={incomeBars}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip formatter={(v:number) => fmtCurr(v)} />
-                <Bar dataKey="waarde" fill={COLORS.primaryOrange} radius={[8,8,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b">
-                  <th className="py-2">Periode</th>
-                  <th>Weekprijs</th>
-                  <th>Bezetting</th>
-                  <th>Inkomsten</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b">
-                  <td className="py-2">Hoogseizoen</td>
-                  <td>{fmtCurr(calc.highSeasonWeeklyRate)}</td>
-                  <td>85%</td>
-                  <td>{fmtCurr(calc.highSeasonIncome)}</td>
-                </tr>
-                <tr>
-                  <td className="py-2">Laagseizoen</td>
-                  <td>{fmtCurr(calc.lowSeasonWeeklyRate)}</td>
-                  <td>25%</td>
-                  <td>{fmtCurr(calc.lowSeasonIncome)}</td>
-                </tr>
-                <tr>
-                  <td className="py-2 font-semibold">Totaal</td>
-                  <td>-</td>
-                  <td>-</td>
-                  <td className="font-semibold">{fmtCurr(calc.totalRentalIncome)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-2xl">
-        <CardContent className="p-5 space-y-4">
-          <SectionTitle title="Netto verhuurresultaat" />
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={resultBars}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip formatter={(v:number) => fmtCurr(v)} />
-                <Bar dataKey="waarde" fill={COLORS.primaryBlue} radius={[8,8,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b">
-                  <th className="py-2">Post</th>
-                  <th>Bedrag</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b"><td className="py-2">Bruto verhuurinkomsten</td><td>{fmtCurr(calc.totalRentalIncome)}</td></tr>
-                <tr className="border-b"><td>Beheerkosten (20%)</td><td>-{fmtCurr(calc.managementCosts)}</td></tr>
-                <tr className="border-b"><td>Schoonmaakkosten</td><td>-{fmtCurr(calc.cleaningCosts)}</td></tr>
-                <tr className="border-b"><td>Marketingkosten</td><td>-{fmtCurr(calc.marketingCosts)}</td></tr>
-                <tr className="border-b"><td>Netto verhuurinkomsten</td><td>{fmtCurr(calc.netRentalIncome)}</td></tr>
-                <tr className="border-b"><td>Lokale belasting (9%)</td><td>-{fmtCurr(calc.rentalTax)}</td></tr>
-                <tr><td className="font-semibold">Netto na belasting</td><td className="font-semibold">{fmtCurr(calc.netAfterTax)}</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function ROI({ calc }: { calc: ReturnType<typeof useCalculations> }) {
-  const roiCompare = [
-    { name: "Spaarrekening", waarde: 1.0 },
-    { name: "Obligaties", waarde: 3.0 },
-    { name: "Verhuur NL", waarde: 4.0 },
-    { name: "Vastgoedfonds", waarde: 5.0 },
-    { name: "Italië", waarde: 5.15 },
-    { name: "Spanje", waarde: 5.97 },
-    { name: "Portugal", waarde: 6.35 },
-    { name: "Aandelen", waarde: 7.0 },
-    { name: "Montenegro", waarde: calc.totalYield },
-  ];
-
-  const stackedCountry = [
-    { land: 'Montenegro', cash: calc.cashYield, app: calc.appreciationYield },
-    { land: 'Portugal', cash: 1.85, app: 4.50 },
-    { land: 'Spanje', cash: 1.97, app: 4.00 },
-    { land: 'Italië', cash: 1.65, app: 3.50 },
-  ];
-
-  return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-      <Card className="rounded-2xl">
-        <CardContent className="p-5">
-          <SectionTitle title="Rendementsvergelijking" />
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={roiCompare}>
-                <XAxis dataKey="name" interval={0} angle={-20} textAnchor="end" height={60} />
-                <YAxis />
-                <Tooltip formatter={(v:number) => fmtPct(v)} />
-                <Bar dataKey="waarde" fill={COLORS.primaryBlue} radius={[8,8,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-2xl">
-        <CardContent className="p-5">
-          <SectionTitle title="Landen (cash + waardestijging)" />
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stackedCountry} stackOffset="expand">
-                <XAxis dataKey="land" />
-                <YAxis tickFormatter={(v) => fmtPct(v * 100)} />
-                <Tooltip formatter={(v:number) => fmtPct(v)} />
-                <Legend />
-                <Bar dataKey="cash" stackId="a" fill={COLORS.primaryBlue} name="Cash rendement" />
-                <Bar dataKey="app" stackId="a" fill={COLORS.primaryOrange} name="Waardestijging" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-export default function BaySightCalculator2025() {
-  const [inputs, setInputs] = useState<Inputs>({
-    region: "Kotor",
-    propertyType: "Appartement",
-    propertySize: undefined,
-    landSize: undefined,
-    purchasePrice: 150000,
-    condition: "Goed",
-    ownCapital: 150000,
-    needFinancing: false,
-    financingAmount: undefined,
-    financingType: "Hypotheek in Nederland",
-    financingTerm: 15,
-    investmentHorizon: 15,
-    usageType: "Vakantiewoning",
-    rentalPeriod: "Korte termijn (vakantieverhuur)",
-    personalUsageWeeks: 6,
-    returnImportance: 7,
-    enjoymentImportance: 8,
-    managementPreference: "Gedeeltelijk uitbesteden",
+function renderCharts(){
+  // invest
+  chartInvest && chartInvest.destroy();
+  chartInvest = make(document.getElementById('chartInvest').getContext('2d'), {
+    type:'doughnut',
+    data:{
+      labels:['Aankoopprijs','Aankoopkosten'],
+      datasets:[{data:[purchasePrice, totals.totalInvestment - purchasePrice], backgroundColor:['#042943','#d4915f']}]
+    },
+    options:{plugins:{legend:{position:'bottom'}}}
   });
 
-  const calc = useCalculations(inputs);
+  // annual
+  chartAnnual && chartAnnual.destroy();
+  const totalCostsAll = totals.totalAnnualCosts + totals.managementCosts + totals.cleaningCosts + totals.marketingCosts + totals.rentalTax;
+  chartAnnual = make(document.getElementById('chartAnnual').getContext('2d'), {
+    type:'bar',
+    data:{
+      labels:['Inkomsten','Kosten','Resultaat'],
+      datasets:[{data:[totals.totalRentalIncome, totalCostsAll, totals.annualResult], backgroundColor:['#31C48D','#E12D39','#d4915f']}]
+    },
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
+  });
 
-  return (
-    <div className="mx-auto max-w-7xl p-4 md:p-6 space-y-6">
-      <Header />
+  // value
+  chartValue && chartValue.destroy();
+  const labels = Array.from({length: investmentHorizon+1}, (_,i)=>i);
+  const values = labels.map(t => purchasePrice * Math.pow(1+MONTENEGRO_APPRECIATION,t));
+  const cashCum = labels.map(t => -totals.totalInvestment + totals.annualResult * t);
+  const totalCum= labels.map(t => -totals.totalInvestment + totals.annualResult * t + (purchasePrice * Math.pow(1+MONTENEGRO_APPRECIATION,t) - purchasePrice));
+  chartValue = make(document.getElementById('chartValue').getContext('2d'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Waarde', data:values, borderColor:'#d4915f', backgroundColor:'rgba(212,145,95,.12)', fill:true, tension:.2},
+        {label:'Cumulatieve cashflow', data:cashCum, borderColor:'#E12D39', backgroundColor:'rgba(225,45,57,.08)', fill:true, tension:.2},
+        {label:'Cashflow + waardestijging', data:totalCum, borderColor:'#31C48D', backgroundColor:'rgba(49,196,141,.10)', fill:true, tension:.2},
+      ]
+    },
+    options:{plugins:{legend:{position:'bottom'}}}
+  });
 
-      <Tabs defaultValue="input" className="w-full">
-        <TabsList className="rounded-2xl bg-white shadow-sm">
-          <TabsTrigger value="input" className="rounded-xl">Gegevens invoeren</TabsTrigger>
-          <TabsTrigger value="results" className="rounded-xl">Resultaten</TabsTrigger>
-        </TabsList>
+  // rental
+  chartRental && chartRental.destroy();
+  chartRental = make(document.getElementById('chartRental').getContext('2d'), {
+    type:'bar',
+    data:{
+      labels:['Hoogseizoen','Laagseizoen'],
+      datasets:[{data:[totals.highSeasonIncome, totals.lowSeasonIncome], backgroundColor:['#d4915f','#f0c6a5']}]
+    },
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
+  });
 
-        <TabsContent value="input" className="space-y-4 mt-4">
-          <InputGrid inputs={inputs} setInputs={setInputs} />
-          <div className="flex justify-end">
-            <Button className="bg-[" + COLORS.primaryOrange + "] hover:opacity-90 rounded-xl px-6 py-6 text-base" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-              Bereken
-            </Button>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="results" className="space-y-6 mt-4">
-          <Summary calc={calc} />
-          <Financials calc={calc} />
-          <Rental calc={calc} />
-          <ROI calc={calc} />
-
-          <Card className="rounded-2xl">
-            <CardContent className="p-5 space-y-2">
-              <SectionTitle title="Belangrijkste aandachtspunten" />
-              <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
-                <li>Buitenlanders kunnen vrijelijk onroerend goed kopen in Montenegro</li>
-                <li>Notaris is verplicht bij overdracht</li>
-                <li>Lage belastingtarieven vergeleken met West‑Europa</li>
-                <li>Geen vermogensbelasting</li>
-                <li>Belastingverdrag met Nederland aanwezig, belasting wordt betaald in Montenegro</li>
-              </ul>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
+  // net
+  chartNet && chartNet.destroy();
+  chartNet = make(document.getElementById('chartNet').getContext('2d'), {
+    type:'bar',
+    data:{
+      labels:['Bruto inkomsten','Kosten','Belasting','Netto resultaat'],
+      datasets:[{data:[
+        totals.totalRentalIncome,
+        -(totals.managementCosts + totals.cleaningCosts + totals.marketingCosts),
+        -totals.rentalTax,
+        totals.netAfterTax
+      ], backgroundColor:['#31C48D','#E12D39','#f18b95','#042943']}]
+    },
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
+  });
 }
+
+/* Auto initial calculation & show results quickly */
+calculate();
+</script>
+</body>
+</html>
