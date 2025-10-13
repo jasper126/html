@@ -540,8 +540,25 @@
             font-weight: 500;
         }
         .data-table td.numeric-cell strong {
-            font-weight: 700;
-        }
+            font-weight: 700;}
+        /* --- FIX: 21% BTW bolletje zichtbaar houden --- */
+#onetime-costs-comparison-table {
+  border-collapse: separate;   /* voorkomt dat het bolletje wordt afgeknipt */
+  border-spacing: 0;
+  overflow: visible;
+}
+
+#onetime-costs-comparison-table td.numeric-cell.badge-host {
+  position: relative;
+  overflow: visible;
+}
+
+.badge-btw {
+  z-index: 5;
+  top: -4px;      /* iets lager zodat hij niet half buiten beeld valt */
+  right: -4px;
+}
+/* --- EINDE FIX --- */
 
 
         .considerations-list {
