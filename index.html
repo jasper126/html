@@ -1494,7 +1494,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const managementFeeRates = { "Volledig uitbesteden": 0.10, "Gedeeltelijk uitbesteden": 0.08, "Zelf actief beheren": 0 };
         params.managementFeeRate = managementFeeRates[managementPreference];
 
-        costBreakdown.baySightCosts = Math.max(3000, purchasePrice * 0.015);
+        costBreakdown.baySightCosts = Math.max(3000, purchasePrice * 0.010);
 
         switch(country) {
             case 'Montenegro':
